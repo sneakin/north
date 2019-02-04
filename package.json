@@ -6,6 +6,7 @@
        "start": "node ./bin/north.js"
    },
    "dependencies": {
+     "xterm": "~3.8.0",
      "brfs": "~2.0.1",
      "browserify": "~16.2.3"
    }

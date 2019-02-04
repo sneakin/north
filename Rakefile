@@ -15,11 +15,15 @@ outputs = [ 'north-stage0.bin',
             #'north-stage1.bin',
             'forth.html',
             'forth.css',
+            'runner.css',
+            'runner.js',
+            'runner.html'
           ].collect { |s| buildroot.join(s) }
 
 directory buildroot
 
-STAGE0_SRC = [ 'forth_core.4th',
+STAGE0_SRC = [ 'forth.js',
+               'forth_core.4th',
                'forth_extra.4th',
                'forth_assembler.4th',
                'forth_ops.4th'
@@ -45,7 +49,7 @@ file STAGE1_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
   sh("#{BCCON} #{STAGE0_TARGET} < src/build-stage1.4th > #{t.name}")
 end
 
-[ 'forth.css' ].each do |name|
+[ 'forth.css', 'runner.css' ].each do |name|
   output = buildroot.join(name)
   src = root.join('www', name)
   
@@ -57,6 +61,13 @@ end
 BrowserifyRunner.bundle buildroot.join('forth_www.js') => [ root.join('www/forth_www.js') ]
 html_file buildroot.join('forth.html') => [ root.join('www/forth.src.html'), buildroot.join('forth_www.js'), buildroot ]
 
+BrowserifyRunner.bundle buildroot.join('runner.js') => [ root.join('www/runner.js') ]
+html_file buildroot.join('runner.html') => [ root.join('www/runner.src.html'), buildroot.join('runner.js'), STAGE0_TARGET, buildroot.join('xterm.css') ]
+
+file buildroot.join('xterm.css') => root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
+  FileUtils.copy(t.sources[0], t.name)
+end
+
 desc "Build all stages."
 task :default => outputs
 
@@ -65,3 +76,12 @@ task :stage0 => STAGE0_TARGET
 
 desc "Build stage1 using stage0"
 task :stage1 => STAGE1_TARGET
+
+desc 'Start a webserver on port 9090 to serve the build directory.'
+task :serve do
+	require 'webrick'
+  $stderr.puts("Serving on #{buildroot}")
+	s = WEBrick::HTTPServer.new(:Port => ENV.fetch('PORT', 9090), :DocumentRoot => buildroot)
+	trap('INT') { s.shutdown }
+	s.start
+end
