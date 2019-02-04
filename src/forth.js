@@ -140,7 +140,7 @@ var macros = {
     asm.label(name + "-code").
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code').
         label(name + '-entry-data').
-        uint32(name + '-end', true).
+        uint32(name + '-end', true, (v) => v / 4 - 1).
         label(name + '-ops');
     
     return tok[1];

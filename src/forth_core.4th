@@ -805,21 +805,40 @@
 : tail-seq
   arg0 cell+ return1
 ;
-  
-: map-seq
-  ( seq entry )
-  arg1 cell+ swapdrop
 
-  map-seq-loop:
-  ( seq )
-  local0 head-seq swapdrop ( head )
-  null? literal map-seq-done ifthenjump
-  arg0 exec ( head result )
-  local0 tail-seq store-local0 ( result seq )
-  drop2
-  literal map-seq-loop jump
+: revmap ( ptr count fn )
+  arg1 literal 0 <= IF return0 THEN
+  arg1 literal 1 int-sub set-arg1
+  arg2 arg1 cell* swapdrop int-add peek
+  arg0 exec
+  RECURSE
+;
 
-  map-seq-done: return0
+: map/4 ( ptr count fn counter )
+  arg0 arg2 >= IF return0 THEN
+  arg3 arg0 cell* swapdrop int-add peek
+  arg1 exec
+  arg0 literal 1 int-add set-arg0
+  RECURSE
+;
+
+: map ( ptr count fn )
+  literal 0
+  rot swap
+  literal map/4 jump-entry-data
+;
+
+: map-seq ( seq fn )
+  arg1 seq-length swap
+  cell+ swapdrop swap
+  arg0 literal 0 map/4
+;
+
+: revmap-seq ( seq fn )
+  arg1 seq-length swap
+  cell+ swapdrop swap
+  arg0
+  revmap
 ;
 
 : copy
@@ -1445,14 +1464,17 @@
   cont
 ;
 
+( Buggy above base 10. )
 : digit-char
   arg0 literal 48 int-sub return1
 ;
 
+( Buggy above base 10. )
 : char-digit
   arg0 abs-int literal 48 int-add return1
 ;
-  
+
+( Does not handle base prefixes. )
 : unsigned-number
   zero
   arg0 seq-length swap
