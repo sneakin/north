@@ -61,11 +61,11 @@ var strings = {};
 
 function next_token(str)
 {
-  var sp = str.match(/\s*([^ \t\n\r]+)/)
+  var sp = str.match(/[ \t\n\r\f\v]*([^ \t\n\r\f\v]+)/)
     
   if(sp) {
     return [ sp[1], str.slice(sp[0].length) ];
-  } else if(str.match(/\s*/)) {
+  } else if(str.match(/[ \t\n\r\f\v]*/)) {
     return false;
   } else {
     throw "Parse error";
@@ -113,10 +113,18 @@ var last_dictionary;
 function unslash(str)
 {
   return str.
+      replace(/\\a/g, "\a").
+      replace(/\\b/g, "\b").
+      replace(/\\f/g, "\f").
+      replace(/\\e/g, "\e").
+      replace(/\\v/g, "\v").
       replace(/\\n/g, "\n").
       replace(/\\r/g, "\r").
-      replace(/\\t/g, "\t")
-      ;
+      //replace(/\\'/g, "\'").
+      //replace(/\\"/g, "\"").
+      replace(/\\t/g, "\t").
+      replace(/\\\\/g, "\\")
+     ;
 }
 
 function genlabel(prefix)
@@ -1554,6 +1562,8 @@ Forth.cellpad = cellpad;
 Forth.sources = forth_sources;
 Forth.interp = interp;
 Forth.execute = execute;
+Forth.next_token = next_token;
+Forth.unslash = unslash;
 
 if(typeof(module) != 'undefined') {
   module.exports = Forth;

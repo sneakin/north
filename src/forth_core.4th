@@ -19,6 +19,7 @@
 ;
 
 ( TTY Color )
+
 
 : color-reset
   literal TTY-ESCAPE write-word
@@ -74,6 +75,7 @@
 ;
 
 ( Common writers )
+
 
 : crnl
   literal CRNL return1
@@ -100,6 +102,7 @@
 ;
 
 ( Prompts )
+
 
 : prompt
   bright yellow 
@@ -137,7 +140,10 @@
   boo-done: write-ok 
   literal $8765 return1
 ;
-  
+
+( Dictionary )
+
+
 : make-dict ( name code data link => entry-ptr )
   arg3 dpush ( name ) 
   dhere 
@@ -225,6 +231,9 @@
 
   dict-each-done: return0
 ;
+
+( Writing )
+
 
 : write-dict-entry-name
   arg0 dict-entry-name write-string
@@ -449,10 +458,17 @@
   return-1
 ;
 
+( Tokenizing )
+
+
 : whitespace?
   arg0 space? swap literal char-code \r equals
   arg0 literal char-code \n equals
   arg0 literal char-code \t equals
+  arg0 literal char-code \v equals
+  arg0 literal char-code \f equals
+  or rotdrop2
+  or rotdrop2
   or rotdrop2
   or rotdrop2
   or rotdrop2
@@ -1214,6 +1230,9 @@
   literal 0 literal *state*-sym set-var drop3
   quit ( exit caller )
 ;
+
+( Evaluation )
+
 
 ( fixme a frame not linking to it's parent as the parent's link gets overwritten by data )
 
