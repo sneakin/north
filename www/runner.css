@@ -27,6 +27,8 @@ body {
     font-size: 16px;
     padding: 1em;
     padding-top: 0.25em;
+    margin: 1em auto;
+    width: 66ex;
 }
 
 DIV {
