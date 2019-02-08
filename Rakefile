@@ -13,8 +13,6 @@ NODE_PATH << [ root.join('src'), BCPATH ]
 
 outputs = [ 'north-stage0.bin',
             #'north-stage1.bin',
-            'forth.html',
-            'forth.css',
             'runner.css',
             'runner.js',
             'runner.html'
@@ -57,9 +55,6 @@ end
     FileUtils.copy(t.sources[0], t.name)
   end
 end
-
-BrowserifyRunner.bundle buildroot.join('forth_www.js') => [ root.join('www/forth_www.js') ]
-html_file buildroot.join('forth.html') => [ root.join('www/forth.src.html'), buildroot.join('forth_www.js'), buildroot ]
 
 BrowserifyRunner.bundle buildroot.join('runner.js') => [ root.join('www/runner.js') ]
 html_file buildroot.join('runner.html') => [ root.join('www/runner.src.html'), buildroot.join('runner.js'), STAGE0_TARGET, buildroot.join('xterm.css') ]
