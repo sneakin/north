@@ -42,6 +42,11 @@ var PS1 = longify("\r\n> ");
 var ERR1 = longify("\r\nER");
 var ERR2 = longify("\r\n> ");
 
+function cell_align(n)
+{
+  return Math.ceil(n / 4) * 4;
+}
+
 function cellpad(str)
 {
   var arr = new Uint8Array((2 + str.length) * VM.TYPES.ULONG.byte_size);
@@ -1559,6 +1564,7 @@ Forth.assemble = function(ds, cs, info) {
 
 Forth.longify = longify;
 Forth.cellpad = cellpad;
+Forth.cell_align = cell_align;
 Forth.sources = forth_sources;
 Forth.interp = interp;
 Forth.execute = execute;

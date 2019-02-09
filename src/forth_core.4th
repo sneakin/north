@@ -558,6 +558,15 @@
   dhere return1
 ;
 
+: dpush-byte
+  arg0 dpush
+  dhere literal 3 int-sub dmove
+;
+
+: cell-align
+  arg0 literal 4 int-div literal 1 int-add literal 4 int-mul return1
+;
+
 : end-seq
   ( seq )
   dhere
