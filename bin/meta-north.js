@@ -1,3 +1,5 @@
+// -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 2 -*-
+
 const VM = require('vm');
 const Forth = require('forth');
 
@@ -14,6 +16,7 @@ var info = {
   "output":{"addr":0xF0003000,"irq":12}
 };
 
-var bin = Forth.assemble(data_segment, 0, info);
+var stage = process.argv[2] || 'stage0';
+var bin = Forth.assemble(data_segment, 0, info, stage);
 var buf = new Buffer(bin.buffer);
 process.stdout.write(buf);

@@ -13,11 +13,24 @@ const fs = require('fs');
 var TESTING = 0;
 
 const forth_sources = {
-  core: fs.readFileSync(__dirname + '/forth_core.4th', 'utf-8'),
+  "core-0": fs.readFileSync(__dirname + '/00_forth_core.4th', 'utf-8'),
+  "core-0-compiler": fs.readFileSync(__dirname + '/00_forth_compiler.4th', 'utf-8'),
+  "00-output": fs.readFileSync(__dirname + '/00_forth_output.4th', 'utf-8'),  
+  "00-ui": fs.readFileSync(__dirname + '/00_forth_ui.4th', 'utf-8'),  
+  "01-atoi": fs.readFileSync(__dirname + '/01_forth_atoi.4th', 'utf-8'),
+  "01-tty": fs.readFileSync(__dirname + '/01_forth_tty.4th', 'utf-8'),
+  "01-dict": fs.readFileSync(__dirname + '/01_forth_dict.4th', 'utf-8'),  
+  "01-seq": fs.readFileSync(__dirname + '/01_forth_seq.4th', 'utf-8'),  
+  "01-ui": fs.readFileSync(__dirname + '/01_forth_ui.4th', 'utf-8'),  
+  "02-memdump": fs.readFileSync(__dirname + '/02_forth_memdump.4th', 'utf-8'),  
+  "02-decompiler": fs.readFileSync(__dirname + '/02_forth_decompiler.4th', 'utf-8'),  
+  "02-misc": fs.readFileSync(__dirname + '/02_forth_misc.4th', 'utf-8'),
+  "core-4": fs.readFileSync(__dirname + '/04_forth_core.4th', 'utf-8'),
+  "core-constants": fs.readFileSync(__dirname + '/04_forth_constants.4th', 'utf-8'),
   extra: fs.readFileSync(__dirname + '/forth_extra.4th', 'utf-8'),
-  fast_dict: fs.readFileSync(__dirname + '/forth_fast_dict.4th', 'utf-8'),
-  assembler: fs.readFileSync(__dirname + '/forth_assembler.4th', 'utf-8'),
-  ops: fs.readFileSync(__dirname + '/forth_ops.4th', 'utf-8')
+  fast_dict: fs.readFileSync(__dirname + '/02_forth_fast_dict.4th', 'utf-8'),
+  assembler: fs.readFileSync(__dirname + '/02_forth_assembler.4th', 'utf-8'),
+  ops: fs.readFileSync(__dirname + '/02_forth_ops.4th', 'utf-8')
 };
 
 function Forth()
@@ -93,18 +106,22 @@ function compile(asm, e, quote_numbers)
   if(m) {
     asm.label(m[1]);
   } else {
-    var m = e.match(/^([$#x%]?)(-?\d+)$/)
+    var m = e.match(/^([$#x%]?)(-?[0-9a-fA-F]+)$/);
     if(m) {
       var base = 10;
       if(m[1].length > 0) base = base_chars[m[1]];
-      if(quote_numbers) {
-        asm.uint32('literal').uint32(parseInt(m[2], base));
-      } else {
-        asm.uint32(parseInt(m[2], base));
+      var n = parseInt(m[2], base);
+      if(Number.isNaN(n) == false) {
+        if(quote_numbers) {
+          asm.uint32('literal');
+        }
+
+        asm.uint32(n);
+        return;
       }
-    } else {
-      asm.uint32(e);
     }
+
+    asm.uint32(e);
   }
 }
 
@@ -139,25 +156,28 @@ function genlabel(prefix)
   return `${prefix}-${n}`;
 }
 
+function colon_def(asm, token, code)
+{
+  var tok = next_token(code);
+  var name = tok[0];
+  
+  last_dictionary = name;
+  dictionary[name] = {
+    code: 'call-data-seq-code',
+    prior: dictionary[name]
+  };
+  
+  asm.label(name + "-code").
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code').
+      label(name + '-entry-data').
+      uint32(name + '-end', true, (v) => v / 4 - 1).
+      label(name + '-ops');
+  
+  return tok[1];
+}
+  
 var macros = {
-  ":": function(asm, token, code) {
-    var tok = next_token(code);
-    var name = tok[0];
-    
-    last_dictionary = name;
-    dictionary[name] = {
-      code: 'call-data-seq-code',
-      prior: dictionary[name]
-    };
-    
-    asm.label(name + "-code").
-        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code').
-        label(name + '-entry-data').
-        uint32(name + '-end', true, (v) => v / 4 - 1).
-        label(name + '-ops');
-    
-    return tok[1];
-  },
+  ":": colon_def,
   ";": function(asm, token, code) {
     var name = last_dictionary;
     dictionary[name].data = name + '-entry-data';
@@ -173,6 +193,17 @@ var macros = {
     var l = longify(v);
     asm.uint32(l);
     return tok[1];
+  },
+  'longify"': function(asm, token, code) {
+    var m = code.indexOf('"');
+    if(m) {
+      var tok = code.slice(1, m + 1);
+      var l = longify(unslash(tok[0]));
+      asm.uint32(l);
+      return tok[1];
+    } else {
+      throw "parse error";
+    }
   },
   "char-code": function(asm, token, code) {
     var tok = next_token(code);
@@ -283,7 +314,7 @@ function interp(asm, str)
   return asm;
 }
 
-Forth.assembler = function(ds, cs, info) {
+Forth.assembler = function(ds, cs, info, stage) {
   var asm = new Assembler();
 
   info = util.merge_options({
@@ -321,25 +352,6 @@ Forth.assembler = function(ds, cs, info) {
   function defop(name, fn) {
     ops.push(name);
     return fn(asm.label(name + "-code"));
-  }
-
-  function deffn(name, fn) {
-    fn(asm.label(name + "-code").
-       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code').
-       label(name + '-entry-data').
-       uint32(name + '-end', true).
-       label(name + '-ops'));
-    
-    dictionary[name] = {
-      code: 'call-data-seq-code',
-      data: name + '-entry-data'
-    };
-
-    asm.label(name + '-end').
-        label(name + '-size', (asm.resolve(name + '-end') - asm.resolve(name + '-ops')) / 4).
-        uint32(TERMINATOR);
-
-    return asm;
   }
 
   asm.label('isr_reset').
@@ -1328,14 +1340,6 @@ Forth.assembler = function(ds, cs, info) {
         store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
-  /*
-  deffn('swapdrop', function(asm) {
-    asm.
-        uint32('arg0').
-        uint32('set-arg1').
-        uint32('return-1');
-  });
-*/
 
   /*
   defop('indirect-param', function(asm) {
@@ -1343,14 +1347,6 @@ Forth.assembler = function(ds, cs, info) {
         load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(4).
         push(VM.CPU.REGISTERS.R0).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next');
-  });
-  
-  deffn('indirect-param', function(asm) {
-    asm.uint32('eip').
-        uint32('peek').
-        uint32('dict-entry-data').
-        uint32('cell+').
-        uint32('return1');
   });
   */
 
@@ -1390,12 +1386,28 @@ Forth.assembler = function(ds, cs, info) {
   });
   
   //var tok = tokenize(forth_sources.core);
-  interp(asm, forth_sources.core);
+  interp(asm, forth_sources['core-0']);
+  interp(asm, forth_sources['core-0-compiler']);
+  interp(asm, forth_sources['00-output']);
+  interp(asm, forth_sources['00-ui']);
 
-  //tok = tokenize(forth_sources.extra);
-  interp(asm, forth_sources.extra);
-  //interp(asm, forth_sources.assembler);
+  if(stage == 'stage1') {
+    interp(asm, forth_sources['01-atoi']);
+    interp(asm, forth_sources['01-tty']);
+    interp(asm, forth_sources['01-dict']);
+    interp(asm, forth_sources['01-seq']);
+    interp(asm, forth_sources['01-ui']);
 
+    interp(asm, forth_sources['02-memdump']);
+    interp(asm, forth_sources['02-decompiler']);
+    interp(asm, forth_sources['02-misc']);
+
+    //interp(asm, forth_sources['assembler']);
+    interp(asm, forth_sources['extra']);
+    
+    //interp(asm, forth_sources.assembler);
+  }
+  
   for(var n in forth_sources) {
     interp(asm, `: ${n}-src literal sources-${n}-src return1 ;`);
   }
@@ -1529,7 +1541,7 @@ Forth.assembler = function(ds, cs, info) {
     }
     last_label = dict_entry(label, n + '-sym', entry.code, entry.data, last_label);
   }
-  last_label = dict_entry('tok-write', 'tok-write-sym', 'call-data-seq-code', 'write-line-ops', last_label);
+  //last_label = dict_entry('tok-write', 'tok-write-sym', 'call-data-seq-code', 'write-line-ops', last_label);
   //last_label = dict_entry('e-lit', 'call-data-code', 'c-lit-ops', last_label);
   //last_label = dict_entry("e-'", 'call-data-code', "c-'-ops", last_label);
   //last_label = dict_entry("e-[']", 'call-data-code', "'-ops", last_label);
@@ -1558,8 +1570,8 @@ Forth.assembler = function(ds, cs, info) {
   return asm;
 }
 
-Forth.assemble = function(ds, cs, info) {
-  return Forth.assembler(ds, cs, info).assemble();
+Forth.assemble = function(ds, cs, info, stage) {
+  return Forth.assembler(ds, cs, info, stage).assemble();
 }
 
 Forth.longify = longify;
