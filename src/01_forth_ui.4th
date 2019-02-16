@@ -1,3 +1,28 @@
+( Colorize the prompt: )
+
+:: write-ok
+  bright green 
+  literal $204b4f20 write-word 
+  color-reset 
+;
+
+:: write-err
+  bright red 
+  literal $20524520 write-word 
+  color-reset 
+;
+
+:: prompt
+  bright yellow
+  literal $203e0a0d write-word 
+  color-reset 
+;
+
+:: write-status
+  *status* UNLESS write-ok return0 THEN
+  write-err literal 0 lit *status* set-var return0
+;
+ 
 ( More human friendly interaction: )
 
 ( Colorful error output: )
@@ -12,9 +37,9 @@
 
 ( Pretty eval-loop. )
 :: eval-loop
-  write-status write-int write-tab
+  write-status write-int write-tab dim write-depth
   color-reset prompt
- flush-read-line
+  flush-read-line
   blue write-string color-reset
   make-the-tokenizer drop2
   literal eval-tokens jump-entry-data

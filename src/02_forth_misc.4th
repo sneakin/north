@@ -19,24 +19,7 @@
   return-2
 ;
 
-( Tokenizing )
-
-
-: digit-detected
-  literal longify \r\nDI
-  write-word
-;
-
-: space-detected
-  literal longify \r\nSP
-  write-word
-;
-
-: alpha-detected
-  literal longify \r\nAL
-  write-word
-  return0
-;
+( Data storing: )
 
 : dpush-byte
   arg0 dpush
@@ -65,37 +48,7 @@
   dup literal 0 >= literal copydown-loop ifthenjump
 ;
 
-: tokenize
-  literal S-TERMINATOR
-  arg0 make-tokenizer swapdrop
-
-  tokenize-loop:
-  next-token
-  dup ( tokenizer token length length )
-  literal 0 equals literal tokenize-done ifthenjump
-  intern-seq ( tokenizer token length symbol )
-  rotdrop2 ( tokenizer symbol )
-  write-line
-  swap ( symbol tokenizer )
-  literal tokenize-loop jump
-
-  tokenize-done:
-  drop ( the length )
-  drop ( the null token )
-  drop ( the state )
-  ( pop the tokens into a list )
-  start-seq
-
-  tokenize-pop-loop:
-  swap terminator? literal tokenize-pop-loop-done ifthenjump
-  dpush
-  literal tokenize-pop-loop jump
-
-  tokenize-pop-loop-done:
-  drop ( terminator )
-  end-seq
-  return1
-;
+( Tokenizer exercisers: )
 
 : each-token
   ( str fn )
@@ -165,8 +118,8 @@
 ;
 
 : wait-return
-  literal press-return-sym
-  write-string flush-read-line
+  " Press return..." write-string
+  flush-read-line
 ;
 
 ( Evaluation )
@@ -177,37 +130,6 @@
 : if-test
   arg0 IF write-ok return0 THEN
   write-err return0
-;
-
-: stack-depth
-  stack-top args uint-sub return1
-;
-
-: write-depth
-  stack-depth write-unsigned-int
-;
-
-:: eval-loop
-  write-status write-int write-tab dim write-depth
-  color-reset prompt
-  flush-read-line
-  blue write-string color-reset
-  make-the-tokenizer drop2
-  literal eval-tokens jump-entry-data
-;
-
-: unset-tokenizer-stop-flag
-  literal 0
-  literal *stop-tokenizing*-sym
-  set-var
-  return0
-;
-
-: set-tokenizer-stop-flag
-  literal 1
-  literal *stop-tokenizing*-sym
-  set-var
-  return0
 ;
 
 : pop-to-seq
@@ -257,11 +179,13 @@
   arg0 literal tail-call-test-1 tailcall1
 ;
 
+(
 : cont-test
   literal write-line
   pause
   cont
 ;
+)
 
 : do
   return-address jump ( start a new frame for the loop )

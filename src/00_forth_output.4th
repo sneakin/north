@@ -90,11 +90,11 @@
 ( Line output: )
 
 : crnl
-  literal CRNL return1
+  literal $0a0d return1
 ;
 
 : write-crnl
-  literal CRNL write-word 
+  crnl write-word 
 ;
 
 : write-line
@@ -112,13 +112,13 @@
 
 ( Common outputs: )
 
-: space $20 return1 ;
+: space literal $20 return1 ;
 : write-space space write-byte ;
 
 : write-tab
-  literal longify \t write-byte 
+  literal 9 write-byte
 ;
 
 : write-helo
-  literal HELO write-word 
+  literal $4f4c4548 write-word 
 ;

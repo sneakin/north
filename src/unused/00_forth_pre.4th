@@ -62,3 +62,37 @@
   boo-done: write-ok 
   literal $8765 return1
 ;
+
+( Basic, unused tokenizer: )
+
+: tokenize
+  literal S-TERMINATOR
+  arg0 make-tokenizer swapdrop
+
+  tokenize-loop:
+  next-token
+  dup ( tokenizer token length length )
+  literal 0 equals literal tokenize-done ifthenjump
+  intern-seq ( tokenizer token length symbol )
+  rotdrop2 ( tokenizer symbol )
+  write-line
+  swap ( symbol tokenizer )
+  literal tokenize-loop jump
+
+  tokenize-done:
+  drop ( the length )
+  drop ( the null token )
+  drop ( the state )
+  ( pop the tokens into a list )
+  start-seq
+
+  tokenize-pop-loop:
+  swap terminator? literal tokenize-pop-loop-done ifthenjump
+  dpush
+  literal tokenize-pop-loop jump
+
+  tokenize-pop-loop-done:
+  drop ( terminator )
+  end-seq
+  return1
+;

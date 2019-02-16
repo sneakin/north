@@ -77,6 +77,12 @@
   return1
 ;
 
+: cell-n
+  arg0 cell*
+  arg1 int-sub
+  return1
+;
+
 : cell-
   arg0 cell-size int-sub
   return1
@@ -283,7 +289,7 @@
 ;
 
 : create
-  *tokenizer* next-token dup UNLESS literal eos-sym error THEN
+  *tokenizer* next-token dup UNLESS " End of stream" error THEN
   [create] return1
 ;
 
@@ -298,10 +304,15 @@
   cell+ return1
 ;
   
-: constant
+: [constant]
   ( value name )
   arg0 literal call-data-code arg1 constant-capturer
   swapdrop add-dict
+;
+
+: constant
+  ( value : name )
+  next-word [constant]
 ;
 
 ( Variables )
@@ -341,11 +352,11 @@
 ( Dictionary initialization )
 
 : mark
-  dict " *mark*" constant
+  dict lit *mark* [constant]
 ;
 
 : forget
-  " *mark*" dict dict-lookup
+  lit *mark* dict dict-lookup
   dict-entry-data set-dict
 ;
 
@@ -576,7 +587,7 @@
 
 : make-the-tokenizer
   arg0 make-tokenizer ( tokenizer )
-  literal the-tokenizer-sym set-var drop2
+  lit *tokenizer* set-var drop2
   return1
 ;
 
@@ -746,6 +757,10 @@
   local0 literal 48 int-add return1
 ;
 
+: negative-sign
+  literal 45 return1
+;
+
 : negative-sign?
   arg0 negative-sign equals return1
 ;
@@ -786,7 +801,7 @@
   arg0 dict dict-lookup dup IF *state* not return2 THEN
   drop2 number IF literal 0 return2 THEN
 
-  drop literal not-found-sym error
+  drop " Not Found" error
   literal 0 literal 0 return2
 ;
 
@@ -814,40 +829,4 @@
 
 : load
   literal eval-string jump-entry-data
-;
-
-( Basic Prompt )
-
-: write-ok
-  literal $204b4f20 write-word 
-;
-
-: write-err
-  literal $20524520 write-word 
-;
-
-: write-status
-  *status* not literal write-status-ok ifthenjump
-  write-err literal 0 literal *status*-sym set-var return0
-  write-status-ok: write-ok
-;
- 
-: prompt
-  literal $203e0a0d write-word 
-;
-
-(
-: eval-loop
-  write-status prompt
-  flush-read-line
-  make-the-tokenizer drop2
-  literal eval-tokens jump-entry-data
-;
-)
-
-( Entry )
-
-: boot
-  dict-init
-  eval-loop
 ;

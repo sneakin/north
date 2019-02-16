@@ -10,8 +10,8 @@
 ( Execute the next instruction in the thread. )
 create next-1 doasm[
     eval-ip 0 0 a-load int16, 0 int32, ( Load the next op into R0. )
-    0 0 eval-ip a-inc int16, CELL-SIZE int32, ( Increment eval IP. )
-    0 0 a-ip a-load int16, CELL-SIZE int32, ( Ops are dictionary addresses, so jump to the code field. )
+    0 0 eval-ip a-inc int16, cell-size int32, ( Increment eval IP. )
+    0 0 a-ip a-load int16, cell-size int32, ( Ops are dictionary addresses, so jump to the code field. )
 ]doasm
 
 ( Emit a NEXT that depends on the status register condition. )

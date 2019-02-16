@@ -13,8 +13,11 @@ BCPATH = root.join('..', 'bacaw', 'js', 'lib')
 NODE_PATH << [ root.join('src'), BCPATH ]
 
 outputs = [ 'north-stage0.bin',
+            'north-stage0-min.bin',
             'north-stage1.bin',
-            #'north-stage1.bin',
+            'north-stage1-min.bin',
+            #'north-stage2.bin',
+            #'north-stage3.bin',
             'runner.css',
             'runner.js',
             'runner.html'
@@ -25,6 +28,8 @@ directory buildroot
 STAGE0_SRC = [ 'forth.js',
                 '00_forth_core.4th',
                 '00_forth_compiler.4th',
+                '00_forth_output.4th',
+                '00_forth_init.4th',
                 '00_forth_ui.4th'
              ].collect { |s| root.join('src', s) }
 STAGE0_TARGET = buildroot.join('north-stage0.bin')
@@ -34,11 +39,17 @@ file STAGE0_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
   sh("node #{bin} stage0 > #{t.name}")
 end
 
+STAGE0_MIN_TARGET = buildroot.join('north-stage0-min.bin')
+file STAGE0_MIN_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
+  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  sh("node #{bin} stage0-min > #{t.name}")
+end
+
+desc "Build stage0: meta compiled text evaluatior"
+task :stage0 => [ STAGE0_TARGET, STAGE0_MIN_TARGET ]
+
 STAGE1_SRC = [ 'forth.js',
-               '00_forth_core.4th',
-               '00_forth_compiler.4th',
-               '00_forth_output.4th',
-               '00_forth_ui.4th',
+               *STAGE0_SRC,
                '01_forth_atoi.4th',
                '01_forth_tty.4th',
                '01_forth_dict.4th',
@@ -60,6 +71,16 @@ file STAGE1_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
   sh("node #{bin} stage1 > #{t.name}")
 end
 
+STAGE1_MIN_TARGET = buildroot.join('north-stage1-min.bin')
+
+file STAGE1_MIN_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
+  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  sh("node #{bin} stage1-min > #{t.name}")
+end
+
+desc "Build stage1: most everything metacompiled"
+task :stage1 => [ STAGE1_TARGET, STAGE1_MIN_TARGET ]
+
 STAGE2_SRC = [ 'build-stage2.4th',
                '02_forth_assembler.4th',
                '02_forth_ops.4th'
@@ -70,6 +91,9 @@ file STAGE2_TARGET => [ buildroot, STAGE0_TARGET, *STAGE2_SRC ] do |t|
   sh("#{BCCON} #{STAGE0_TARGET} < src/build-stage1.4th > #{t.name}")
 end
 
+desc "Build stage2: stage1 built with stage0"
+task :stage2 => STAGE2_TARGET
+
 [ 'forth.css', 'runner.css' ].each do |name|
   output = buildroot.join(name)
   src = root.join('www', name)
@@ -79,8 +103,13 @@ end
   end
 end
 
-BrowserifyRunner.bundle buildroot.join('runner.js') => [ root.join('www/runner.js') ]
-html_file buildroot.join('runner.html') => [ root.join('www/runner.src.html'), buildroot.join('runner.js'), STAGE0_TARGET, buildroot.join('xterm.css') ]
+desc "Build stage3: stage0 built with stage2"
+task :stage3 do
+  raise NotImplementedError
+end
+
+BrowserifyRunner.bundle buildroot.join('runner.js') => [ root.join('www/runner.js'), STAGE0_TARGET, STAGE1_TARGET ]
+html_file buildroot.join('runner.html') => [ root.join('www/runner.src.html'), buildroot.join('runner.js'), buildroot.join('xterm.css') ]
 
 file buildroot.join('xterm.css') => root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
   FileUtils.copy(t.sources[0], t.name)
@@ -88,20 +117,6 @@ end
 
 desc "Build all stages."
 task :default => outputs
-
-desc "Build stage0: meta compiled text evaluatior"
-task :stage0 => STAGE0_TARGET
-
-desc "Build stage1: most everything metacompiled"
-task :stage1 => STAGE1_TARGET
-
-desc "Build stage2: stage1 built with stage0"
-task :stage2 => STAGE2_TARGET
-
-desc "Build stage3: stage0 built with stage2"
-task :stage3 do
-  raise NotImplementedError
-end
 
 desc 'Start a webserver on port 9090 to serve the build directory.'
 task :serve do
