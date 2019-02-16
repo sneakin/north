@@ -16,13 +16,11 @@
   arg0 
 
   dict-each-loop:
-  local0 terminator? literal dict-each-done ifthenjump 
+  local0 terminator? IF return0 THEN
   drop
   arg1 exec 
   local0 dict-entry-next store-local0 drop
   literal dict-each-loop jump
-
-  dict-each-done: return0
 ;
 
 ( Dictionary output listing: )
@@ -40,29 +38,20 @@
 ;
 
 : write-dict-entry-kind
-  arg0 
   ( functions )
-  dict-entry-code
-  literal call-data-code 
-  equals literal write-dict-entry-kind-func ifthenjump 
+  arg0 dict-entry-code
+  literal call-data dict-entry-code swapdrop
+  equals IF longify FUN write-word return0 THEN
   ( also have sequences )
   dict-entry-code 
-  literal call-data-seq-code 
-  equals literal write-dict-entry-kind-func ifthenjump 
+  literal call-data-seq dict-entry-code swapdrop
+  equals IF longify FUN write-word return0 THEN
   ( vars )
   dict-entry-code 
-  literal variable-peeker-code 
-  equals literal write-dict-entry-kind-var ifthenjump 
+  literal variable-peeker dict-entry-code swapdrop
+  equals IF longify VAR write-word return0 THEN
   ( asm )
-  literal longify ASM write-word 
-  return0
-
-  write-dict-entry-kind-func:
-  literal longify FUN write-word 
-  return0
-
-  write-dict-entry-kind-var:
-  literal longify VAR write-word 
+  longify ASM write-word 
 ;
 
 : write-dict-entry

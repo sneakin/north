@@ -194,7 +194,7 @@ var macros = {
     var tok = next_token(code);
     var v = unslash(tok[0]);
     var l = longify(v);
-    asm.uint32(l);
+    asm.uint32('literal').uint32(l);
     return tok[1];
   },
   'longify"': function(asm, token, code) {
@@ -202,7 +202,7 @@ var macros = {
     if(m >= 0) {
       var tok = code.slice(1, m + 1);
       var l = longify(unslash(tok[0]));
-      asm.uint32(l);
+      asm.uint32('literal').uint32(l);
       return tok[1];
     } else {
       throw "parse error";
@@ -958,6 +958,22 @@ Forth.assembler = function(ds, cs, info, stage) {
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
 
+  defop('next-param', function(asm) {
+    asm.
+        // get the return address
+        load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
+        // load the value
+        load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.R0).uint32(0).
+        push(VM.CPU.REGISTERS.R1).
+        // move it up a cell
+        inc(VM.CPU.REGISTERS.R0).uint32(4).
+        // update it
+        store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
+        // done
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
+        ret();
+  });
+
   defop('return-address', function(asm) {
     asm.
         load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
@@ -1071,6 +1087,11 @@ Forth.assembler = function(ds, cs, info, stage) {
         push(FP_REG).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
+
+  defop('set-current-frame', function(asm) {
+    asm.pop(FP_REG).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  })
   
   defop('dict', function(asm) {
     asm.

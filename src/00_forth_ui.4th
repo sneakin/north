@@ -9,9 +9,10 @@
 ;
 
 : write-status
-  *status* not literal write-status-ok ifthenjump
-  write-err literal 0 literal *status*-sym set-var return0
-  write-status-ok: write-ok
+  *status* UNLESS
+    write-err literal 0 literal *status*-sym set-var return0
+  THEN
+  write-ok
 ;
  
 : prompt

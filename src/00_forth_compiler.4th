@@ -86,10 +86,9 @@
   ( start-location needle ++ ptr )
   arg1
   stack-find-loop:
-  local0 peek arg0 equals literal stack-find-done ifthenjump
+  local0 peek arg0 equals IF local0 return1 THEN
   local0 cell+ store-local0 drop
   literal stack-find-loop jump
-  stack-find-done: local0 return1
 ;
   
 : [
@@ -135,8 +134,8 @@
 
 ( Jump to the word after UNLESS and evaluate until THEN if the top of stack is zero. )
 : UNLESS
-      literal literal terminator literal ifthenreljump
-      literal 3 returnN
+  literal literal terminator literal ifthenreljump
+  literal 3 returnN
 ; immediate-only
 
 ( Stop evaluation for an UNLESS or IF. )
@@ -262,9 +261,8 @@
 
 ( Read and intern the next token. )
 : lit
-  next-word dup not literal lit-no-token ifthenjump
+  next-word dup UNLESS eos return0 THEN
   intern-seq return1
-  lit-no-token: literal eos-sym error return0
 ;
 
 ( A postponed LIT. )
@@ -274,9 +272,8 @@
 
 ( Read the next token and look it up in the dictionary. )
 : '
-  next-word not literal '-no-token ifthenjump
+  next-word UNLESS literal eos-sym error return0 THEN
   dict dict-lookup return1
-  '-no-token: literal eos-sym error return0
 ;
 
 ( Actually emit ' when ' is redefined to emit LITERAL. )
@@ -339,12 +336,14 @@
 ( Turn the next token into a 4 byte "string" or long. )
 : longify
   next-word UNLESS eos eos error THEN
-  cell+ longify-string return1
+  cell+ longify-string
+  literal literal swap return2
 ; immediate
 
 ( Read until the next " and convert that to a long. )
 : longify"
   *tokenizer* literal 34 tokenizer-read-until UNLESS eos eos error THEN
-  cell+ longify-string return1
+  cell+ longify-string
+  literal literal swap return2
 ; immediate
 

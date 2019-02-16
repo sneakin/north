@@ -1,4 +1,4 @@
-( With an assembler the ops can be redefined. )
+( With an assembler the ops can be redefined. )
 
 ( Registers used by the inner interpreter. )
 

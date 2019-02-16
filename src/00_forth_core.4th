@@ -100,11 +100,12 @@
   ( lengths )
   arg0 peek
   arg1 peek
-  ( elements )
-  equals literal string-equal-cmp ifthenjump
-  ( lengths are different )
-  literal 0 return1
+  equals UNLESS
+    ( lengths are different )
+    literal 0 return1
+  THEN
 
+  ( elements )
   string-equal-cmp:
   arg0 arg1
 
@@ -117,14 +118,11 @@
   ( at the terminators? )
   2dup terminator equals
   swap terminator equals
-  logand literal string-equal-done ifthenjump
+  logand IF literal 1 return1 THEN
   ( elements match? )
   equals literal string-equal-loop ifthenjump
   ( not equal )
   literal 0 return1
-
-  string-equal-done:
-  literal 1 return1
 ;
 
 ( Call frames: )
@@ -289,12 +287,13 @@
 ;
 
 : create
-  *tokenizer* next-token dup UNLESS " End of stream" error THEN
+  next-word dup UNLESS " End of stream" error THEN
   [create] return1
 ;
 
 ( Constants )
 
+( Returns a colon sequence that returns the argument. )
 : constant-capturer
   start-seq
   literal literal dpush
@@ -304,15 +303,26 @@
   cell+ return1
 ;
   
+: does-constant
+  ( entry init-value )
+  literal variable-peeker-code arg1 set-dict-entry-code
+  arg0 arg1 set-dict-entry-data
+;
+
 : [constant]
   ( value name )
-  arg0 literal call-data-code arg1 constant-capturer
-  swapdrop add-dict
+  arg0 seq-length [create] arg1 does-constant
+  drop return1
+;
+
+: constant'
+  ( value : name )
+  arg0 next-param [constant]
 ;
 
 : constant
   ( value : name )
-  next-word [constant]
+  create arg0 does-constant
 ;
 
 ( Variables )
@@ -338,14 +348,15 @@
   ( value name )
   ( return the entry )
   ( lookup if not found then define )
-  arg0 dict dict-lookup null? literal set-not-found ifthenjump
+  arg0 dict dict-lookup null? IF
+    ( set data )
+    arg1 arg0 [variable]
+    return1
+  THEN
   ( found )
   arg1 swap set-dict-entry-data
   ( make sure the code is a variable's )
   literal variable-peeker-code swap set-dict-entry-code
-  return1
-  ( else set data )
-  set-not-found: arg1 arg0 [variable]
   return1
 ;
 
@@ -374,14 +385,11 @@
 
 : read-line
   start-seq
-  literal read-line-loop jump
 
   read-line-loop: read-byte dup
-  literal char-code \n equals literal read-line-done ifthenjump
+  literal char-code \n equals IF dpush end-seq return1 THEN
   dpush
   literal read-line-loop jump
-
-  read-line-done: dpush end-seq return1
 ;
 
 : flush-read-line
@@ -437,15 +445,12 @@
 
 : in-range?
   ( Max min value )
-  arg0 dup arg1 >= literal range-maybe ifthenjump
+  arg0 dup arg1 >= IF
+    arg2 <= IF literal 1 return1 THEN
+    literal 0 return1
+  THEN
+  
   drop literal 0 return1
-
-  range-maybe:
-  arg2 <= literal range-yes ifthenjump
-  literal 0 return1
-
-  range-yes:
-  literal 1 return1
 ;
 
 : digit?
@@ -505,11 +510,9 @@
 
 : tokenizer-peek-word
   arg0
-  tokenizer-exhausted? literal tokenizer-peek-eos ifthenjump
+  tokenizer-exhausted? IF literal 0 return1 THEN
   arg0 tokenizer-str-ptr peek
   return1
-
-  tokenizer-peek-eos: literal 0 return1
 ;
 
 : tokenizer-exhausted?
@@ -521,12 +524,10 @@
   
 : tokenizer-next-word
   arg0
-  tokenizer-exhausted? literal tokenizer-next-word-eos ifthenjump
+  tokenizer-exhausted? IF literal 0 return1 THEN
   tokenizer-str-ptr peek
   swap tokenizer-inc-str-offset
   swap return1 ( tokenizer cell )
-
-  tokenizer-next-word-eos: literal 0 return1
 ;
 
 ( todo use a function and refactor eat-spaces )
@@ -535,12 +536,10 @@
   ( tokenizer needle )
   arg1
 
-  tokenizer-skip-until-loop: tokenizer-next-word null? literal tokenizer-skip-until-done ifthenjump
-  dup arg0 equals literal tokenizer-skip-until-done ifthenjump
+  tokenizer-skip-until-loop: tokenizer-next-word null? IF return0 THEN
+  dup arg0 equals IF return0 THEN
   drop
   literal tokenizer-skip-until-loop jump
-
-  tokenizer-skip-until-done: return0
 ;
 
 : tokenizer-eat-spaces
@@ -548,10 +547,7 @@
 
   tokenizer-eat-spaces-loop:
   tokenizer-peek-word
-  whitespace? literal tokenizer-eat-spaces-reloop ifthenjump
-  return0
-
-  tokenizer-eat-spaces-reloop:
+  whitespace? UNLESS return0 THEN
   drop
   tokenizer-inc-str-offset
   literal tokenizer-eat-spaces-loop jump
@@ -563,12 +559,14 @@
   ( tokenizer needle ++ output-seq length )
   arg1 tokenizer-buffer-reset
 
-  tokenizer-read-until-loop: tokenizer-next-word null? literal tokenizer-read-until-done ifthenjump
-  dup arg0 equals literal tokenizer-read-until-done ifthenjump
-  tokenizer-push drop
-  literal tokenizer-read-until-loop jump
-  
-  tokenizer-read-until-done: drop tokenizer-finish-output return2
+  tokenizer-read-until-loop: tokenizer-next-word null? UNLESS
+    dup arg0 equals UNLESS
+      tokenizer-push drop
+      literal tokenizer-read-until-loop jump
+    THEN
+  THEN
+
+  drop tokenizer-finish-output return2
 ;
 
 ( fixme: tokenizer should return start ptrs and lengths, try to eliminate usage of the buffer so "" and such can be unlimited. )
@@ -661,15 +659,15 @@
 
   tokenizer-loop:
   tokenizer-next-word ( tokenizer byte )
-  null? literal tokenizer-done ifthenjump
-  whitespace? literal tokenizer-done ifthenjump
-  tokenizer-push drop ( tokenizer )
-  literal tokenizer-loop jump
+  null? UNLESS
+    whitespace? UNLESS
+      tokenizer-push drop ( tokenizer )
+      literal tokenizer-loop jump
+    THEN
+  THEN
 
-  tokenizer-done:  ( tokenizer last-byte )
   drop ( tokenizer )
-
-  tokenizer-done-done: tokenizer-finish-output return2 ( next-token length )
+  tokenizer-finish-output return2 ( next-token length )
 ;
 
 : tokenizer-finish-output
@@ -712,9 +710,9 @@
 ( Some signed math: )
 
 : abs-int
-  arg0 literal 0 > literal abs-int-done ifthenjump
-  abs-int-negate: arg0 negate set-arg0
-  abs-int-done: return0
+  arg0 literal 0 > UNLESS
+    arg0 negate set-arg0
+  THEN
 ;
   
 : negate
@@ -772,26 +770,32 @@
   cell+ swapdrop
   unsigned-number-loop:
   dup peek
-  negative-sign? literal unsigned-number-skip ifthenjump
-  whitespace? literal unsigned-number-skip ifthenjump
-  terminator? literal unsigned-number-done ifthenjump
-  digit? not literal unsigned-number-error ifthenjump
-  digit-char swapdrop
-  local0 literal 10 int-mul
-  int-add store-local0
-  unsigned-number-inc:
+  negative-sign? UNLESS
+    whitespace? UNLESS
+      terminator? IF local0 literal 1 return2 THEN
+      digit? UNLESS literal 0 literal 0 return2 THEN
+      digit-char swapdrop
+      local0 base int-mul
+      int-add store-local0
+      unsigned-number-inc:
+
+      cell+ swapdrop
+      swap literal 1 int-sub swap
+      literal unsigned-number-loop jump
+    THEN
+  THEN
+  drop literal unsigned-number-inc jump
+
   cell+ swapdrop
   swap literal 1 int-sub swap
   literal unsigned-number-loop jump
-  unsigned-number-skip: drop literal unsigned-number-inc jump
-  unsigned-number-error: literal 0 literal 0 return2
-  unsigned-number-done: local0 literal 1 return2
 ;
 
 : number
-  arg0 cell+ swapdrop peek negative-sign equals literal number-negative ifthenjump
-  arg0 unsigned-number return2
-  number-negative: arg0 unsigned-number swap negate swapdrop swap return2
+  arg0 cell+ swapdrop peek negative-sign equals UNLESS
+    arg0 unsigned-number return2
+  THEN
+  arg0 unsigned-number swap negate swapdrop swap return2
 ;
 
 ( Evaluation )
@@ -811,7 +815,7 @@
 
 : eval-tokens
   ( ++ str )
-  next-word UNLESS drop literal eval-loop jump-entry-data THEN
+  POSTPONE next-word UNLESS drop literal eval-loop jump-entry-data THEN
   ( compile lookup )
   *state* UNLESS interp THEN
   *state* IF *state* exec THEN

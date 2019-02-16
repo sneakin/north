@@ -1,15 +1,14 @@
+( String output: )
+
 : write-string
   arg0 literal 4 int-add
 
   write-string-loop:
     dup peek dup
-    terminator equals literal write-string-done ifthenjump
+    terminator equals IF drop2 return0 THEN
     write-byte
     literal 4 int-add
     literal write-string-loop jump
-
-  write-string-done:
-    drop2 return0
 ;
 
 : write-string-n
@@ -23,14 +22,11 @@
   write-string-n-loop:
   dup peek
   dup
-  terminator equals literal write-string-n-done ifthenjump
+  terminator equals IF drop2 return0 THEN
   write-byte
   literal 4 int-add
-  2dup equals literal write-string-n-done ifthenjump
+  2dup equals IF drop2 return0 THEN
   literal write-string-n-loop jump
-
-  write-string-n-done:
-  drop2
 ;
   
 : write-string-rev
@@ -42,11 +38,8 @@
   write-string-rev-loop:
   dup peek write-byte
   literal -4 int-add
-  2dup equals literal write-string-rev-done ifthenjump
+  2dup equals IF drop2 return0 THEN
   literal write-string-rev-loop jump
-
-  write-string-rev-done:
-  drop2
 ;
 
 ( Integer output: )

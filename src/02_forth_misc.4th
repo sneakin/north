@@ -1,20 +1,11 @@
-( Common writers )
-
+( Common writers )
 
 : program-size
   literal *program-size* return1
 ;
 
-: CELL-SIZE
-  literal 4 return1
-;
-
-: FRAME-SIZE
-  CELL-SIZE literal 2 int-mul return1
-;
-
 : set-arg
-  current-frame parent-frame FRAME-SIZE arg0 cell* swapdrop int-add int-add
+  current-frame parent-frame frame-size arg0 cell* swapdrop int-add int-add
   arg1 swap poke
   return-2
 ;
@@ -122,8 +113,7 @@
   flush-read-line
 ;
 
-( Evaluation )
-
+( Evaluation )
 
 ( fixme a frame not linking to it's parent as the parent's link gets overwritten by data )
 
@@ -141,11 +131,9 @@
   pop-to-seq-loop:
   local1 peek
   dpush
-  local1 local2 < literal pop-to-seq-done ifthenjump
+  local1 local2 < IF local0 end-seq return1 THEN
   local1 cell- store-local1 drop
   literal pop-to-seq-loop jump
-
-  pop-to-seq-done: local0 end-seq return1
 ;
   
 : pause2
@@ -166,15 +154,14 @@
 ;
 
 : tail-call-test-1
-  arg0 literal 0 equals literal tail-call-test-1-done ifthenjump
+  arg0 literal 0 equals IF arg0 return1 THEN
   literal HELO write-word
   arg0 literal 1 int-sub
   literal tail-call-test-1 tailcall1
-  tail-call-test-1-done: arg0 return1
 ;
 
 : tail-call-test
-  literal longify \r\nGO write-word
+  longify \r\nGO write-word
   ( fixme arg0? )
   arg0 literal tail-call-test-1 tailcall1
 ;

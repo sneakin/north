@@ -1,3 +1,5 @@
+( An assembler for the BC-VM. )
+
 ( Construct a 16 bit value from 4 arguments, MSB to LSB. )
 : make-short ( msb mlsb lmsb lsb ++ uint16 )
   arg3 literal 4 bsl

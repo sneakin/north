@@ -35,22 +35,6 @@ defop('return-to', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('next-param', function(asm) {
-  asm.
-      // get the return address
-      load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
-      // load the value
-      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.R0).uint32(0).
-      push(VM.CPU.REGISTERS.R1).
-      // move it up a cell
-      inc(VM.CPU.REGISTERS.R0).uint32(4).
-      // update it
-      store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
-      // done
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
-      ret();
-});
-
 defop('stack-top', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.DS).uint32('stack_top').
       push(VM.CPU.REGISTERS.R0).
