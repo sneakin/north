@@ -801,6 +801,24 @@ Forth.assembler = function(ds, cs, info, stage) {
     });
   }
 
+  var conv_ops = {
+    i2f: [ 'convi', VM.TYPES.FLOAT ],
+    u2f: [ 'convu', VM.TYPES.FLOAT ],
+    f2i: [ 'convf', VM.TYPES.LONG ],
+    f2u: [ 'convf', VM.TYPES.ULONG ]
+  };
+  for(var f in conv_ops) {
+    var op = conv_ops[f][0];
+    var type_out = conv_ops[f][1];
+    
+    defop(f, function(asm) {
+      asm.pop(VM.CPU.REGISTERS.R0);
+      asm[op](VM.CPU.REGISTERS.R0, type_out);
+      asm.push(VM.CPU.REGISTERS.R0).
+          load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+    });
+  }
+  
   defop('bsl', function(asm) {
     asm.pop(VM.CPU.REGISTERS.R1).
         pop(VM.CPU.REGISTERS.R0).
