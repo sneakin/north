@@ -1,19 +1,14 @@
 ( An immediate dictionary for compiling words: )
 
-: immediate-dict
-  literal immediate-dictionary peek
-  return1
-;
-
 : immediate-lookup
-  arg0 immediate-dict dict-lookup
+  arg0 immediate-dict peek dict-lookup
   return1
 ;
 
 : immediate-dict-add
-  arg2 arg1 arg0 immediate-dict make-dict
-  literal immediate-dict-sym set-var
-  drop return1
+  arg2 arg1 arg0 immediate-dict peek make-dict
+  dup immediate-dict poke
+  return1
 ;
 
 : add-immediate-as
@@ -38,7 +33,7 @@
 ( Comments )
 
 : (
-  *tokenizer* literal 41 tokenizer-skip-until
+  *tokenizer* peek literal 41 tokenizer-skip-until
 ; immediate
 
 ( Reverse interning: )
@@ -94,12 +89,12 @@
 ;
   
 : [
-  literal compile lit *state* set-var
+  literal compile *state* poke
   terminator return1
 ; immediate
 
 : ]
-  literal 0 lit *state* set-var drop3
+  literal 0 *state* poke
   args terminator stack-find swapdrop cell- swapdrop
   swap 2dup int-sub cell/ swapdrop literal 1 int-add internrev
   seq-length literal 1 int-add return1-n
@@ -292,7 +287,7 @@
 ( fixme: need to read strings larger than the tokenizer's buffer )
 
 : "
-  *tokenizer* literal 34 tokenizer-read-until intern-seq return1
+  *tokenizer* peek literal 34 tokenizer-read-until intern-seq return1
 ; immediate
 
 : c-"
@@ -345,7 +340,7 @@
 
 ( Read until the next " and convert that to a long. )
 : longify"
-  *tokenizer* literal 34 tokenizer-read-until UNLESS eos eos error THEN
+  *tokenizer* peek literal 34 tokenizer-read-until UNLESS eos eos error THEN
   cell+ longify-string
   literal literal swap return2
 ; immediate

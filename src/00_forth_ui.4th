@@ -9,8 +9,8 @@
 ;
 
 : write-status
-  *status* IF
-    write-err literal 0 lit *status* set-var return0
+  *status* peek IF
+    write-err literal 0 *status* poke return0
   THEN
   write-ok
 ;
@@ -34,8 +34,8 @@
   ( error-msg2 error-msg1 )
   arg0 write-line
   arg1 write-line
-  arg0 lit *status* set-var
-  literal 0 lit *state* set-var drop3
+  arg0 *status* poke
+  literal 0 *state* poke
   quit ( exit caller )
 ;
 

@@ -46,8 +46,8 @@
 
 ( Convert an unsigned integer value to a string possibly adding a negative sign. )
 : unsigned-int-to-string-inner ( negative? number -- 0 str-ptr )
-  arg0 base uint-mod char-digit swapdrop
-  arg0 base uint-div dup set-arg0
+  arg0 base peek uint-mod char-digit swapdrop
+  arg0 base peek uint-div dup set-arg0
   IF RECURSE THEN
 
   arg1 IF negative-sign THEN

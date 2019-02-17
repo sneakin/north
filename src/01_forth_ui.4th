@@ -19,8 +19,8 @@
 ;
 
 :: write-status
-  *status* UNLESS write-ok return0 THEN
-  write-err literal 0 lit *status* set-var return0
+  *status* peek UNLESS write-ok return0 THEN
+  write-err literal 0 *status* poke return0
 ;
  
 ( More human friendly interaction: )
@@ -30,8 +30,8 @@
   ( error-msg2 error-msg1 )
   bright red arg0 write-line color-reset
   arg1 write-line
-  arg0 lit *status* set-var
-  literal 0 lit *state* set-var drop3
+  arg0 *status* poke
+  literal 0 *state* poke
   quit ( exit caller )
 ;
 
@@ -56,6 +56,6 @@ literal endcol jump-entry-data
 
 ( Base helpers: )
 
-: binary literal %10 lit base set-var ;
-: hex literal $10 lit base set-var ;
-: dec literal #10 lit base set-var ;
+: binary literal %10 base poke ;
+: hex literal $10 base poke ;
+: dec literal #10 base poke ;

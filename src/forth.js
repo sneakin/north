@@ -380,7 +380,8 @@ Forth.assembler = function(ds, cs, info, stage) {
       label('waiting_for_input', 8).
       label('waiting_for_output', 12).
       label('heap_top', 16).
-      label('stack_top', 20);
+      label('stack_top', 20).
+      label('data_segment_end', 24);
 
   asm.label('data_init').
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
@@ -1168,6 +1169,12 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
   */
 
+  defop('value-peeker', function(asm) {
+    asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
+        push(VM.CPU.REGISTERS.R0).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  });
+  
   defop('variable-peeker', function(asm) {
     asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
         push(VM.CPU.REGISTERS.R0).
@@ -1237,6 +1244,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   asm.label('base-sym').bytes(cellpad('base'));
   asm.label('TERMINATOR-sym').bytes(cellpad('TERMINATOR'));
   asm.label('*state*-sym').bytes(cellpad('*state*'));
+  asm.label('immediate-dict-sym').bytes(cellpad('immediate-dict'));
 
   for(var n in strings) {
     asm.label(n).bytes(cellpad(strings[n]));
@@ -1300,13 +1308,14 @@ Forth.assembler = function(ds, cs, info, stage) {
   function dict_entry_var(label, value, last_label) {
     return dict_entry(label, label + '-sym', 'variable-peeker-code', value, last_label);
   }
-  
-  last_label = dict_entry_var('*tokenizer*', 0, last_label);
-  last_label = dict_entry_var('*status*', 0, last_label);
-  last_label = dict_entry_var('*debug*', 0, last_label);
-  last_label = dict_entry_var('base', 10, last_label);
-  last_label = dict_entry_var('TERMINATOR', TERMINATOR, last_label);
-  last_label = dict_entry_var('*state*', 0, last_label);
+
+  var off = ds + asm.resolve('data_segment_end');
+  last_label = dict_entry_var('*tokenizer*', off, last_label);
+  last_label = dict_entry_var('*status*', off+4, last_label);
+  last_label = dict_entry_var('*debug*', off+8, last_label);
+  last_label = dict_entry_var('*state*', off+12, last_label);
+  last_label = dict_entry_var('base', off+16, last_label);
+  last_label = dict_entry_var('immediate-dict', off+20, last_label);
 
   asm.label('dictionary-end');
   asm.label('dictionary').uint32(last_label);

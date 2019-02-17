@@ -68,7 +68,7 @@
      swap cell+ swapdrop
      swap
   THEN ( ptr+2 length-1 )
-  base ( ptr+1 length base )
+  base peek ( ptr+1 length base )
   unsigned-number-base
   return2
 ;

@@ -45,7 +45,7 @@
 ( Read and look tokens up inserting `literal` before each. )
 : `
   DO
-    *tokenizer* next-token UNLESS drop2 LEAVE THEN
+    *tokenizer* peek next-token UNLESS drop2 LEAVE THEN
     swapdrop ( token )
     backtick? IF drop LEAVE THEN
     compile drop ( token addr )
@@ -129,8 +129,8 @@
   arg0
   here
   DO
-    arg2 base uint-mod char-digit swapdrop
-    arg2 base uint-div dup set-arg2
+    arg2 base poke uint-mod char-digit swapdrop
+    arg2 base poke uint-div dup set-arg2
   WHILE
   here dup local1 swap uint-sub cell/ swapdrop literal 4 uint-sub intern return1
 ;

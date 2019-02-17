@@ -43,7 +43,7 @@
 
 : each-token
   ( str fn )
-  literal S-TERMINATOR
+  terminator
   arg1 make-tokenizer swapdrop
 
   each-token-loop: ( tokenizer )
@@ -137,13 +137,9 @@
 ;
   
 : pause2
-  *debug* IF wait-return THEN
+  *debug* peek IF wait-return THEN
 ;
  
-: terminator
-  literal S-TERMINATOR return1
-;
-
 : one
   literal 1 return1
 ;

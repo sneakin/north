@@ -329,7 +329,7 @@
   
 : does-constant
   ( entry init-value )
-  literal variable-peeker dict-entry-code swapdrop
+  literal value-peeker dict-entry-code swapdrop
   arg1 set-dict-entry-code
   arg0 arg1 set-dict-entry-data
 ;
@@ -356,7 +356,7 @@
   ( entry init-value )
   literal variable-peeker dict-entry-code swapdrop
   arg1 set-dict-entry-code
-  arg0 arg1 set-dict-entry-data
+  arg0 dpush dhere arg1 set-dict-entry-data
 ;
 
 : [variable]
@@ -368,23 +368,6 @@
 : variable
   ( value : name )
   create arg0 does-var
-;
-
-: set-var
-  ( value name ++ entry )
-  ( lookup if not found then define )
-  arg0 dict dict-lookup null? IF
-    ( set data )
-    arg1 arg0 [variable]
-    return1
-  THEN
-  ( found )
-  arg1 swap set-dict-entry-data
-  ( make sure the code is a variable's )
-  literal variable-peeker dict-entry-code swapdrop
-  swap set-dict-entry-code
-  ( return the entry )
-  return1
 ;
 
 ( Dictionary initialization )
@@ -401,10 +384,16 @@
 : drop-dict
   dict dict-entry-next set-dict
 ;
-  
+
+: immediate-dict-init
+  literal immediate-dictionary peek
+  immediate-dict poke
+;
+
 : dict-init
   literal dictionary peek
   set-dict
+  immediate-dict-init
   mark
 ;
 
@@ -614,7 +603,7 @@
 
 : make-the-tokenizer
   arg0 make-tokenizer ( tokenizer )
-  lit *tokenizer* set-var drop2
+  *tokenizer* poke
   return1
 ;
 
@@ -764,7 +753,7 @@
   arg0 lower-alpha? IF
     literal 97 int-sub
     literal 10 int-add
-    base literal 36 >= IF literal 26 int-add THEN
+    base peek literal 36 >= IF literal 26 int-add THEN
     return1
   THEN
   arg0 digit? IF
@@ -808,7 +797,7 @@
       terminator? IF local0 literal 1 return2 THEN
       digit? UNLESS literal 0 literal 0 return2 THEN
       digit-char swapdrop
-      local0 base int-mul
+      local0 base peek int-mul
       int-add store-local0
       unsigned-number-inc:
 
@@ -835,7 +824,7 @@
 
 ( Look a token up or try converting to a number. )
 : interp ( token ++ value executable? )
-  arg0 dict dict-lookup dup IF *state* not return2 THEN
+  arg0 dict dict-lookup dup IF *state* peek not return2 THEN
   drop2 number IF literal 0 return2 THEN
 
   drop " Not Found" error
@@ -843,15 +832,15 @@
 ;
 
 : next-word
-  *tokenizer* next-token return2
+  *tokenizer* peek next-token return2
 ;
 
 : eval-tokens
   ( ++ str )
   POSTPONE next-word UNLESS drop literal eval-loop jump-entry-data THEN
   ( compile lookup )
-  *state* UNLESS interp THEN
-  *state* IF *state* exec THEN
+  *state* peek UNLESS interp THEN
+  *state* peek IF *state* peek exec THEN
   ( exec? )
   IF swapdrop exec RECURSE THEN
   swapdrop RECURSE

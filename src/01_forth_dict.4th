@@ -41,14 +41,14 @@
   ( also have sequences )
   dict-entry-code 
   literal call-data-seq dict-entry-code swapdrop
-  equals IF longify FUN write-word return0 THEN
+  equals IF longify FUNC write-word return0 THEN
   ( constants )
   dict-entry-code 
-  literal variable-peeker dict-entry-code swapdrop
+  literal value-peeker dict-entry-code swapdrop
   equals IF longify CON write-word return0 THEN
   ( vars )
   dict-entry-code 
-  literal pointer-peeker dict-entry-code swapdrop
+  literal variable-peeker dict-entry-code swapdrop
   equals IF longify VAR write-word return0 THEN
   ( asm )
   longify ASM write-word 
@@ -71,7 +71,7 @@
 : words dict dict-list ;
 
 ( Write the immediate dictionary out. )
-: iwords immediate-dict dict-list ;
+: iwords immediate-dict peek dict-list ;
 
 ( Dictionary predicates: )
 
