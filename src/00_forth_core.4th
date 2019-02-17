@@ -40,6 +40,16 @@
   return1
 ;
 
+: seq-poke ( v seq n )
+  arg2 arg1 arg0 cell+n rotdrop2 cell+ swapdrop
+  poke
+;
+
+: seq-peek ( [seq n] todo bounds checking )
+  arg1 arg0 cell+n cell+
+  peek return1
+;
+
 ( Cells )
 
 : cell-size
@@ -95,34 +105,50 @@
 
 ( Strings )
 
-: string-equal
-  ( ptr-a ptr-b )
+( Compares to values returning -1 if the first is less, 0 if equal, and 1 if greater. )
+: <=> ( a b ++ result )
+  arg1 arg0 < IF literal -1 return1 THEN
+  arg1 arg0 > IF literal 1 return1 THEN
+  literal 0 return1
+;
+
+: string-cmp-n/4 ( seq-a seq-b max counter! ++ result )
+  arg3 arg0 seq-peek rotdrop2
+  arg2 arg0 seq-peek rotdrop2
+  <=> rotdrop2 dup UNLESS
+    drop
+    arg0 literal 1 int-add
+    dup set-arg0
+    arg1 < IF RECURSE THEN
+    literal 0 return1
+  THEN
+
+  return1
+;
+
+: string-cmp-n ( seq-a seq-b length ++ result )
+  arg2 arg1 arg0 literal 0 string-cmp-n/4 return1
+;
+
+: string-cmp ( seq-a seq-b ++ result )
+  arg1 arg0 seq-length literal 0 string-cmp-n/4 return1
+;
+
+: string-equal-n ( seq-a seq-b length ++ equal? )
+  arg2 arg1 arg0 string-cmp-n UNLESS literal 1 return1 THEN
+  literal 0 return1
+;
+
+: string-equal ( seq-a seq-b ++ equal? )
   ( lengths )
-  arg0 peek
-  arg1 peek
+  arg0 seq-length swapdrop
+  arg1 seq-length swapdrop
   equals UNLESS
     ( lengths are different )
     literal 0 return1
   THEN
 
-  ( elements )
-  string-equal-cmp:
-  arg0 arg1
-
-  string-equal-loop:
-  literal 4 int-add swap
-  literal 4 int-add swap
-  ( read elements )
-  2dup peek
-  swap peek
-  ( at the terminators? )
-  2dup terminator equals
-  swap terminator equals
-  logand IF literal 1 return1 THEN
-  ( elements match? )
-  equals literal string-equal-loop ifthenjump
-  ( not equal )
-  literal 0 return1
+  arg1 arg0 seq-length string-equal-n return1
 ;
 
 ( Call frames: )
@@ -251,13 +277,11 @@
 ;
   
 : dict-lookup-parent
-  arg0
-
-  dict-lookup-parent-loop:
-  dict-entry-next
+  arg0 dict-entry-next
   terminator? IF literal 0 return1 THEN
   dict-entry-name arg1 string-equal IF drop3 return1 THEN
-  drop2 swapdrop literal dict-lookup-parent-loop jump
+  drop2 swapdrop set-arg0
+  RECURSE
 ;
 
 : dict-lookup
@@ -305,7 +329,8 @@
   
 : does-constant
   ( entry init-value )
-  literal variable-peeker-code arg1 set-dict-entry-code
+  literal variable-peeker dict-entry-code swapdrop
+  arg1 set-dict-entry-code
   arg0 arg1 set-dict-entry-data
 ;
 
@@ -329,7 +354,8 @@
 
 : does-var
   ( entry init-value )
-  literal variable-peeker-code arg1 set-dict-entry-code
+  literal variable-peeker dict-entry-code swapdrop
+  arg1 set-dict-entry-code
   arg0 arg1 set-dict-entry-data
 ;
 
@@ -345,8 +371,7 @@
 ;
 
 : set-var
-  ( value name )
-  ( return the entry )
+  ( value name ++ entry )
   ( lookup if not found then define )
   arg0 dict dict-lookup null? IF
     ( set data )
@@ -356,7 +381,9 @@
   ( found )
   arg1 swap set-dict-entry-data
   ( make sure the code is a variable's )
-  literal variable-peeker-code swap set-dict-entry-code
+  literal variable-peeker dict-entry-code swapdrop
+  swap set-dict-entry-code
+  ( return the entry )
   return1
 ;
 
@@ -383,13 +410,17 @@
 
 ( Input )
 
+: read-line-inner
+  read-byte dup
+  literal char-code \n equals IF dpush return0 THEN
+  dpush
+  RECURSE
+;
+
 : read-line
   start-seq
-
-  read-line-loop: read-byte dup
-  literal char-code \n equals IF dpush end-seq return1 THEN
-  dpush
-  literal read-line-loop jump
+  read-line-inner
+  end-seq return1
 ;
 
 : flush-read-line
@@ -534,39 +565,37 @@
 
 : tokenizer-skip-until
   ( tokenizer needle )
-  arg1
-
-  tokenizer-skip-until-loop: tokenizer-next-word null? IF return0 THEN
+  arg1 tokenizer-next-word null? IF return0 THEN
   dup arg0 equals IF return0 THEN
-  drop
-  literal tokenizer-skip-until-loop jump
+  drop RECURSE
 ;
 
 : tokenizer-eat-spaces
-  arg0
-
-  tokenizer-eat-spaces-loop:
-  tokenizer-peek-word
+  arg0 tokenizer-peek-word
   whitespace? UNLESS return0 THEN
   drop
   tokenizer-inc-str-offset
-  literal tokenizer-eat-spaces-loop jump
+  drop RECURSE
 ;
 
 ( fixme limit length read to buffer size )
 
-: tokenizer-read-until
+: tokenizer-read-until-loop
   ( tokenizer needle ++ output-seq length )
-  arg1 tokenizer-buffer-reset
-
-  tokenizer-read-until-loop: tokenizer-next-word null? UNLESS
+  arg1 tokenizer-next-word null? UNLESS
     dup arg0 equals UNLESS
-      tokenizer-push drop
-      literal tokenizer-read-until-loop jump
+      tokenizer-push drop2
+      RECURSE
     THEN
   THEN
 
   drop tokenizer-finish-output return2
+;
+
+: tokenizer-read-until
+  ( tokenizer needle ++ output-seq length )
+  arg1 tokenizer-buffer-reset
+  arg0 tokenizer-read-until-loop return2
 ;
 
 ( fixme: tokenizer should return start ptrs and lengths, try to eliminate usage of the buffer so "" and such can be unlimited. )
@@ -630,14 +659,16 @@
   swap poke
 ;
 
-: fill
-  literal 0
-
-  fill-loop:
-  dup arg1 int-add
+: fill-loop ( ptr number-cells counter )
+  arg0 dup arg2 int-add
   literal 0 swap poke
   cell+ swapdrop
-  dup arg0 <= literal fill-loop ifthenjump
+  dup set-arg0
+  dup arg1 <= IF RECURSE THEN
+;
+
+: fill
+  arg1 arg0 literal 0 fill-loop
 ;
 
 : tokenizer-buffer-reset
@@ -651,23 +682,25 @@
   arg0 arg1 poke
 ;
 
-: next-token
-  ( tokenizer -> string-past-token token )
-  arg0
-  tokenizer-eat-spaces
-  tokenizer-buffer-reset
-
-  tokenizer-loop:
-  tokenizer-next-word ( tokenizer byte )
+: next-token-loop
+  arg0 tokenizer-next-word ( tokenizer byte )
   null? UNLESS
     whitespace? UNLESS
-      tokenizer-push drop ( tokenizer )
-      literal tokenizer-loop jump
+      tokenizer-push drop2
+      RECURSE
     THEN
   THEN
 
   drop ( tokenizer )
   tokenizer-finish-output return2 ( next-token length )
+;
+
+: next-token
+  ( tokenizer -> string-past-token token )
+  arg0
+  tokenizer-eat-spaces
+  tokenizer-buffer-reset
+  next-token-loop return2
 ;
 
 : tokenizer-finish-output

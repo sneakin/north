@@ -82,29 +82,32 @@
 
 ( Colon definitions )
 
+: stack-find-loop ( start-location needle current! ++ ptr )
+  arg0 peek arg1 equals IF arg0 return1 THEN
+  arg0 cell+ set-arg0 drop
+  RECURSE
+;
+
 : stack-find
   ( start-location needle ++ ptr )
-  arg1
-  stack-find-loop:
-  local0 peek arg0 equals IF local0 return1 THEN
-  local0 cell+ store-local0 drop
-  literal stack-find-loop jump
+  arg1 arg0 arg1 stack-find-loop return1
 ;
   
 : [
-  literal compile literal *state*-sym set-var
+  literal compile lit *state* set-var
   terminator return1
 ; immediate
 
 : ]
-  literal 0 literal *state*-sym set-var drop3
+  literal 0 lit *state* set-var drop3
   args terminator stack-find swapdrop cell- swapdrop
   swap 2dup int-sub cell/ swapdrop literal 1 int-add internrev
   seq-length literal 1 int-add return1-n
 ; immediate
 
 : docol>
-  literal call-data-seq-code arg0 set-dict-entry-code
+  literal call-data-seq dict-entry-code swapdrop
+  arg0 set-dict-entry-code
   [
   return2
 ;

@@ -9,8 +9,8 @@
 ;
 
 : write-status
-  *status* UNLESS
-    write-err literal 0 literal *status*-sym set-var return0
+  *status* IF
+    write-err literal 0 lit *status* set-var return0
   THEN
   write-ok
 ;
@@ -34,8 +34,8 @@
   ( error-msg2 error-msg1 )
   arg0 write-line
   arg1 write-line
-  arg0 literal *status*-sym set-var
-  literal 0 literal *state*-sym set-var drop3
+  arg0 lit *status* set-var
+  literal 0 lit *state* set-var drop3
   quit ( exit caller )
 ;
 

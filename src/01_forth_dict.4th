@@ -12,15 +12,11 @@
 
 ( Dictionary iteration: )
 
-: dict-each  
-  arg0 
-
-  dict-each-loop:
-  local0 terminator? IF return0 THEN
-  drop
+: dict-each  ( fn dict -- fn last-dict)
+  arg0 terminator? IF return0 THEN
   arg1 exec 
-  local0 dict-entry-next store-local0 drop
-  literal dict-each-loop jump
+  arg0 dict-entry-next set-arg0 drop2
+  RECURSE
 ;
 
 ( Dictionary output listing: )
@@ -46,9 +42,13 @@
   dict-entry-code 
   literal call-data-seq dict-entry-code swapdrop
   equals IF longify FUN write-word return0 THEN
-  ( vars )
+  ( constants )
   dict-entry-code 
   literal variable-peeker dict-entry-code swapdrop
+  equals IF longify CON write-word return0 THEN
+  ( vars )
+  dict-entry-code 
+  literal pointer-peeker dict-entry-code swapdrop
   equals IF longify VAR write-word return0 THEN
   ( asm )
   longify ASM write-word 
@@ -62,9 +62,16 @@
   write-dict-entry-data write-crnl 
 ;
 
-: dict-list
-  literal write-dict-entry dict dict-each 
+( Write a dictionary out entry by entry. )
+: dict-list ( dict )
+  literal write-dict-entry arg0 dict-each 
 ;
+
+( Write the primary dictionary out. )
+: words dict dict-list ;
+
+( Write the immediate dictionary out. )
+: iwords immediate-dict dict-list ;
 
 ( Dictionary predicates: )
 

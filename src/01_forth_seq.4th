@@ -8,16 +8,6 @@
   arg0 cell+ return1
 ;
 
-: seq-poke ( v seq n )
-  arg2 arg1 arg0 cell+n rotdrop2 cell+ swapdrop
-  poke
-;
-
-: seq-peek ( [seq n] todo bounds checking )
-  arg1 arg0 cell+n cell+ rotdrop2
-  peek return1
-;
-
 
 ( Sequence iteration: )
 

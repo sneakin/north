@@ -367,7 +367,6 @@ Forth.assembler = function(ds, cs, info, stage) {
       inc(VM.CPU.REGISTERS.R0).uint32('boot').
       push(VM.CPU.REGISTERS.R0).
       call(0, VM.CPU.REGISTERS.CS).uint32('outer-execute').
-      //call(0, VM.CPU.REGISTERS.CS).uint32('boot').
       call(0, VM.CPU.REGISTERS.CS).uint32('goodbye').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('isr_reset');
   
@@ -408,6 +407,7 @@ Forth.assembler = function(ds, cs, info, stage) {
         load(HEAP_REG, 0, VM.CPU.REGISTERS.DS).uint32('heap_top').
         load(VM.CPU.REGISTERS.SP, 0, VM.CPU.REGISTERS.DS).uint32('stack_top').
         mov(FP_REG, VM.CPU.REGISTERS.SP).
+        load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.CS).uint32(0).
         inc(VM.CPU.REGISTERS.R0).uint32('boot').
         push(VM.CPU.REGISTERS.R0).
         call(0, VM.CPU.REGISTERS.CS).uint32('outer-execute');
@@ -436,10 +436,7 @@ Forth.assembler = function(ds, cs, info, stage) {
       push(VM.CPU.REGISTERS.R0).
       push(VM.CPU.REGISTERS.R1).
       load(FP_REG, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-code').
-      // mov(EVAL_IP_REG, VM.CPU.REGISTERS.R1).
-      // load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('begin-code').
-      ret();
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-code');
 
   defop('jump', function(asm) {
     asm.pop(EVAL_IP_REG).
@@ -498,7 +495,29 @@ Forth.assembler = function(ds, cs, info, stage) {
 
   // todo need an abort to eval-loop: catch/throw?
   
-  // actually return from call
+  // actually return from interpreter
+  defop('bye', function(asm) {
+    asm.
+        load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
+        // get the top most stack frame
+        label('bye-loop').
+        load(VM.CPU.REGISTERS.R1, 0, FP_REG).uint32(0).
+        cmpi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
+        inc(VM.CPU.REGISTERS.IP, VM.CPU.STATUS.ZERO).uint32('bye-done', true).
+        mov(FP_REG, VM.CPU.REGISTERS.R1).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('bye-loop').
+        label('bye-done').
+        // drop and exit frame
+        mov(VM.CPU.REGISTERS.SP, FP_REG).
+        pop(FP_REG).
+        pop(EVAL_IP_REG).
+        // overwrite the zero frame
+        pop(VM.CPU.REGISTERS.R0).
+        store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
+        ret();
+  });
+
+  // Return to the outer-executed function.
   defop('quit', function(asm) {
     asm.
         load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
@@ -510,16 +529,16 @@ Forth.assembler = function(ds, cs, info, stage) {
         mov(FP_REG, VM.CPU.REGISTERS.R1).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('quit-loop').
         label('quit-done').
-        // move SP
+        // drop and exit frame
         mov(VM.CPU.REGISTERS.SP, FP_REG).
-        inc(VM.CPU.REGISTERS.SP).uint32(FRAME_SIZE + 4).
-        ret();
+        dec(VM.CPU.REGISTERS.SP).uint32(4). // not the top most frame's return
+        pop(EVAL_IP_REG).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
-
+  
   // Return to the calling function.
   defop('exit', function(asm) {
-    asm.
-        load(EVAL_IP_REG, 0, FP_REG).int32(4).
+    asm.load(EVAL_IP_REG, 0, FP_REG).int32(4).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('end-code');
   });
 
@@ -540,11 +559,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
   
   defop('return1', function(asm) {
-    asm.
-        //load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(4).
-        //push(VM.CPU.REGISTERS.R0).
-        //load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('returnN').
-        // save a return value
+    asm.// save a return value
         pop(VM.CPU.REGISTERS.R0).
         // pop frame
         mov(VM.CPU.REGISTERS.SP, FP_REG).
@@ -556,11 +571,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
 
   defop('return2', function(asm) {
-    asm.
-        //load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(4).
-        //push(VM.CPU.REGISTERS.R0).
-        //load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('returnN').
-        // save a return value
+    asm.// save a return value
         pop(VM.CPU.REGISTERS.R0).
         pop(VM.CPU.REGISTERS.R1).
         // pop frame
@@ -574,8 +585,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
 
   defop('return-1', function(asm) {
-    asm.
-        // exit frame
+    asm.// exit frame
         mov(VM.CPU.REGISTERS.SP, FP_REG).
         pop(FP_REG).
         pop(EVAL_IP_REG).
@@ -584,8 +594,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
   
   defop('return0', function(asm) {
-    asm.
-        // exit frame
+    asm.// exit frame
         mov(VM.CPU.REGISTERS.SP, FP_REG).
         pop(FP_REG).
         pop(EVAL_IP_REG).
@@ -593,8 +602,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
   
   defop('returnN', function(asm) {
-    asm.
-        // copy values between FP and SP up over the frame
+    asm.// copy values between FP and SP up over the frame
         // exit frame
         // save the number of words
         pop(VM.CPU.REGISTERS.R0).
@@ -607,8 +615,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
   
   defop('shift-stack', function(asm) {
-    asm.
-        // R1: old SP
+    asm.// R1: old SP
         // R0: number of words
         load(VM.CPU.REGISTERS.R2, 0, VM.CPU.REGISTERS.INS).uint32(4).
         cls(VM.CPU.STATUS.NUMERICS).
@@ -625,8 +632,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
 
   defop('return1-n', function(asm) {
-    asm.
-        // save number cells to pop
+    asm.// save number cells to pop
         pop(VM.CPU.REGISTERS.R0).
         // save a return value
         pop(VM.CPU.REGISTERS.R1).
@@ -802,10 +808,10 @@ Forth.assembler = function(ds, cs, info, stage) {
   }
 
   var conv_ops = {
-    i2f: [ 'convi', VM.TYPES.FLOAT ],
-    u2f: [ 'convu', VM.TYPES.FLOAT ],
-    f2i: [ 'convf', VM.TYPES.LONG ],
-    f2u: [ 'convf', VM.TYPES.ULONG ]
+    "i->f": [ 'convi', VM.TYPE_IDS.FLOAT ],
+    "u->f": [ 'convu', VM.TYPE_IDS.FLOAT ],
+    "f->i": [ 'convf', VM.TYPE_IDS.LONG ],
+    "f->u": [ 'convf', VM.TYPE_IDS.ULONG ]
   };
   for(var f in conv_ops) {
     var op = conv_ops[f][0];

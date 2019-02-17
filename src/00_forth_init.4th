@@ -1,6 +1,8 @@
 ( Entry )
 
 : boot
-  dict-init
+  dict terminator? IF dict-init THEN
+  drop
   eval-loop
+  RECURSE
 ;
