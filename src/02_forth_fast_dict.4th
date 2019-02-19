@@ -1,6 +1,18 @@
 : cons args return1 ;
+: dcons arg0 dpush dhere arg1 dpush return1 ;
 : tail arg0 cell+ peek return1 ;
 : head arg0 peek return1 ;
+
+: map-list! ( cons! fn ++ )
+  arg1 UNLESS return0 THEN
+  arg1 head swapdrop arg0 exec ( todo only dictionary entries can be passed, bracketed definitions, :noname maybe, should work too. )
+  arg1 tail swapdrop set-arg1
+  RECURSE
+;
+
+: map-list ( cons fn ++ )
+  arg1 arg0 map-list!
+;
 
 : count-inner
   arg0 IF
@@ -14,30 +26,44 @@
 
 : count literal 0 arg0 count-inner return1 ;
 
+: nil literal 0 return1 ;
+
 ( Tree structure: btree-ptr -> tip predicate.
   Tip -> Branch -> [ Value, [ Left Branch, Right Branch ] ] | [ Value, nil ]
+struct btree-branch
+  field value
+  field left
+  field right
+
+struct btree
+  field tip
+  field predicate
 )
 
-: make-btree ( predicate -- btree-ptr )
-  arg0 zero cons return1
+: make-btree ( predicate tip -- btree-list )
+  nil arg1 cons arg0 cons exit
 ;
 
-: btree-leaf? arg0 tail null? return1 ;
+: make-empty-btree ( predicate -- btree-list )
+  arg0 nil make-btree exit
+;
 
 : btree-predicate
-  arg0 tail return1
+  arg0 tail head return1
 ;
 
 : btree-set-tip
-  arg0 tail arg1 cons return1
+  arg0 btree-predicate arg1 make-btree return1
 ;
 
 : btree-tip
   arg0 head return1
 ;
 
+( Branches )
+
 : btree-make-branch ( left right value -- ptr )
-  arg2 arg1 cons arg0 cons return1
+  nil arg2 cons arg1 cons arg0 cons exit
 ;
 
 : btree-branch-value
@@ -51,6 +77,8 @@
 : btree-branch-right
   arg0 tail tail head return1
 ;
+
+: btree-leaf? arg0 tail null? return1 ;
 
 : btree-add ( value btree )
   ( go head if <, go tail if >=; )
