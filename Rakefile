@@ -5,12 +5,15 @@ require 'rbconfig'
 root = Pathname.new(__FILE__).parent.expand_path
 buildroot ||= ENV.fetch('BUILDROOT', root.join('build'))
 
-$: << root.parent.join('lib')
-require 'tasks'
+$: << root.join('lib')
+$: << root.join('vendor/rake-node/lib')
+require 'rake/browserify'
 
-BCCON = "node ../bacaw/bin/bccon.js"
-BCPATH = root.join('..', 'bacaw', 'js', 'lib')
-NODE_PATH << [ root.join('src'), BCPATH ]
+BCROOT = root.join('vendor', 'bacaw')
+BCBIN = BCROOT.join('bin', 'bccon.js')
+BCCON = "node #{Shellwords.escape(BCBIN)}"
+BCLIB = BCROOT.join('js', 'lib')
+NODE_PATH << [ root.join('src'), BCLIB ]
 
 outputs = [ 'north-stage0.bin',
             'north-stage0-min.bin',

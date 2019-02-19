@@ -1,7 +1,6 @@
 require('vm');
 const Terminal = require('vm/devices/terminal');
 const DevCon = require('vm/devices/console.js');
-const ROM = require('vm/devices/rom.js');
 const RAM = require('vm/devices/ram.js');
 const Timer = require('vm/devices/timer.js');
 const RTC = require('vm/devices/rtc.js');
