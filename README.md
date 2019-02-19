@@ -8,9 +8,9 @@ Building
 
 You will need `git`, `node.js`, `ruby`, `rake`, and a web browser.
 
-# git submodule --init
-# npm install
-# rake
+1. git submodule --init
+2. npm install
+3. rake
 
 Running
 ---
