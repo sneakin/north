@@ -22,6 +22,7 @@ outputs = [ 'north-stage0.bin',
             #'north-stage2.bin',
             #'north-stage3.bin',
             'runner.css',
+	    'unscii-8.ttf',
             'runner.js',
             'runner.html'
           ].collect { |s| buildroot.join(s) }
@@ -97,7 +98,10 @@ end
 desc "Build stage2: stage1 built with stage0"
 task :stage2 => STAGE2_TARGET
 
-[ 'forth.css', 'runner.css' ].each do |name|
+[ 'forth.css',
+  'runner.css',
+  'unscii-8.ttf'
+].each do |name|
   output = buildroot.join(name)
   src = root.join('www', name)
   
