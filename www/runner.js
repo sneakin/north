@@ -8,8 +8,11 @@ const RTC = require('vm/devices/rtc.js');
 const FS = require('fs');
 
 const North = {
-  "stage0": FS.readFileSync(__dirname + '/../build/north-stage0.bin')
+  "stage-0": FS.readFileSync(__dirname + '/../build/north-stage0.bin'),
+  "stage-1": FS.readFileSync(__dirname + '/../build/north-stage1.bin')
 };
+
+const DefaultStage = 'stage-1';
 
 function runner_init(mem_size, terminal, buttons)
 {
@@ -18,6 +21,7 @@ function runner_init(mem_size, terminal, buttons)
   var run = document.getElementById(buttons.run);
   var reset = document.getElementById(buttons.reset);
   var reload = document.getElementById(buttons.reload);
+  var stage_selector = document.getElementById(buttons.stage_selector);
   
   var term = new Terminal(document.getElementById(terminal), {
     fontFamily: '"Unscii 8", Inconsolata, Unifont, "GNU Unifont", courier-new, courier, monospace',
@@ -48,8 +52,18 @@ function runner_init(mem_size, terminal, buttons)
   }
 
   reload.onclick = function() {
-    vm.mmu.memwrite(0, North.stage0);
+    var stage = North[stage_selector.value];
+    if(stage == null) stage = North[DefaultStage];
+    vm.mmu.memwrite(0, stage);
   }
+
+  for(var name in North) {
+    var el = document.createElement('option');
+		el.value = name;
+		el.innerText = name;
+		stage_selector.appendChild(el);
+  }
+	stage_selector.value = DefaultStage;
 }
 
 function vm_init(mem_size, terminal, callbacks)
@@ -62,10 +76,10 @@ function vm_init(mem_size, terminal, callbacks)
   //mmu.map_memory(0, rom.length, rom);
   //mmu.map_memory(1024*1024, mem_size, new RAM(mem_size));
   mmu.map_memory(0, mem_size, new RAM(mem_size));
-  mmu.memwrite(0, North.stage0);
+  mmu.memwrite(0, North[DefaultStage]);
   vm.add_device(mmu);
   
-	var cpu = new VM.CPU(mmu, mem_size);
+  var cpu = new VM.CPU(mmu, mem_size);
   vm.add_device(cpu);
   
   var devcon = new DevCon();
@@ -123,5 +137,5 @@ if(typeof(module) != 'undefined') {
 }
 
 if(typeof(window) != 'undefined') {
-	window.runner_init = runner_init;
+  window.runner_init = runner_init;
 }
