@@ -47,7 +47,7 @@
   arg1 make-tokenizer swapdrop
 
   each-token-loop: ( tokenizer )
-  next-token ( tokenizer next-tokenizer token )
+  tokenizer-next-token ( tokenizer next-tokenizer token )
   dup not literal each-token-done ifthenjump
   rotdrop ( token next-tokenizer )
   literal each-token-loop jump

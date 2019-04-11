@@ -123,7 +123,7 @@
 
 ( Redefine or create the next word as a colon definition. )
 : ::
-  next-word dup UNLESS eos eos error return0 THEN
+  next-token dup UNLESS eos eos error return0 THEN
   dup1 dict dict-lookup dup UNLESS drop3 intern-seq literal 0 literal 0 add-dict THEN
   docol> return2
 ;
@@ -145,7 +145,7 @@
 
 ( Read the next token and look it up in immediate and regular dictionaries. )
 : POSTPONE
-  next-word UNLESS literal eos eos error return0 THEN
+  next-token UNLESS literal eos eos error return0 THEN
   compile not UNLESS swapdrop return1 THEN
   swapdrop
   literal literal swap
@@ -259,7 +259,7 @@
 
 ( Read and intern the next token. )
 : lit
-  next-word dup UNLESS eos return0 THEN
+  next-token dup UNLESS eos return0 THEN
   intern-seq return1
 ;
 
@@ -270,7 +270,7 @@
 
 ( Read the next token and look it up in the dictionary. )
 : '
-  next-word UNLESS literal eos-sym error return0 THEN
+  next-token UNLESS literal eos-sym error return0 THEN
   dict dict-lookup return1
 ;
 
@@ -310,7 +310,7 @@
 
 ( Return the next-token's first character. )
 : char-code-at
-  next-word UNLESS eos eos error THEN
+  next-token UNLESS eos eos error THEN
   cell+ peek return1
 ; immediate
 
@@ -333,7 +333,7 @@
 
 ( Turn the next token into a 4 byte "string" or long. )
 : longify
-  next-word UNLESS eos eos error THEN
+  next-token UNLESS eos eos error THEN
   cell+ longify-string
   literal literal swap return2
 ; immediate

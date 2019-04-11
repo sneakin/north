@@ -311,7 +311,7 @@
 ;
 
 : create
-  next-word dup UNLESS " End of stream" error THEN
+  next-token dup UNLESS " End of stream" error THEN
   [create] return1
 ;
 
@@ -671,7 +671,7 @@
   arg0 arg1 poke
 ;
 
-: next-token-loop
+: tokenizer-next-token-loop
   arg0 tokenizer-next-word ( tokenizer byte )
   null? UNLESS
     whitespace? UNLESS
@@ -684,12 +684,12 @@
   tokenizer-finish-output return2 ( next-token length )
 ;
 
-: next-token
+: tokenizer-next-token
   ( tokenizer -> string-past-token token )
   arg0
   tokenizer-eat-spaces
   tokenizer-buffer-reset
-  next-token-loop return2
+  tokenizer-next-token-loop return2
 ;
 
 : tokenizer-finish-output
@@ -831,13 +831,13 @@
   literal 0 literal 0 return2
 ;
 
-: next-word
-  *tokenizer* peek next-token return2
+: next-token
+  *tokenizer* peek tokenizer-next-token return2
 ;
 
 : eval-tokens
   ( ++ str )
-  POSTPONE next-word UNLESS drop literal eval-loop jump-entry-data THEN
+  POSTPONE next-token UNLESS drop literal eval-loop jump-entry-data THEN
   ( compile lookup )
   *state* peek UNLESS interp THEN
   *state* peek IF *state* peek exec THEN

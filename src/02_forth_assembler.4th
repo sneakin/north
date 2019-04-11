@@ -15,7 +15,7 @@
 
 (
 : a-def-op
-  next-word dup UNLESS eos eos error THEN
+  next-token dup UNLESS eos eos error THEN
   2dup [:] POSTPONE arg2
     POSTPONE arg1
     POSTPONE arg0

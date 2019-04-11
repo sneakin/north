@@ -45,7 +45,7 @@
 ( Read and look tokens up inserting `literal` before each. )
 : `
   DO
-    *tokenizer* peek next-token UNLESS drop2 LEAVE THEN
+    *tokenizer* peek tokenizer-next-token UNLESS drop2 LEAVE THEN
     swapdrop ( token )
     backtick? IF drop LEAVE THEN
     compile drop ( token addr )
