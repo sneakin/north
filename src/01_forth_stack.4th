@@ -1,7 +1,7 @@
 ( Stack information )
 
 : stack-depth
-  stack-top args uint-sub return1
+  stack-top args uint-sub cell/ return1
 ;
 
 : write-depth

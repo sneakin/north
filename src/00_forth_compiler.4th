@@ -112,7 +112,7 @@
   literal return0
   ]
   swap set-dict-entry-data drop2
-  literal eval-tokens jump-entry-data
+  literal eval-loop jump-entry-data
 ; immediate-as ;
 
 : eos " EOS" return1 ;

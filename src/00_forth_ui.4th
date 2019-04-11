@@ -21,15 +21,6 @@
 
 ( More input prompt: )
 
-(
-: eval-loop
-  write-status prompt
-  flush-read-line
-  make-the-tokenizer drop2
-  literal eval-tokens jump-entry-data
-;
-)
-
 : error
   ( error-msg2 error-msg1 )
   arg0 write-line
@@ -39,10 +30,11 @@
   quit ( exit caller )
 ;
 
-: eval-loop
-  write-status write-int write-tab
+: eval-read-line
+  write-status arg0 write-int drop write-tab
   prompt
   flush-read-line
-  make-the-tokenizer drop2
-  literal eval-tokens jump-entry-data
+  return1
+  ( make-the-tokenizer drop2
+  literal eval-loop jump-entry-data )
 ;

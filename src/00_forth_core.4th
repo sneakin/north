@@ -832,12 +832,13 @@
 ;
 
 : next-token
-  *tokenizer* peek tokenizer-next-token return2
+  *tokenizer* peek dup IF tokenizer-next-token return2 THEN
+  literal 0 literal 0 return2
 ;
 
-: eval-tokens
+: eval-loop
   ( ++ str )
-  POSTPONE next-token UNLESS drop literal eval-loop jump-entry-data THEN
+  POSTPONE next-token UNLESS drop eval-read-line eval-string THEN
   ( compile lookup )
   *state* peek UNLESS interp THEN
   *state* peek IF *state* peek exec THEN
@@ -850,7 +851,7 @@
 : eval-string
   end drop2 ( not coming back! )
   ( arg0 ) make-the-tokenizer drop2
-  literal eval-tokens jump-entry-data
+  literal eval-loop jump-entry-data
 ;
 
 : load

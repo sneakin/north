@@ -36,13 +36,14 @@
 ;
 
 ( Pretty eval-loop. )
-:: eval-loop
-  write-status write-int write-tab dim write-depth
+:: eval-read-line
+  write-status arg0 write-int drop write-tab dim write-depth
   color-reset prompt
   flush-read-line
   blue write-string color-reset
-  make-the-tokenizer drop2
-  literal eval-tokens jump-entry-data
+  return1
+  ( make-the-tokenizer drop2
+  literal eval-loop jump-entry-data )
 ;
 
 ( Make ; print the new entry's name and OK. )

@@ -13,8 +13,9 @@ const fs = require('fs');
 var TESTING = 0;
 
 const forth_sources = {
-  "core-0": fs.readFileSync(__dirname + '/00_forth_core.4th', 'utf-8'),
-  "core-0-compiler": fs.readFileSync(__dirname + '/00_forth_compiler.4th', 'utf-8'),
+  "00-list": fs.readFileSync(__dirname + '/00_forth_list.4th', 'utf-8'),
+  "00-core": fs.readFileSync(__dirname + '/00_forth_core.4th', 'utf-8'),
+  "00-core-compiler": fs.readFileSync(__dirname + '/00_forth_compiler.4th', 'utf-8'),
   "00-output": fs.readFileSync(__dirname + '/00_forth_output.4th', 'utf-8'),  
   "00-ui": fs.readFileSync(__dirname + '/00_forth_ui.4th', 'utf-8'),  
   "00-init": fs.readFileSync(__dirname + '/00_forth_init.4th', 'utf-8'),  
@@ -1199,8 +1200,9 @@ Forth.assembler = function(ds, cs, info, stage) {
   });
 
   //var tok = tokenize(forth_sources.core);
-  interp(asm, forth_sources['core-0']);
-  interp(asm, forth_sources['core-0-compiler']);
+  interp(asm, forth_sources['00-core']);
+  interp(asm, forth_sources['00-list']);
+  interp(asm, forth_sources['00-core-compiler']);
   interp(asm, forth_sources['00-output']);
   interp(asm, forth_sources['00-init']);
 
