@@ -1,0 +1,48 @@
+@font-face {
+    font-family: 'Unscii 8';
+    src: url('unscii-8.ttf') format('truetype');
+}
+
+html, body, h1, h2, h3, .xterm {
+    font-family: "Unscii 8", Inconsolata, Unifont, "GNU Unifont", courier-new, courier, monospace;
+    background: black;
+    color: white;
+}
+
+A, A:visited, A:hover {
+    color: cyan;
+    text-decoration: none;
+    border-bottom: solid 2px cyan;
+}
+
+A:hover {
+    border-bottom: solid 2px cyan;
+}
+
+A:visited {
+    border-bottom: dotted 2px cyan;
+}
+
+body {
+    font-size: 16px;
+    padding: 1em;
+    padding-top: 0.25em;
+    margin: 1em auto;
+    width: 66ex;
+}
+
+DIV {
+    padding-bottom: 0.5em;
+}
+
+.xterm {
+    font-family: "Unscii 8", Inconsolata, Unifont, "GNU Unifont", courier-new, courier, monospace;
+    font-size: 16px;
+    padding: 0.25em;
+    border: solid 2px gray;
+    width: 640px;
+}
+
+.xterm-viewport {
+    overflow: hidden !important;
+}

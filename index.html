@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<html>
+	<head>
+    <meta charset="UTF-8" /> 
+    <meta name="viewport" content="width=1024, initial-scale=0.25, maximum-scale=4, user-scalable=1"/> <!--320-->
+    <style type="text/css">
+      @import "xterm.css";
+      @import "index.css";
+    </style>
+    <script src="index.js" type="text/javascript"></script>
+	</head>
+  <body onload="index_init(1024*1024*4, 'tty', { run: 'run-button', reset: 'reset-button', reload: 'reload-button', stage_selector: 'stage-selector' });">
+    <div class="horiz-bar">
+      <select id="stage-selector">
+      </select>
+      <input type="button" value="Reload" id="reload-button"/>
+      <input type="button" value="Run" id="run-button"/>
+      <input type="button" value="Reset" id="reset-button"/>
+    </div>
+    <div class="vm-display">
+      <div id="tty"></div>
+    </div>
+    <div>
+      <h1>North</h1>
+      <p>Get the source:
+      <a href="http://github.com/sneakin/north">GitHub.com/sneakin/north</a>
+      </p>
+    </div>
+  </body>
+</html>
