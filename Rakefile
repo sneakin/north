@@ -4,6 +4,7 @@ require 'rbconfig'
 
 root = Pathname.new(__FILE__).parent.expand_path
 buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', root.join('build')))
+release_root=Pathname.new(ENV.fetch('RELEASE_ROOT', root.join('tmp/gh-pages')))
 
 $: << root.join('lib')
 $: << root.join('vendor/rake-node/lib')
@@ -147,5 +148,15 @@ namespace :doc do
       sh("pygmentize -f html -O full -l #{lang} #{Shellwords.escape(src)} -o #{Shellwords.escape(DOC_SRC_DIR.join(src.basename))}")
     end
   end
+end
+
+directory release_root do
+  sh("git clone -b gh-pages #{root} #{release_root}")
+end
+
+desc "Build and update the gh-pages branch."
+task :release => [ :default, release_root ] do
+  sh("cp -rav #{buildroot}/* #{release_root}")
+  sh("cd #{release_root} && git add -A #{release_root} && git commit")
 end
 
