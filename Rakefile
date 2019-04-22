@@ -3,7 +3,7 @@ require 'shellwords'
 require 'rbconfig'
 
 root = Pathname.new(__FILE__).parent.expand_path
-buildroot ||= ENV.fetch('BUILDROOT', root.join('build'))
+buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', root.join('build')))
 
 $: << root.join('lib')
 $: << root.join('vendor/rake-node/lib')
@@ -21,10 +21,10 @@ outputs = [ 'north-stage0.bin',
             'north-stage1-min.bin',
             #'north-stage2.bin',
             #'north-stage3.bin',
-            'runner.css',
+            'index.css',
 	    'unscii-8.ttf',
-            'runner.js',
-            'runner.html'
+            'index.js',
+            'index.html'
           ].collect { |s| buildroot.join(s) }
 
 directory buildroot
@@ -99,7 +99,7 @@ desc "Build stage2: stage1 built with stage0"
 task :stage2 => STAGE2_TARGET
 
 [ 'forth.css',
-  'runner.css',
+  'index.css',
   'unscii-8.ttf'
 ].each do |name|
   output = buildroot.join(name)
@@ -115,8 +115,8 @@ task :stage3 do
   raise NotImplementedError
 end
 
-BrowserifyRunner.bundle buildroot.join('runner.js') => [ root.join('www/runner.js'), STAGE0_TARGET, STAGE1_TARGET ]
-html_file buildroot.join('runner.html') => [ root.join('www/runner.src.html'), buildroot.join('runner.js'), buildroot.join('xterm.css') ]
+BrowserifyRunner.bundle buildroot.join('index.js') => [ root.join('www/index.js'), STAGE0_TARGET, STAGE1_TARGET ]
+html_file buildroot.join('index.html') => [ root.join('www/index.src.html'), buildroot.join('index.js'), buildroot.join('xterm.css') ]
 
 file buildroot.join('xterm.css') => root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
   FileUtils.copy(t.sources[0], t.name)

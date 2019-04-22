@@ -14,7 +14,7 @@ const North = {
 
 const DefaultStage = 'stage-1';
 
-function runner_init(mem_size, terminal, buttons)
+function index_init(mem_size, terminal, buttons)
 {
   console.log("Initializing...");
 
@@ -133,9 +133,9 @@ function vm_init(mem_size, terminal, callbacks)
 }
 
 if(typeof(module) != 'undefined') {
-  module.exports = runner_init;
+  module.exports = index_init;
 }
 
 if(typeof(window) != 'undefined') {
-  window.runner_init = runner_init;
+  window.index_init = index_init;
 }
