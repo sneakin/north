@@ -157,6 +157,6 @@ end
 desc "Build and update the gh-pages branch."
 task :release => [ :default, release_root ] do
   sh("cp -rav #{buildroot}/* #{release_root}")
-  sh("cd #{release_root} && git add -A #{release_root} && git commit")
+  sh("cd #{release_root} && git add -A #{release_root} && git commit && git push origin gh-pages")
 end
 
