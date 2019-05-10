@@ -11,11 +11,12 @@ https://github.com/sneakin/north
 Building
 ---
 
-You will need `git`, `node.js`, `ruby`, `rake`, and a web browser.
+You will need a POSIX environment like Linux or MSYS, `git`, `node.js`, `ruby`, `rake`, and a web browser.
 
 1. git submodule --init
 2. npm install
-3. rake
+3. export PATH=$(npm bin):$PATH
+4. rake
 
 Running
 ---

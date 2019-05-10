@@ -3,12 +3,12 @@
    "version": "0.0.1",
    "private": true,
    "scripts": {
-       "start": "node ./bin/north.js"
+      "start": "node ./bin/north.js"
    },
    "dependencies": {
-     "xterm": "~3.8.0",
-     "brfs": "~2.0.1",
-     "browserify": "~16.2.3",
-     "colors": "~1.3.2"
+      "xterm": "~3.8.0",
+      "brfs": "~2.0.1",
+      "browserify": "~16.2.3",
+      "colors": "~1.3.2"
    }
 }
