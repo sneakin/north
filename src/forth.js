@@ -101,6 +101,21 @@ const base_chars = {
   "%": 2
 };
 
+function parse_number(str)
+{
+  var m = str.match(/^([$#x%]?)(-?[0-9a-fA-F]+)$/);
+  if(m) {
+    var base = 10;
+    if(m[1].length > 0) base = base_chars[m[1]];
+    var n = parseInt(m[2], base);
+    if(Number.isNaN(n) == false) {
+      return n;
+    }
+  }
+  
+  return null;
+}
+
 function compile(asm, e, quote_numbers)
 {
   if(e.length == 0) return;
@@ -109,22 +124,16 @@ function compile(asm, e, quote_numbers)
   if(m) {
     asm.label(m[1]);
   } else {
-    var m = e.match(/^([$#x%]?)(-?[0-9a-fA-F]+)$/);
-    if(m) {
-      var base = 10;
-      if(m[1].length > 0) base = base_chars[m[1]];
-      var n = parseInt(m[2], base);
-      if(Number.isNaN(n) == false) {
-        if(quote_numbers) {
-          asm.uint32('literal');
-        }
-
-        asm.uint32(n);
-        return;
+    var n = parse_number(e);
+    if(n != null) {
+      if(quote_numbers) {
+        asm.uint32('literal');
       }
-    }
 
-    asm.uint32(e);
+      asm.uint32(n);
+    } else {
+      asm.uint32(e);
+    }
   }
 }
 
@@ -191,6 +200,23 @@ var macros = {
         label(name + '-size', (asm.resolve(name + '-end') - asm.resolve(name + '-ops')) / 4).
         uint32(TERMINATOR);
   },
+  constant: function(asm, token, code) {
+    // constant NAME VALUE
+    // Adds a dictionary entry with the name and value.
+    var tok = next_token(code);
+    var name = tok[0];
+    tok = next_token(tok[1]);
+    var value = parse_number(tok[0]);
+
+    last_dictionary = name;
+    dictionary[name] = {
+      code: 'value-peeker-code',
+      data: value,
+      prior: dictionary[name]
+    };
+
+    return tok[1];
+  },    
   longify: function(asm, token, code) {
     var tok = next_token(code);
     var v = unslash(tok[0]);
