@@ -151,7 +151,7 @@ namespace :doc do
 end
 
 directory release_root do
-  sh("git clone -b gh-pages #{root} #{release_root}")
+  sh("git branch -f gh-pages origin/gh-pages && git clone -b gh-pages #{root} #{release_root}")
 end
 
 desc "Build and update the gh-pages branch."
