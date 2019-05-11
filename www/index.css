@@ -28,10 +28,13 @@ body {
     padding: 1em;
     padding-top: 0.25em;
     width: 66ex;
+    margin: 1em;
 }
 
-@media screen and (max-width: 600px) body {
-    margin: 1em auto;
+@media screen and (min-width: 70ex) {
+    body {
+        margin: 1em auto;
+    }
 }
 
 DIV {
