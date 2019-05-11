@@ -15279,7 +15279,7 @@ Terminal.prototype.readableLength = function()
 
 Terminal.prototype.write = function(data)
 {
-  if(this.debug) console.log("Terminal write:", data, data.charCodeAt(0));
+  if(this.debug) console.log("Terminal write:", data, data.split(''));
     this.term.write(data);
     return this;
 }
@@ -15782,42 +15782,56 @@ InputStream.prototype.trigger_interrupt = function()
   }
 }
 
-InputStream.prototype.read_more = function(data)
+InputStream.prototype.encode = function(data)
 {
-  /*
-    var len = this.data.buffer.length;
-    if(this.stream._readableState) len = Math.min(this.stream._readableState.length, len);
-    if(this.stream.readableLength) len = Math.min(this.stream.readableLength(), len);
-    
-  var data = this.stream.read(Math.max(len, 1));
-*/
-  this.stream.pause();
+}
 
-  if(this.debug) {
-    console.log("InputStream", data && data.length, this.data.eos, this.data.ready, "Read ", data);
-  }
-
+InputStream.prototype.set_data = function(data)
+{
   if(data && data.length > 0) {
+    var length = data.length;
+    
     if(typeof(data) == 'string') {
-      for(var i = 0; i < data.length; i++) {
-        this.data.buffer[i] = data.charCodeAt(i);
+      if(typeof(TextEncoder) != 'undefined') {
+        if(this.encoder == null) {
+          this.encoder = new TextEncoder();
+        }
+        var bytes = this.encoder.encode(data, { stream: true });
+        this.data.buffer.set(bytes);
+        length = bytes.length;
+      } else {
+        for(var i = 0; i < data.length; i++) {
+          this.data.buffer[i] = data.charCodeAt(i);
+        }
       }
-      this.data.buffer.fill(0, data.length);
     } else {
       this.data.buffer.set(data);
-      this.data.buffer.fill(0, data.length);
     }    
+  
+    this.data.buffer.fill(0, length);
+    this.data.ready = length;
+    this.data.eos = 0;
   } else {
     this.data.buffer.fill(0);
     this.data.ready = 0;
+  }
+}
+
+InputStream.prototype.read_more = function(data)
+{
+  this.stream.pause();
+
+  if(this.debug) {
+    console.log("InputStream", data && data.length, this.data.eos, this.data.ready, "Read ", data, (new TextEncoder()).encode(data));
+  }
+
+  this.set_data(data);
+  if(data == null || data.length == 0) {
     return false;
   }
   
-    this.data.ready = data.length;
-    this.data.eos = 0;
-
-    this.trigger_interrupt();
-    return this;
+  this.trigger_interrupt();
+  return this;
 }
 
 InputStream.prototype.ram_size = function()
@@ -15946,14 +15960,29 @@ OutputStream.prototype.ram_size = function()
   return this.ram.length;
 }
 
+OutputStream.prototype.decode = function(bytes)
+{
+  if(typeof(TextDecoder) != 'undefined') {
+    if(this.decoder == null) {
+      this.decoder = new TextDecoder();
+    }
+    return this.decoder.decode(bytes, { stream: true });
+  } else {
+    return String.fromCharCode.apply(null, bytes);
+  }
+}
+
 OutputStream.prototype.flush = function()
 {
   var self = this;
-  var r = this.stream.write(String.fromCharCode.apply(null, this.data.buffer.slice(0, this.data.flush)),
+  var bytes = this.data.buffer.slice(0, this.data.flush);
+  var data = this.decode(bytes);
+  
+  var r = this.stream.write(data,
                             null,
                             function() {
                               if(self.data.flush > 0) {
-                                if(self.debug) console.log("OutputStream flushed");
+                                if(self.debug) console.log("OutputStream flushed", data, bytes);
                                 self.data.eos = OutputStream.EOSStates.OK;
                                 self.ram.set(0, self.ram.length, 0);
                                 self.trigger_interrupt();
