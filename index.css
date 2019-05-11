@@ -27,8 +27,11 @@ body {
     font-size: 16px;
     padding: 1em;
     padding-top: 0.25em;
-    margin: 1em auto;
     width: 66ex;
+}
+
+@media screen and (max-width: 600px) body {
+    margin: 1em auto;
 }
 
 DIV {
