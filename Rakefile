@@ -145,7 +145,7 @@ namespace :doc do
     STAGE1_SRC.each do |src|
       lang = 'forth'
       lang = 'javascript' if src.extname == '.js'
-      sh("pygmentize -f html -O full -l #{lang} #{Shellwords.escape(src)} -o #{Shellwords.escape(DOC_SRC_DIR.join(src.basename))}")
+      sh("pygmentize -f html -O full -l #{lang} -o #{Shellwords.escape(DOC_SRC_DIR.join(src.basename))}.html #{Shellwords.escape(src)}")
     end
   end
 end
