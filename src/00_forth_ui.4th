@@ -33,7 +33,7 @@
 : eval-read-line
   write-status arg0 write-int drop write-tab
   prompt
-  flush-read-line
+  read-line
   return1
   ( make-the-tokenizer drop2
   literal eval-loop jump-entry-data )

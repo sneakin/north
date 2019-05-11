@@ -39,7 +39,7 @@
 :: eval-read-line
   write-status arg0 write-int drop write-tab dim write-depth
   color-reset prompt
-  flush-read-line
+  read-line
   blue write-string color-reset
   return1
   ( make-the-tokenizer drop2
