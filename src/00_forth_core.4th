@@ -656,7 +656,7 @@
   dup arg1 <= IF RECURSE THEN
 ;
 
-: fill
+: fill ( ptr number-cells )
   arg1 arg0 literal 0 fill-loop
 ;
 

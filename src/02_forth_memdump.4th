@@ -21,11 +21,20 @@
   write-crnl
 ;
 
-( Dump a region of memory to screen. )
-: memdump ( start-ptr num-bytes )
+( Dump a region of memory to screen destructively using the arguments. )
+: memdump/2 ( start-ptr num-bytes -- start-ptr num-bytes )
   arg0 literal 0 > UNLESS return0 THEN
   arg1 arg0 literal 32 min rotdrop2 memdump-line ( arg1 bytes-to-dump )
   arg0 dup1 int-sub set-arg0
   int-add set-arg1
   RECURSE
+;
+
+( Dump a region of memory to screen. )
+: memdump ( start-ptr num-bytes )
+  arg1 arg0 memdump/2
+;
+
+: hexdump ( start-ptr num-bytes )
+  hex arg1 arg0 memdump/2 dec
 ;

@@ -9,6 +9,7 @@ const asm_output = require('vm/asm/output-device');
 const asm_isr = require('vm/asm/isr');
 const DataStruct = require('data_struct');
 const fs = require('fs');
+const TextEncoder = require('util/text_encoder');
 
 var TESTING = 0;
 
@@ -28,6 +29,13 @@ const forth_sources = {
   "02-memdump": fs.readFileSync(__dirname + '/02_forth_memdump.4th', 'utf-8'),  
   "02-decompiler": fs.readFileSync(__dirname + '/02_forth_decompiler.4th', 'utf-8'),  
   "02-misc": fs.readFileSync(__dirname + '/02_forth_misc.4th', 'utf-8'),
+  "03-assembler": fs.readFileSync(__dirname + '/03_forth_assembler.4th', 'utf-8'),
+  "03-interrupts": fs.readFileSync(__dirname + '/03_forth_interrupts.4th', 'utf-8'),
+  "03-sequence": fs.readFileSync(__dirname + '/03_forth_sequence.4th', 'utf-8'),
+  "03-byte-string": fs.readFileSync(__dirname + '/03_forth_byte_string.4th', 'utf-8'),
+  "03-storage-devices": fs.readFileSync(__dirname + '/03_forth_storage_devices.4th', 'utf-8'),
+  "03-storage": fs.readFileSync(__dirname + '/03_forth_storage.4th', 'utf-8'),
+  "03-storage-test": fs.readFileSync(__dirname + '/03_forth_storage_test.4th', 'utf-8'),
   "core-4": fs.readFileSync(__dirname + '/04_forth_core.4th', 'utf-8'),
   "core-constants": fs.readFileSync(__dirname + '/04_forth_constants.4th', 'utf-8'),
   extra: fs.readFileSync(__dirname + '/forth_extra.4th', 'utf-8'),
@@ -42,10 +50,14 @@ function Forth()
 
 function longify(str)
 {
+  /*
   return str.split('').
       map((c) => c.charCodeAt(0)).
       reverse().
       reduce((a, c) => (a << 8) | c);
+*/
+  var bytes = (new TextEncoder()).encode(str);
+  return bytes.slice(0, 4).reverse().reduce((a, c) => (a << 8) | c);
 }
 
 var TERMINATOR = longify("STOP");
@@ -65,14 +77,15 @@ function cell_align(n)
 
 function cellpad(str)
 {
-  var arr = new Uint8Array((2 + str.length) * VM.TYPES.ULONG.byte_size);
+  var bytes = (new TextEncoder()).encode(str);
+  var arr = new Uint8Array((2 + bytes.length) * VM.TYPES.ULONG.byte_size);
   var dv = new DataView(arr.buffer);
 
-  VM.TYPES.ULONG.set(dv, 0, str.length, true);
-  VM.TYPES.ULONG.set(dv, (1 + str.length) * VM.TYPES.ULONG.byte_size, TERMINATOR, true);
+  VM.TYPES.ULONG.set(dv, 0, bytes.length, true);
+  VM.TYPES.ULONG.set(dv, (1 + bytes.length) * VM.TYPES.ULONG.byte_size, TERMINATOR, true);
   
-  for(var i = 0; i < str.length; i++) {
-    VM.TYPES.ULONG.set(dv, (1 + i) * VM.TYPES.ULONG.byte_size, str.charCodeAt(i), true);
+  for(var i = 0; i < bytes.length; i++) {
+    VM.TYPES.ULONG.set(dv, (1 + i) * VM.TYPES.ULONG.byte_size, bytes[i], true);
   }
   
   return arr;
@@ -187,7 +200,16 @@ function colon_def(asm, token, code)
   
   return tok[1];
 }
-  
+
+function literal_immediate(asm, token, code)
+{
+    var tok = next_token(code);
+    var label = genlabel('string');
+    strings[label] = tok[0];
+    asm.uint32('literal').uint32(label);
+    return tok[1];
+}
+
 var macros = {
   ":": colon_def,
   "::": colon_def,
@@ -238,7 +260,8 @@ var macros = {
   "char-code": function(asm, token, code) {
     var tok = next_token(code);
     var v = unslash(tok[0]);
-    asm.uint32(v.charCodeAt(0));
+    var n = v.codePointAt(0);
+    asm.uint32(n);
     return tok[1];
   },
   immediate: function(asm, token, code) {
@@ -306,6 +329,11 @@ var macros = {
     var label = genlabel('string');
     strings[label] = tok[0];
     asm.uint32('literal').uint32(label);
+    return tok[1];
+  },
+  "'": function(asm, token, code) {
+    var tok = next_token(code);
+    asm.uint32('literal').uint32(tok[0]);
     return tok[1];
   },
   "(": function(asm, token, code) {
@@ -376,7 +404,7 @@ Forth.assembler = function(ds, cs, info, stage) {
   var DICT_REG = HEAP_REG - 4;
   var FP_REG = HEAP_REG - 5;
 
-  asm_isr(asm, VM.CPU.INTERRUPTS.user * 2);
+  asm_isr(asm, VM.CPU.INTERRUPTS.user * 3);
   asm_memcpy(asm);
 
   function defop(name, fn) {
@@ -393,7 +421,7 @@ Forth.assembler = function(ds, cs, info, stage) {
       mov(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.CS).
       inc(VM.CPU.REGISTERS.R0).uint32('boot').
       push(VM.CPU.REGISTERS.R0).
-      call(0, VM.CPU.REGISTERS.CS).uint32('outer-execute').
+      call(0, VM.CPU.REGISTERS.CS).uint32('outer-start-thread').
       call(0, VM.CPU.REGISTERS.CS).uint32('goodbye').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('isr_reset');
   
@@ -438,7 +466,7 @@ Forth.assembler = function(ds, cs, info, stage) {
         load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.CS).uint32(0).
         inc(VM.CPU.REGISTERS.R0).uint32('boot').
         push(VM.CPU.REGISTERS.R0).
-        call(0, VM.CPU.REGISTERS.CS).uint32('outer-execute');
+        call(0, VM.CPU.REGISTERS.CS).uint32('outer-start-thread');
   });
   
   asm_input(asm, input_dev_irq, input_dev_addr);
@@ -456,7 +484,7 @@ Forth.assembler = function(ds, cs, info, stage) {
       push(VM.CPU.REGISTERS.R1).
       ret();
 
-  asm.label('outer-execute').
+  asm.label('outer-start-thread').
       // swap return addr and EIP
       // and make a frame before pushing them back
       pop(VM.CPU.REGISTERS.R0). // return addr
@@ -545,7 +573,8 @@ Forth.assembler = function(ds, cs, info, stage) {
         ret();
   });
 
-  // Return to the outer-executed function.
+  // Return to the function started with outer-start-thread, but not the
+  // outer-start-thread's caller.
   defop('quit', function(asm) {
     asm.
         load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
@@ -620,7 +649,8 @@ Forth.assembler = function(ds, cs, info, stage) {
         pop(VM.CPU.REGISTERS.R0).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
-  
+
+  // todo jump to bye if there's no parent frame
   defop('return0', function(asm) {
     asm.// exit frame
         mov(VM.CPU.REGISTERS.SP, FP_REG).
@@ -718,7 +748,7 @@ Forth.assembler = function(ds, cs, info, stage) {
         push(VM.CPU.REGISTERS.SP).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
-  
+
   defop('swap', function(asm) {
     asm.
         pop(VM.CPU.REGISTERS.R0).
@@ -1055,6 +1085,12 @@ Forth.assembler = function(ds, cs, info, stage) {
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
 
+  defop('store-local2', function(asm) {
+    asm.pop(VM.CPU.REGISTERS.R0).
+        store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(-12).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  });
+  
   defop('args', function(asm) {
     asm.mov(VM.CPU.REGISTERS.R0, FP_REG).
         inc(VM.CPU.REGISTERS.R0).uint32(FRAME_SIZE).
@@ -1236,6 +1272,7 @@ Forth.assembler = function(ds, cs, info, stage) {
     interp(asm, forth_sources['00-ui']);
   } else if(stage.indexOf('stage1') >= 0) {
     eval(fs.readFileSync(__dirname + '/forth_01.js', 'utf-8'));
+    eval(fs.readFileSync(__dirname + '/forth_interrupts.js', 'utf-8'));
     
     //interp(asm, forth_sources['01-atoi']);
     interp(asm, forth_sources['01-tty']);
@@ -1246,6 +1283,13 @@ Forth.assembler = function(ds, cs, info, stage) {
 
     interp(asm, forth_sources['02-memdump']);
     interp(asm, forth_sources['02-decompiler']);
+    interp(asm, forth_sources['03-interrupts']);
+    interp(asm, forth_sources['03-assembler']);
+    interp(asm, forth_sources['03-byte-string']);
+    interp(asm, forth_sources['03-sequence']);
+    interp(asm, forth_sources['03-storage-devices']);
+    interp(asm, forth_sources['03-storage']);
+    interp(asm, forth_sources['03-storage-test']);
     //interp(asm, forth_sources['02-misc']);
 
     //interp(asm, forth_sources['assembler']);
@@ -1273,9 +1317,11 @@ Forth.assembler = function(ds, cs, info, stage) {
   asm.label('TERMINATOR-sym').bytes(cellpad('TERMINATOR'));
   asm.label('*state*-sym').bytes(cellpad('*state*'));
   asm.label('immediate-dict-sym').bytes(cellpad('immediate-dict'));
+  asm.label('isr-handlers-sym').bytes(cellpad('isr-handlers'));
+  asm.label('interrupt-waiting-for-sym').bytes(cellpad('interrupt-waiting-for'));
 
   for(var n in strings) {
-    asm.label(n).bytes(cellpad(strings[n]));
+    asm.label(n).bytes(cellpad(unslash(strings[n])));
   }
   
   for(var n in ops) {
@@ -1344,6 +1390,8 @@ Forth.assembler = function(ds, cs, info, stage) {
   last_label = dict_entry_var('*state*', off+12, last_label);
   last_label = dict_entry_var('base', off+16, last_label);
   last_label = dict_entry_var('immediate-dict', off+20, last_label);
+  last_label = dict_entry_var('isr-handlers', off+24, last_label);
+  last_label = dict_entry_var('interrupt-waiting-for', off+28, last_label);
 
   asm.label('dictionary-end');
   asm.label('dictionary').uint32(last_label);
