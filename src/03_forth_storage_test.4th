@@ -37,7 +37,7 @@
   ( read the new value )
   " Reread: " write-string drop
   literal 256 local0 poke
-  local2 local1 local2 seq-length swapdrop copy-seq
+  local2 local1 arg0 storage-read-size cell/ rotdrop2 copy-seq
   arg0 local1 local0 literal 0 storage-read/4
   write-int write-space drop
   arg1 arg0 storage-wait drop2
