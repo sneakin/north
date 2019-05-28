@@ -8,6 +8,7 @@ const Timer = require('vm/devices/timer.js');
 const RTC = require('vm/devices/rtc.js');
 const KeyStore = require('vm/devices/keystore.js');
 const KeyValue = require('key_value');
+const VMWorker = require('vm/service_worker');
 
 const FS = require('fs');
 
@@ -37,7 +38,16 @@ function index_init(mem_size, terminal, buttons)
   var reset = document.getElementById(buttons.reset);
   var reload = document.getElementById(buttons.reload);
   var stage_selector = document.getElementById(buttons.stage_selector);
+
+  var worker = null;
   
+  VMWorker.register('service_worker.js', window.location).then((reg) => {
+    worker = reg;
+    console.log("ServiceWorker register", reg);
+  }).catch((error) => {
+    console.log("ServiceWorker failed to register", error);
+  });
+
   var term = new Terminal(document.getElementById(terminal), {
     fontFamily: '"Unscii 8", Inconsolata, Unifont, "GNU Unifont", courier-new, courier, monospace',
     fontSize: 16,

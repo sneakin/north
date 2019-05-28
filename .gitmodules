@@ -1,6 +1,6 @@
 [submodule "vendor/rake-node"]
 	path = vendor/rake-node
-	url = git@github.com:sneakin/rake-node.git
+	url = git@github.com:sneakin/rake-node
 [submodule "vendor/bacaw"]
 	path = vendor/bacaw
 	url = git@github.com:sneakin/bacaw.git

@@ -23,9 +23,11 @@ outputs = [ 'north-stage0.bin',
             'north-stage1-min.bin',
             #'north-stage2.bin',
             #'north-stage3.bin',
+            'service_worker.js',
             'ipfs.js',
+            'manifest.webmanifest',
+      	    'unscii-8.ttf',
             'index.css',
-	    'unscii-8.ttf',
             'index.js',
             'index.html'
           ].collect { |s| buildroot.join(s) }
@@ -111,7 +113,8 @@ task :stage2 => STAGE2_TARGET
 
 [ 'forth.css',
   'index.css',
-  'unscii-8.ttf'
+  'unscii-8.ttf',
+  'manifest.webmanifest'
 ].each do |name|
   output = buildroot.join(name)
   src = root.join('www', name)
@@ -126,6 +129,7 @@ task :stage3 do
   raise NotImplementedError
 end
 
+BrowserifyRunner.bundle buildroot.join('service_worker.js') => [ root.join('www/service_worker.js') ]
 BrowserifyRunner.bundle buildroot.join('ipfs.js') => [ root.join('www/ipfs.js') ]
 BrowserifyRunner.bundle buildroot.join('index.js') => [ root.join('www/index.js'), STAGE0_TARGET, STAGE1_TARGET ]
 html_file buildroot.join('index.html') => [ root.join('www/index.src.html'), buildroot.join('index.js'), buildroot.join('xterm.css') ]
