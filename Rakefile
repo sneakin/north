@@ -8,9 +8,10 @@ release_root=Pathname.new(ENV.fetch('RELEASE_ROOT', root.join('tmp/gh-pages')))
 
 $: << root.join('lib')
 $: << root.join('vendor/rake-node/lib')
+$:.unshift(root.join('vendor/webrick/lib'))
 require 'rake/browserify'
 
-BCROOT = root.join('vendor', 'bacaw')
+BCROOT = Pathname.new(ENV.fetch('BACAW', root.join('vendor', 'bacaw')))
 BCBIN = BCROOT.join('bin', 'bccon.js')
 BCCON = "node #{Shellwords.escape(BCBIN)}"
 BCLIB = BCROOT.join('js', 'lib')
@@ -138,11 +139,12 @@ task :default => outputs
 
 desc 'Start a webserver on port 9090 to serve the build directory.'
 task :serve do
-	require 'webrick'
-  $stderr.puts("Serving on #{buildroot}")
-	s = WEBrick::HTTPServer.new(:Port => ENV.fetch('PORT', 9090), :DocumentRoot => buildroot)
-	trap('INT') { s.shutdown }
-	s.start
+  require 'rake-node/http/server'
+  RakeNode::HTTP.run(:Port => ENV.fetch('PORT', 9090).to_i,
+                      :DocumentRoot => buildroot,
+                     :SSLCertPrefix => root.join('server'),
+                     :Domain => ENV.fetch('DOMAIN', nil),
+                     :IP => ENV.fetch('IP', nil))
 end
 
 namespace :doc do

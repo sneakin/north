@@ -1,18 +1,33 @@
+"use strict";
+
 require('vm');
 const Terminal = require('vm/devices/terminal');
 const DevCon = require('vm/devices/console.js');
 const RAM = require('vm/devices/ram.js');
 const Timer = require('vm/devices/timer.js');
 const RTC = require('vm/devices/rtc.js');
+const KeyStore = require('vm/devices/keystore.js');
+const KeyValue = require('key_value');
 
 const FS = require('fs');
 
-const North = {
-  "stage-0": FS.readFileSync(__dirname + '/../build/north-stage0.bin'),
-  "stage-1": FS.readFileSync(__dirname + '/../build/north-stage1.bin')
+const Binaries = {
 };
 
-const DefaultStage = 'stage-1';
+const BinaryURLs = [
+  'north-stage0.bin',
+  'north-stage1.bin',
+  'north-stage0-min.bin',
+  'north-stage1-min.bin'
+];
+
+const DefaultStage = 'north-stage1.bin';
+
+function basename(path)
+{
+  var parts = path.split('/');
+  return parts[parts.length - 1];
+}
 
 function index_init(mem_size, terminal, buttons)
 {
@@ -52,18 +67,34 @@ function index_init(mem_size, terminal, buttons)
   }
 
   reload.onclick = function() {
-    var stage = North[stage_selector.value];
-    if(stage == null) stage = North[DefaultStage];
-    vm.mmu.memwrite(0, stage);
+    var stage = Binaries[stage_selector.value];
+    if(stage == null) stage = Binaries[DefaultStage];
+    vm.mem.memwrite(0, stage);
   }
 
-  for(var name in North) {
-    var el = document.createElement('option');
-		el.value = name;
-		el.innerText = name;
-		stage_selector.appendChild(el);
+  stage_selector.onchange = function() {
+    vm.mem.memwrite(0, Binaries[stage_selector.value]);
   }
-	stage_selector.value = DefaultStage;
+  
+  for(var url of BinaryURLs) {
+    global.fetch(url).then((resp) => {
+      if(resp.ok) {
+        resp.arrayBuffer().then((body) => {
+          var name = basename((new URL(resp.url)).pathname);
+          var el = document.createElement('option');
+		      el.value = name;
+		      el.innerText = name;
+		      stage_selector.appendChild(el);
+
+          Binaries[name] = new Uint8Array(body);
+          if(name == DefaultStage) {
+	          stage_selector.value = name;
+            vm.mem.memwrite(0, Binaries[name]);
+          }
+        });
+      }
+    });
+  }
 }
 
 function vm_init(mem_size, terminal, callbacks)
