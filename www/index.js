@@ -71,43 +71,84 @@ function vm_init(mem_size, terminal, callbacks)
   var vm = new VM.Container(callbacks);
   if(typeof(window) != 'undefined') window.vm = vm;
   
-  var mmu = new VM.MMU();
-  //var rom = new ROM(North.stage0);
-  //mmu.map_memory(0, rom.length, rom);
-  //mmu.map_memory(1024*1024, mem_size, new RAM(mem_size));
-  mmu.map_memory(0, mem_size, new RAM(mem_size));
-  mmu.memwrite(0, North[DefaultStage]);
-  vm.add_device(mmu);
+  var mem = new VM.MemoryBus();
+  //var rom = new ROM(Binaries.stage0);
+  //mem.map_memory(0, rom.length, rom);
+  //mem.map_memory(1024*1024, mem_size, new RAM(mem_size));
+  mem.map_memory(0, mem_size, new RAM(mem_size));
+  vm.add_device(mem);
   
-  var cpu = new VM.CPU(mmu, mem_size);
+  var cpu = new VM.CPU(mem, mem_size);
   vm.add_device(cpu);
   
   var devcon = new DevCon();
   var devcon_addr = 0xF0001000;
-  mmu.map_memory(devcon_addr, devcon.ram_size(), devcon);
+  mem.map_memory(devcon_addr, devcon.ram_size(), devcon);
   vm.add_device(devcon);
   
   var timer_addr = 0xF0002000;
-  var timer_irq = VM.CPU.INTERRUPTS.user + 2;
-  var timer = new Timer(vm, timer_irq, 1<<20);
-  mmu.map_memory(timer_addr, timer.ram_size(), timer);
+  var timer_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 2);
+  var timer = new Timer(timer_irq, 1<<20);
+  mem.map_memory(timer_addr, timer.ram_size(), timer);
   vm.add_device(timer);
   
   var rtc_addr = 0xF0006000;
   var rtc = new RTC();
-  mmu.map_memory(rtc_addr, rtc.ram_size(), rtc);
+  mem.map_memory(rtc_addr, rtc.ram_size(), rtc);
   vm.add_device(rtc);
 
-  var input_irq = VM.CPU.INTERRUPTS.user + 4;
+  var local_store = new KeyValue.Storage(localStorage);
+  var local_storage_addr = 0xF0007000;
+  var local_storage_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 6);
+  var local_storage = new KeyStore(local_store, mem, local_storage_irq, 'LocalStorage');
+  vm.mem.map_memory(local_storage_addr, local_storage.ram_size(), local_storage);
+  vm.add_device(local_storage);
+
+  var session_store = new KeyValue.Storage(sessionStorage);
+  var session_storage_addr = 0xF0008000;
+  var session_storage_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 7);
+  var session_storage = new KeyStore(session_store, mem, session_storage_irq, 'SessionStorage');
+  vm.mem.map_memory(session_storage_addr, session_storage.ram_size(), session_storage);
+  vm.add_device(session_storage);
+
+  var db_store = new KeyValue.IDB('bacaw', (state) => { console.log('IDBStore', state); });
+  var db_storage_addr = 0xF0009000;
+  var db_storage_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 8);
+  var db_storage = new KeyStore(db_store, mem, db_storage_irq, 'IndexedDB Storage');
+  vm.mem.map_memory(db_storage_addr, db_storage.ram_size(), db_storage);
+  vm.add_device(db_storage);
+
+  var ipfs_store = new KeyValue.IPFS(global.IPFS);
+  var ipfs_storage_addr = 0xF000A000;
+  var ipfs_storage_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 9);
+  var ipfs_storage = new KeyStore(ipfs_store, mem, ipfs_storage_irq, 'IPFS Storage');
+  vm.mem.map_memory(ipfs_storage_addr, ipfs_storage.ram_size(), ipfs_storage);
+  vm.add_device(ipfs_storage);
+
+  var http_store = new KeyValue.HTTP(global.fetch);
+  var http_storage_addr = 0xF000B000;
+  var http_storage_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 10);
+  var http_storage = new KeyStore(http_store, mem, http_storage_irq, "HTTP Storage");
+  vm.mem.map_memory(http_storage_addr, http_storage.ram_size(), http_storage);
+  vm.add_device(http_storage);
+  
+  var table_store = new KeyValue.Table();
+  var table_storage_addr = 0xF000C000;
+  var table_storage_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 11);
+  var table_storage = new KeyStore(table_store, mem, table_storage_irq, "Table Storage");
+  vm.mem.map_memory(table_storage_addr, table_storage.ram_size(), table_storage);
+  vm.add_device(table_storage);
+  
+  var input_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 4);
   var input_addr = 0xF0004000;
-  var input_term = terminal.get_input_device(1024, vm, input_irq);
-  vm.mmu.map_memory(input_addr, input_term.ram_size(), input_term);
+  var input_term = terminal.get_input_device(1024, input_irq);
+  vm.mem.map_memory(input_addr, input_term.ram_size(), input_term);
   vm.add_device(input_term);
 
-  var output_irq = VM.CPU.INTERRUPTS.user + 3;
+  var output_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 3);
   var output_addr = 0xF0003000;
-  var output_term = terminal.get_output_device(1024, vm, output_irq);
-  vm.mmu.map_memory(output_addr, output_term.ram_size(), output_term);
+  var output_term = terminal.get_output_device(1024, output_irq);
+  vm.mem.map_memory(output_addr, output_term.ram_size(), output_term);
   vm.add_device(output_term);
 
   vm.info = {

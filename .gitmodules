@@ -4,3 +4,6 @@
 [submodule "vendor/bacaw"]
 	path = vendor/bacaw
 	url = git@github.com:sneakin/bacaw.git
+[submodule "vendor/webrick"]
+	path = vendor/webrick
+	url = git@github.com:sneakin/webrick
