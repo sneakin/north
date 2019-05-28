@@ -1,0 +1,13 @@
+{
+  "name": "North",
+  "short_name": "North",
+  "start_url": ".",
+  "display": "fullscreen",
+  "background_color": "#000",
+  "description": "Nolan's Forth",
+  "icons": [{
+    "src": "images/icon.png",
+    "sizes": "64x64",
+    "type": "image/png"
+  }]
+}
