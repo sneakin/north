@@ -5,7 +5,9 @@ Nolan's Forth
 
 Copyright (C) 2019 Nolan Eakins
 
-https://github.com/sneakin/north
+Demo: https://sneakin.github.io/north/
+
+Source code: https://github.com/sneakin/north
 
 
 Building
