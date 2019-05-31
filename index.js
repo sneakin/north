@@ -10297,6 +10297,7 @@ DBStore.prototype.transaction = function(mode, oncomplete, onerror)
   var transaction = this.db.transaction([this.db_name], mode || 'readonly');
   transaction.oncomplete = oncomplete || ((error) => console.log('txn complete', error));
   transaction.onerror = onerror || ((error) => console.log('txn error', error));
+  transaction.onabort = onerror || ((error) => console.log('txn abort', error));
   return transaction.objectStore(this.db_name);
 }
 

@@ -2,7 +2,7 @@
   "name": "North",
   "short_name": "North",
   "start_url": ".",
-  "display": "fullscreen",
+  "display": "application",
   "background_color": "#000",
   "description": "Nolan's Forth",
   "icons": [{
