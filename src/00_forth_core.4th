@@ -589,10 +589,13 @@
 
 ( fixme: tokenizer should return start ptrs and lengths, try to eliminate usage of the buffer so "" and such can be unlimited. )
 
+: token-max-cell-size literal 128 return1 ;
+: token-max-byte-size token-max-cell-size cell* return1 ;
+
 ( string -> tokenizer ready string )
 ( tokenizer structure: str-ptr str-offset token-seq token-seq-ptr )
 : make-tokenizer
-  literal 32 dallot
+  token-max-cell-size dallot
   arg0 dpush
   dhere
   literal 0 dpush
@@ -636,7 +639,7 @@
 ;
 
 : tokenizer-push
-  ( tokenizer token )
+  ( tokenizer character )
   arg1 tokenizer-buffer-ptr
   arg0 swap poke
   tokenizer-inc-buffer-offset
@@ -648,22 +651,22 @@
   swap poke
 ;
 
-: fill-loop ( ptr number-cells counter )
+: fill-loop ( ptr number-bytes counter )
   arg0 dup arg2 int-add
   literal 0 swap poke
   cell+ swapdrop
   dup set-arg0
-  dup arg1 <= IF RECURSE THEN
+  arg1 <= IF RECURSE THEN
 ;
 
-: fill ( ptr number-cells )
+: fill ( ptr number-bytes )
   arg1 arg0 literal 0 fill-loop
 ;
 
 : tokenizer-buffer-reset
-  arg0 literal 0 set-tokenizer-buffer-offset swapdrop
+  arg0 literal 0 set-tokenizer-buffer-offset drop
   tokenizer-buffer-ptr
-  literal 32 cell* swapdrop
+  token-max-byte-size literal 2 cell* swapdrop int-sub
   fill
 ;
 
@@ -838,7 +841,7 @@
 
 : eval-loop
   ( ++ str )
-  POSTPONE next-token UNLESS drop eval-read-line eval-string THEN
+  next-token UNLESS drop eval-read-line eval-string THEN
   ( compile lookup )
   *state* peek UNLESS interp THEN
   *state* peek IF *state* peek exec THEN
