@@ -40,7 +40,7 @@ function index_init(mem_size, terminal, buttons)
   var stage_selector = document.getElementById(buttons.stage_selector);
 
   var worker = null;
-  
+
   VMWorker.register('service_worker.js', window.location).then((reg) => {
     worker = reg;
     console.log("ServiceWorker register", reg);
