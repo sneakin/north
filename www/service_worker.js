@@ -53,6 +53,7 @@ self.addEventListener('fetch', (event) => {
         }).catch((error) => {
           console.log("Error fetching", event.request, error);
         });
+        return response;
       }).catch((error) => {
         return new Response('' + error.code + ': ' + error.message, {
           status: 404,
