@@ -587,24 +587,23 @@
   arg0 tokenizer-read-until-loop return2
 ;
 
-( fixme: tokenizer should return start ptrs and lengths, try to eliminate usage of the buffer so "" and such can be unlimited. )
-
 : token-max-cell-size literal 128 return1 ;
 : token-max-byte-size token-max-cell-size cell* return1 ;
 
-( string -> tokenizer ready string )
-( tokenizer structure: str-ptr str-offset token-seq token-seq-ptr )
+( token-buffer string ++ tokenizer )
+( tokenizer structure: str-ptr str-offset token-seq token-seq-offset )
 : make-tokenizer
-  token-max-cell-size dallot
   arg0 dpush
   dhere
   literal 0 dpush
-  swap dpush
+  arg1 dpush
   literal 0 dpush
   return1
 ;
 
 : make-the-tokenizer
+  *tokenizer* peek dup IF tokenizer-buffer THEN
+  dup UNLESS token-max-cell-size dallot THEN
   arg0 make-tokenizer ( tokenizer )
   *tokenizer* poke
   return1
@@ -841,7 +840,7 @@
 
 : eval-loop
   ( ++ str )
-  next-token UNLESS drop eval-read-line eval-string THEN
+  next-token UNLESS drop eval-read-line eval-string THEN ( todo change the tokenizer's string instead )
   ( compile lookup )
   *state* peek UNLESS interp THEN
   *state* peek IF *state* peek exec THEN
@@ -852,7 +851,7 @@
 ;
 
 : eval-string
-  end drop2 ( not coming back! )
+  end drop2 ( not coming back! ) ( todo needs to return to the caller )
   ( arg0 ) make-the-tokenizer drop2
   literal eval-loop jump-entry-data
 ;
