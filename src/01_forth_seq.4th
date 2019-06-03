@@ -12,8 +12,8 @@
 ( Sequence iteration: )
 
 : revmap ( ptr count fn )
-  arg1 literal 0 <= IF return0 THEN
-  arg1 literal 1 int-sub set-arg1
+  arg1 int32 0 <= IF return0 THEN
+  arg1 int32 1 int-sub set-arg1
   arg2 arg1 cell* swapdrop int-add peek
   arg0 exec
   RECURSE
@@ -23,12 +23,12 @@
   arg0 arg2 >= IF return0 THEN
   arg3 arg0 cell* swapdrop int-add peek
   arg1 exec
-  arg0 literal 1 int-add set-arg0
+  arg0 int32 1 int-add set-arg0
   RECURSE
 ;
 
 : map ( ptr count fn )
-  literal 0
+  int32 0
   rot swap
   literal map/4 jump-entry-data
 ;
@@ -36,7 +36,7 @@
 : map-seq ( seq fn )
   arg1 seq-length swap
   cell+ swapdrop swap
-  arg0 literal 0 map/4
+  arg0 int32 0 map/4
 ;
 
 : revmap-seq ( seq fn )

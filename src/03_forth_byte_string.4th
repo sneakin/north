@@ -5,7 +5,7 @@
 
 : peek-byte ( addr )
   arg0 peek
-  literal 255 logand return1
+  int32 255 logand return1
 ;
 
 : seq-peek-byte ( seq n )
@@ -18,7 +18,7 @@
   arg2 arg0 seq-peek rotdrop2
   ( arg0 write-int write-space drop write-int write-crnl )
   arg3 arg0 seq-poke-byte drop3
-  arg0 literal 1 int-add set-arg0
+  arg0 int32 1 int-add set-arg0
   arg0 arg1 equals IF arg0 return1 THEN
   RECURSE
 ;
@@ -27,7 +27,7 @@
 : to-byte-string ( seq ++ new-seq )
   arg0 seq-length swapdrop
   cell+ cell/ swapdrop dallot swap
-  arg0 swap literal 0 to-byte-string/4
+  arg0 swap int32 0 to-byte-string/4
   local0 swap return2
 ;
 
@@ -38,7 +38,7 @@
   ( write to dest cell )
   arg2 arg0 seq-poke
   ( loop )
-  arg0 literal 1 int-add set-arg0
+  arg0 int32 1 int-add set-arg0
   arg0 arg1 equals IF arg0 return1 THEN
   RECURSE
 ;
@@ -49,18 +49,18 @@
   arg0 ( seq length )
   dup dallot ( seq length out-seq )
   swap ( seq out-seq length )
-  literal 0 byte-string-to-string/4
+  int32 0 byte-string-to-string/4
   rotdrop2 return2
 ;
 
 ( Test the byte-string conversions. )
 : test-byte-string-conversion
-  literal 256 dallot
+  int32 256 dallot
   " Bytes" write-line drop
   " hey there" to-byte-string
   2dup hex memdump drop2 dec
   drop cell+
-  local0 literal 256 literal 0 byte-string-to-string/4 rotdrop2
+  local0 int32 256 int32 0 byte-string-to-string/4 rotdrop2
   " Cells" write-line drop
   local0 swap hex memdump drop2 dec
   local0 local1 string-equal write-int write-crnl

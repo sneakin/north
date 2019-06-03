@@ -14,11 +14,11 @@
 
 : dpush-byte
   arg0 dpush
-  dhere literal 3 int-sub dmove
+  dhere int32 3 int-sub dmove
 ;
 
 : cell-align
-  arg0 literal 4 int-div literal 1 int-add literal 4 int-mul return1
+  arg0 int32 4 int-div int32 1 int-add int32 4 int-mul return1
 ;
 
 : copydown
@@ -36,7 +36,7 @@
   ( dec )
   local0 cell- swapdrop store-local0
   ( loop? )
-  dup literal 0 >= literal copydown-loop ifthenjump
+  dup int32 0 >= literal copydown-loop ifthenjump
 ;
 
 ( Tokenizer exercisers: )
@@ -141,18 +141,18 @@
 ;
  
 : one
-  literal 1 return1
+  int32 1 return1
 ;
 
 : cell-3
-  arg0 literal -3 cell+n
+  arg0 int32 -3 cell+n
   return1
 ;
 
 : tail-call-test-1
-  arg0 literal 0 equals IF arg0 return1 THEN
+  arg0 int32 0 equals IF arg0 return1 THEN
   literal HELO write-word
-  arg0 literal 1 int-sub
+  arg0 int32 1 int-sub
   literal tail-call-test-1 tailcall1
 ;
 
@@ -194,9 +194,9 @@
   arg1 arg0 2dup int-sub dallot
   do arg1 write-int arg0 arg1 seq-poke drop3
      write-ok write-crnl
-     arg1 literal 10 equals literal again ifthencall
-                                  arg1 literal 1 int-add set-arg1
+     arg1 int32 10 equals literal again ifthencall
+                                  arg1 int32 1 int-add set-arg1
                                   arg2 arg1 > while
-  write-ok literal 1146048327 write-word drop
+  write-ok int32 1146048327 write-word drop
   local2 return1
 ;

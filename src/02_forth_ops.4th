@@ -2,10 +2,10 @@
 
 ( Registers used by the inner interpreter. )
 
-: heap-reg literal 8 return1 ;
-: eval-ip literal 7 return1 ;
-: dict-reg literal 4 return1 ;
-: fp-reg literal 3 return1 ;
+: heap-reg int32 8 return1 ;
+: eval-ip int32 7 return1 ;
+: dict-reg int32 4 return1 ;
+: fp-reg int32 3 return1 ;
 
 ( Execute the next instruction in the thread. )
 create next-1 doasm[
@@ -23,7 +23,7 @@ create next-1 doasm[
 
 ( Emit an unconditional NEXT. )
 : next,
-  literal 0 next,/1
+  int32 0 next,/1
 ;
 
 ( Move eval IP to the ToS. )

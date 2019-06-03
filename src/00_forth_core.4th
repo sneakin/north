@@ -3,16 +3,16 @@
 ( Sequences )
 
 : terminator
-  literal $504f5453 return1
+  int32 $504f5453 return1
 ;
 
 : terminator?
-  arg0 terminator equals IF literal 1 return1 THEN
-  literal 0 return1
+  arg0 terminator equals IF int32 1 return1 THEN
+  int32 0 return1
 ;
 
 : start-seq
-  literal 0 dpush
+  int32 0 dpush
   dhere return1
 ;
 
@@ -21,7 +21,7 @@
   terminator dpush
   ( calc length )
   arg0 int-sub
-  literal 4 int-div
+  int32 4 int-div
   ( set length )
   arg0 poke
 ;
@@ -53,7 +53,7 @@
 ( Cells )
 
 : cell-size
-  literal 4 return1
+  int32 4 return1
 ;
 
 : cell*
@@ -78,12 +78,12 @@
 ;
 
 : cell+2
-  arg0 literal 2 cell+n
+  arg0 int32 2 cell+n
   return1
 ;
 
 : cell+3
-  arg0 literal 3 cell+n
+  arg0 int32 3 cell+n
   return1
 ;
 
@@ -99,7 +99,7 @@
 ;
 
 : cell-2
-  arg0 literal -2 cell+n
+  arg0 int32 -2 cell+n
   return1
 ;
 
@@ -107,9 +107,9 @@
 
 ( Compares to values returning -1 if the first is less, 0 if equal, and 1 if greater. )
 : <=> ( a b ++ result )
-  arg1 arg0 < IF literal -1 return1 THEN
-  arg1 arg0 > IF literal 1 return1 THEN
-  literal 0 return1
+  arg1 arg0 < IF int32 -1 return1 THEN
+  arg1 arg0 > IF int32 1 return1 THEN
+  int32 0 return1
 ;
 
 : string-cmp-n/4 ( seq-a seq-b max counter! ++ result )
@@ -117,26 +117,26 @@
   arg2 arg0 seq-peek rotdrop2
   <=> rotdrop2 dup UNLESS
     drop
-    arg0 literal 1 int-add
+    arg0 int32 1 int-add
     dup set-arg0
     arg1 < IF RECURSE THEN
-    literal 0 return1
+    int32 0 return1
   THEN
 
   return1
 ;
 
 : string-cmp-n ( seq-a seq-b length ++ result )
-  arg2 arg1 arg0 literal 0 string-cmp-n/4 return1
+  arg2 arg1 arg0 int32 0 string-cmp-n/4 return1
 ;
 
 : string-cmp ( seq-a seq-b ++ result )
-  arg1 arg0 seq-length literal 0 string-cmp-n/4 return1
+  arg1 arg0 seq-length int32 0 string-cmp-n/4 return1
 ;
 
 : string-equal-n ( seq-a seq-b length ++ equal? )
-  arg2 arg1 arg0 string-cmp-n UNLESS literal 1 return1 THEN
-  literal 0 return1
+  arg2 arg1 arg0 string-cmp-n UNLESS int32 1 return1 THEN
+  int32 0 return1
 ;
 
 : string-equal ( seq-a seq-b ++ equal? )
@@ -145,7 +145,7 @@
   arg1 seq-length swapdrop
   equals UNLESS
     ( lengths are different )
-    literal 0 return1
+    int32 0 return1
   THEN
 
   arg1 arg0 seq-length string-equal-n return1
@@ -154,7 +154,7 @@
 ( Call frames: )
 
 : frame-size
-  literal 2 cell* return1
+  int32 2 cell* return1
 ;
 
 : parent-frame
@@ -185,7 +185,7 @@
 ;
 
 : copy ( src dest number )
-  arg2 arg1 arg0 literal 0 copy-n
+  arg2 arg1 arg0 int32 0 copy-n
 ;
 
 ( Sequence storage )
@@ -193,7 +193,7 @@
 : terminate-seq ( ptr num-cells )
   terminator
   ( calc length )
-  arg0 literal 1 int-add
+  arg0 int32 1 int-add
   cell* swapdrop
   arg1 int-add
   ( store terminator )
@@ -268,7 +268,7 @@
 ;
 
 : dict-entry-next
-  arg0 UNLESS literal 0 return1 THEN
+  arg0 UNLESS int32 0 return1 THEN
   arg0 cell+3 peek return1
 ;
 
@@ -278,7 +278,7 @@
   
 : dict-lookup-parent
   arg0 dict-entry-next
-  terminator? IF literal 0 return1 THEN
+  terminator? IF int32 0 return1 THEN
   dict-entry-name arg1 string-equal IF drop3 return1 THEN
   drop2 swapdrop set-arg0
   RECURSE
@@ -296,8 +296,8 @@
 (
 : error
   ( error-msg2 error-msg1 )
-(  arg0 literal *status*-sym set-var
-  literal 0 literal *state*-sym set-var drop3
+(  arg0 int32 *status*-sym set-var
+  int32 0 int32 *state*-sym set-var drop3
   quit ( exit caller )
 ( ;
 )
@@ -306,7 +306,7 @@
 
 : [create]
   arg1 arg0 intern-seq
-  literal 0 literal 0 add-dict
+  int32 0 int32 0 add-dict
   return1
 ;
 
@@ -425,21 +425,21 @@
 ;
 
 : false
-  literal 0 return1
+  int32 0 return1
 ;
 
 : true
-  literal 1 return1
+  int32 1 return1
 ;
 
 : zero
-  literal 0 return1
+  int32 0 return1
 ;
 
 ( Character classifiers )
 
 : space?
-  arg0 literal $20 equals
+  arg0 int32 $20 equals
   return1
 ;
 
@@ -458,7 +458,7 @@
 ;
 
 : null?
-  arg0 literal 0 equals
+  arg0 int32 0 equals
   arg0 terminator equals
   or return1
 ;
@@ -466,11 +466,11 @@
 : in-range?
   ( Max min value )
   arg0 dup arg1 >= IF
-    arg2 <= IF literal 1 return1 THEN
-    literal 0 return1
+    arg2 <= IF int32 1 return1 THEN
+    int32 0 return1
   THEN
   
-  drop literal 0 return1
+  drop int32 0 return1
 ;
 
 : digit?
@@ -530,7 +530,7 @@
 
 : tokenizer-peek-word
   arg0
-  tokenizer-exhausted? IF literal 0 return1 THEN
+  tokenizer-exhausted? IF int32 0 return1 THEN
   arg0 tokenizer-str-ptr peek
   return1
 ;
@@ -544,7 +544,7 @@
   
 : tokenizer-next-word
   arg0
-  tokenizer-exhausted? IF literal 0 return1 THEN
+  tokenizer-exhausted? IF int32 0 return1 THEN
   tokenizer-str-ptr peek
   swap tokenizer-inc-str-offset
   swap return1 ( tokenizer cell )
@@ -587,7 +587,7 @@
   arg0 tokenizer-read-until-loop return2
 ;
 
-: token-max-cell-size literal 128 return1 ;
+: token-max-cell-size int32 128 return1 ;
 : token-max-byte-size token-max-cell-size cell* return1 ;
 
 ( token-buffer string ++ tokenizer )
@@ -595,9 +595,9 @@
 : make-tokenizer
   arg0 dpush
   dhere
-  literal 0 dpush
+  int32 0 dpush
   arg1 dpush
-  literal 0 dpush
+  int32 0 dpush
   return1
 ;
 
@@ -606,7 +606,6 @@
   dup UNLESS token-max-cell-size dallot THEN
   arg0 make-tokenizer ( tokenizer )
   *tokenizer* poke
-  return1
 ;
 
 : tokenizer-buffer
@@ -652,20 +651,20 @@
 
 : fill-loop ( ptr number-bytes counter )
   arg0 dup arg2 int-add
-  literal 0 swap poke
+  int32 0 swap poke
   cell+ swapdrop
   dup set-arg0
   arg1 <= IF RECURSE THEN
 ;
 
 : fill ( ptr number-bytes )
-  arg1 arg0 literal 0 fill-loop
+  arg1 arg0 int32 0 fill-loop
 ;
 
 : tokenizer-buffer-reset
-  arg0 literal 0 set-tokenizer-buffer-offset drop
+  arg0 int32 0 set-tokenizer-buffer-offset drop
   tokenizer-buffer-ptr
-  token-max-byte-size literal 2 cell* swapdrop int-sub
+  token-max-byte-size int32 2 cell* swapdrop int-sub
   fill
 ;
 
@@ -697,7 +696,7 @@
 : tokenizer-finish-output
   arg0 terminator tokenizer-push drop
   tokenizer-buffer-start swap
-  tokenizer-buffer-offset swapdrop cell/ swapdrop literal 1 int-sub set-tokenizer-buffer-length
+  tokenizer-buffer-offset swapdrop cell/ swapdrop int32 1 int-sub set-tokenizer-buffer-length
   return2
 ;
 
@@ -734,13 +733,13 @@
 ( Some signed math: )
 
 : abs-int
-  arg0 literal 0 > UNLESS
+  arg0 int32 0 > UNLESS
     arg0 negate set-arg0
   THEN
 ;
   
 : negate
-  literal 0 arg0 int-sub return1
+  int32 0 arg0 int-sub return1
 ;
 
 ( String to number conversion. )
@@ -748,39 +747,39 @@
 ( Convert an ASCII character to a digit. )
 : digit-char
   arg0 upper-alpha? IF
-    literal 65 int-sub
-    literal 10 int-add
+    int32 65 int-sub
+    int32 10 int-add
     return1
   THEN
   arg0 lower-alpha? IF
-    literal 97 int-sub
-    literal 10 int-add
-    base peek literal 36 >= IF literal 26 int-add THEN
+    int32 97 int-sub
+    int32 10 int-add
+    base peek int32 36 >= IF int32 26 int-add THEN
     return1
   THEN
   arg0 digit? IF
-    literal 48 int-sub return1
+    int32 48 int-sub return1
   THEN
-  literal 0 return1
+  int32 0 return1
 ;
 
 ( Convert a single digit to an ASCII digit or letter. )
 : char-digit
   arg0 abs-int
-  local0 literal 10 >= IF
-    local0 literal 10 int-sub
-    dup literal 26 >= IF
-      literal 26 int-sub
-      literal 97 int-add
+  local0 int32 10 >= IF
+    local0 int32 10 int-sub
+    dup int32 26 >= IF
+      int32 26 int-sub
+      int32 97 int-add
       return1
     THEN
-    literal 65 int-add return1
+    int32 65 int-add return1
   THEN
-  local0 literal 48 int-add return1
+  local0 int32 48 int-add return1
 ;
 
 : negative-sign
-  literal 45 return1
+  int32 45 return1
 ;
 
 : negative-sign?
@@ -789,29 +788,29 @@
 
 ( Does not handle base prefixes. )
 : unsigned-number
-  literal 0
+  int32 0
   arg0 seq-length swap
   cell+ swapdrop
   unsigned-number-loop:
   dup peek
   negative-sign? UNLESS
     whitespace? UNLESS
-      terminator? IF local0 literal 1 return2 THEN
-      digit? UNLESS literal 0 literal 0 return2 THEN
+      terminator? IF local0 int32 1 return2 THEN
+      digit? UNLESS int32 0 int32 0 return2 THEN
       digit-char swapdrop
       local0 base peek int-mul
       int-add store-local0
       unsigned-number-inc:
 
       cell+ swapdrop
-      swap literal 1 int-sub swap
+      swap int32 1 int-sub swap
       literal unsigned-number-loop jump
     THEN
   THEN
   drop literal unsigned-number-inc jump
 
   cell+ swapdrop
-  swap literal 1 int-sub swap
+  swap int32 1 int-sub swap
   literal unsigned-number-loop jump
 ;
 
@@ -827,15 +826,15 @@
 ( Look a token up or try converting to a number. )
 : interp ( token ++ value executable? )
   arg0 dict dict-lookup dup IF *state* peek not return2 THEN
-  drop2 number IF literal 0 return2 THEN
+  drop2 number IF int32 0 return2 THEN
 
   drop " Not Found" error
-  literal 0 literal 0 return2
+  int32 0 int32 0 return2
 ;
 
 : next-token
   *tokenizer* peek dup IF tokenizer-next-token return2 THEN
-  literal 0 literal 0 return2
+  int32 0 int32 0 return2
 ;
 
 : eval-loop
@@ -852,7 +851,7 @@
 
 : eval-string
   end drop2 ( not coming back! ) ( todo needs to return to the caller )
-  ( arg0 ) make-the-tokenizer drop2
+  ( arg0 ) make-the-tokenizer drop
   literal eval-loop jump-entry-data
 ;
 

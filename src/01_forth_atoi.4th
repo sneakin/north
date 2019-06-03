@@ -2,15 +2,15 @@
 
 : base-char-to-int
   ( % is binary )
-  arg0 literal 37 equals IF literal 2 return1 THEN
+  arg0 int32 37 equals IF int32 2 return1 THEN
   ( & and # are decimal )
-  arg0 literal 38 equals IF literal 10 return1 THEN
-  arg0 literal 35 equals IF literal 10 return1 THEN
+  arg0 int32 38 equals IF int32 10 return1 THEN
+  arg0 int32 35 equals IF int32 10 return1 THEN
   ( $ and x are hexadecimal )
-  arg0 literal 36 equals IF literal 16 return1 THEN
-  arg0 literal 120 equals IF literal 16 return1 THEN
+  arg0 int32 36 equals IF int32 16 return1 THEN
+  arg0 int32 120 equals IF int32 16 return1 THEN
   ( not base char )
-  literal 0 return1
+  int32 0 return1
 ;
 
 : number-base-char?
@@ -34,16 +34,16 @@
     UNLESS
       whitespace? UNLESS
         terminator? IF LEAVE THEN
-        digit? UNLESS literal 4 argn literal 10 > UNLESS LEAVE THEN THEN
+        digit? UNLESS int32 4 argn int32 10 > UNLESS LEAVE THEN THEN
         digit-char
-        arg3 literal 4 argn int-mul
+        arg3 int32 4 argn int-mul
         int-add set-arg3
       THEN
     THEN
 
     drop
     arg1 cell+ set-arg1 drop
-    arg2 literal 1 int-sub dup set-arg2
+    arg2 int32 1 int-sub dup set-arg2
   WHILE
 
   local1 local2 not return2
@@ -55,7 +55,7 @@
   number-base-char? IF ( str ptr+1 value )
     base-char-to-int swapdrop ( str ptr+1 base )
     rot seq-length swapdrop ( base ptr+1 len )
-    literal 1 int-sub ( base ptr+1 len )
+    int32 1 int-sub ( base ptr+1 len )
     swap cell+ swapdrop rot ( ptr+2 len base )
     unsigned-number-base
     return2
@@ -64,7 +64,7 @@
   seq-length swapdrop ( ptr+1 length )
   dup1 peek
   ( todo recurse to the next character )
-  negative-sign? swapdrop IF literal 1 int-sub
+  negative-sign? swapdrop IF int32 1 int-sub
      swap cell+ swapdrop
      swap
   THEN ( ptr+2 length-1 )

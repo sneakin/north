@@ -17,16 +17,16 @@
 : count-inner
   arg0 IF
     arg0 tail set-arg0
-    arg1 literal 1 int-add set-arg1
+    arg1 int32 1 int-add set-arg1
     ( literal count tailcall )
     RECURSE
   THEN
   arg1 return1
 ;
 
-: count literal 0 arg0 count-inner return1 ;
+: count int32 0 arg0 count-inner return1 ;
 
-: nil literal 0 return1 ;
+: nil int32 0 return1 ;
 
 ( Tree structure: btree-ptr -> tip predicate.
   Tip -> Branch -> [ Value, [ Left Branch, Right Branch ] ] | [ Value, nil ]
@@ -97,7 +97,7 @@ struct btree
     ( compare needle with value using the predicate )
     arg3 arg1 arg2 call dup UNLESS drop LEAVE THEN
     ( > so go left )
-    literal 0 > IF
+    int32 0 > IF
       drop btree-branch-left dup UNLESS LEAVE THEN
       set-arg1 drop
       AGAIN

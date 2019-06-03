@@ -33,7 +33,7 @@
 ( Comments )
 
 : (
-  *tokenizer* peek literal 41 tokenizer-skip-until
+  *tokenizer* peek int32 41 tokenizer-skip-until
 ; immediate
 
 ( Reverse interning: )
@@ -41,7 +41,7 @@
 : copyrev
   ( src dest num-bytes )
   arg0 cell- swapdrop
-  literal 0
+  int32 0
 
   copyrev-loop:
   ( dest )
@@ -70,7 +70,7 @@
 ( Compiler )
 
 : compile ( tok -- lookup executable? )
-  arg0 immediate-lookup dup IF literal 1 return2 THEN
+  arg0 immediate-lookup dup IF int32 1 return2 THEN
   drop
   interp return2
 ;
@@ -94,10 +94,10 @@
 ; immediate
 
 : ]
-  literal 0 *state* poke
+  int32 0 *state* poke
   args terminator stack-find swapdrop cell- swapdrop
-  swap 2dup int-sub cell/ swapdrop literal 1 int-add internrev
-  seq-length literal 1 int-add return1-n
+  swap 2dup int-sub cell/ swapdrop int32 1 int-add internrev
+  seq-length int32 1 int-add return1-n
 ; immediate
 
 : docol>
@@ -124,7 +124,7 @@
 ( Redefine or create the next word as a colon definition. )
 : ::
   next-token dup UNLESS eos eos error return0 THEN
-  dup1 dict dict-lookup dup UNLESS drop3 intern-seq literal 0 literal 0 add-dict THEN
+  dup1 dict dict-lookup dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
   docol> return2
 ;
 
@@ -133,7 +133,7 @@
 ( Jump to the word after UNLESS and evaluate until THEN if the top of stack is zero. )
 : UNLESS
   literal literal terminator literal ifthenreljump
-  literal 3 returnN
+  int32 3 returnN
 ; immediate-only
 
 ( Stop evaluation for an UNLESS or IF. )
@@ -188,7 +188,7 @@
 ( Starts a new frame with the start and hopefully end of loop pointers as arguments. )
 : DO
   ( Loop pointer )
-  literal literal literal 6 literal next-op+ literal swapdrop
+  literal literal int32 6 literal next-op+ literal swapdrop
   ( Abort pointer and return address when looping. )
   literal dup literal literal terminator literal int-add
   literal begin
@@ -215,8 +215,8 @@
   swap poke ( arg )
 ;
 
-( literal 2 lit frame-size constant drop2 )
-( literal 8 lit frame-byte-size constant drop2 )
+( int32 2 lit frame-size constant drop2 )
+( int32 8 lit frame-byte-size constant drop2 )
 
 ( jump back to do )
 : UNTIL
@@ -226,7 +226,7 @@
       POSTPONE THEN
     literal end
     ( Patch the loop's abort increment. )
-    here literal 16 int-add patch-terminator drop
+    here int32 16 int-add patch-terminator drop
   return-locals
 ; immediate-only
 
@@ -238,7 +238,7 @@
       POSTPONE THEN
     literal end
     ( Patch the loop's abort increment. )
-    here literal 16 int-add patch-terminator drop
+    here int32 16 int-add patch-terminator drop
   return-locals
 ; immediate-only
 
@@ -250,7 +250,7 @@
 ; immediate-only
 
 : ]DOTIMES
-  literal arg1 literal literal literal 1 literal int-add literal set-arg1
+  literal arg1 literal literal int32 1 literal int-add literal set-arg1
   literal arg1 literal arg2 literal < POSTPONE WHILE
   return-locals
 ; immediate-only
@@ -287,11 +287,11 @@
 ( fixme: need to read strings larger than the tokenizer's buffer )
 
 : "
-  *tokenizer* peek literal 34 tokenizer-read-until intern-seq return1
+  *tokenizer* peek int32 34 tokenizer-read-until intern-seq return1
 ; immediate
 
 : c-"
-  literal literal POSTPONE " return2
+  literal string POSTPONE " return2
 ; immediate-as "
 
 
@@ -299,11 +299,11 @@
 
 ( Construct a 32 bit value from 4 arguments, LSB to MSB. )
 : make-long-msb ( lsb lmsb mlsb msb ++ uint32 )
-  arg0 literal 8 bsl
+  arg0 int32 8 bsl
   arg1 logior
-  literal 8 bsl
+  int32 8 bsl
   arg2 logior
-  literal 8 bsl
+  int32 8 bsl
   arg3 logior
   return1
 ;
@@ -316,15 +316,15 @@
 
 ( Turn the ToS string into a 4 byte "string" or long. )
 : longify-string
-  arg0 peek terminator? IF literal 0 return1 THEN
+  arg0 peek terminator? IF int32 0 return1 THEN
   arg0 cell+ swapdrop peek terminator? IF
-    drop literal 0 literal 0 literal 0 make-long-msb return1
+    drop int32 0 int32 0 int32 0 make-long-msb return1
   THEN
   arg0 cell+2 swapdrop peek terminator? IF
-    drop literal 0 literal 0 make-long-msb return1
+    drop int32 0 int32 0 make-long-msb return1
   THEN
   arg0 cell+3 swapdrop peek terminator? IF
-    drop literal 0 make-long-msb return1
+    drop int32 0 make-long-msb return1
   THEN
   make-long-msb return1
 ;
@@ -340,7 +340,7 @@
 
 ( Read until the next " and convert that to a long. )
 : longify"
-  *tokenizer* peek literal 34 tokenizer-read-until UNLESS eos eos error THEN
+  *tokenizer* peek int32 34 tokenizer-read-until UNLESS eos eos error THEN
   cell+ longify-string
   literal literal swap return2
 ; immediate

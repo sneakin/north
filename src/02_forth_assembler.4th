@@ -2,11 +2,11 @@
 
 ( Construct a 16 bit value from 4 arguments, MSB to LSB. )
 : make-short ( msb mlsb lmsb lsb ++ uint16 )
-  arg3 literal 4 bsl
+  arg3 int32 4 bsl
   arg2 logior
-  literal 4 bsl
+  int32 4 bsl
   arg1 logior
-  literal 4 bsl
+  int32 4 bsl
   arg0 logior
   return1
 ;
@@ -25,7 +25,7 @@
     POSTPONE ;
 ( append a comma for a dpush helper
   local0 local1 int-add 44 swap poke
-  local0 local1 literal 1 int-add [:]
+  local0 local1 int32 1 int-add [:]
     POSTPONE arg2
     POSTPONE arg1
     POSTPONE arg0
@@ -39,67 +39,67 @@
 ( inc load store push pop)
 
 (
-literal 14 a-def-op a-push
-literal 6 a-def-op a-pop
-literal 5 a-def-op a-load
-literal 13 a-def-op a-store
-literal 1 a-def-op a-inc
-literal 9 a-def-op a-dec
+int32 14 a-def-op a-push
+int32 6 a-def-op a-pop
+int32 5 a-def-op a-load
+int32 13 a-def-op a-store
+int32 1 a-def-op a-inc
+int32 9 a-def-op a-dec
 )
 
 ( Instructions: )
 
 : a-nop
-  literal 0 return1
+  int32 0 return1
 ;
 
 : a-push
-  literal 0 literal 0 arg0 literal 14 make-short return1
+  int32 0 int32 0 arg0 int32 14 make-short return1
 ;
 
 : a-pop
-  literal 0 literal 0 arg0 literal 6 make-short return1
+  int32 0 int32 0 arg0 int32 6 make-short return1
 ;
 
 : a-load
-  arg2 arg1 arg0 literal 5 make-short return1
+  arg2 arg1 arg0 int32 5 make-short return1
 ;
 
 : a-store
-  arg2 arg1 arg0 literal 13 make-short return1
+  arg2 arg1 arg0 int32 13 make-short return1
 ;
 
 : a-inc
-  arg2 arg1 arg0 literal 1 make-short return1
+  arg2 arg1 arg0 int32 1 make-short return1
 ;
 
 : a-cmpi
-  arg1 arg0 literal 0 literal 2 make-short return1
+  arg1 arg0 int32 0 int32 2 make-short return1
 ;
 
 : a-mov
-  literal 0 arg1 arg0 literal 8 make-short return1
+  int32 0 arg1 arg0 int32 8 make-short return1
 ;
 
 ( Registers: )
 
-: a-ins literal 15 return1 ;
-: a-status literal 14 return1 ;
-: a-isr literal 13 return1 ;
-: a-ip literal 12 return1 ;
-: a-sp literal 11 return1 ;
-: a-cs literal 10 return1 ;
-: a-ds literal 9 return1 ;
+: a-ins int32 15 return1 ;
+: a-status int32 14 return1 ;
+: a-isr int32 13 return1 ;
+: a-ip int32 12 return1 ;
+: a-sp int32 11 return1 ;
+: a-cs int32 10 return1 ;
+: a-ds int32 9 return1 ;
 
 ( Status flags: )
 
-: a-status-zero literal 1 return1 ;
-: a-status-negative literal 2 return1 ;
-: a-status-carry literal 4 return1 ;
-: a-status-error literal 8 return1 ;
-: a-status-int-enabled literal 16 return1 ;
-: a-status-sleep literal 32 return1 ;
-: a-status-int-flag literal 64 return1 ;
+: a-status-zero int32 1 return1 ;
+: a-status-negative int32 2 return1 ;
+: a-status-carry int32 4 return1 ;
+: a-status-error int32 8 return1 ;
+: a-status-int-enabled int32 16 return1 ;
+: a-status-sleep int32 32 return1 ;
+: a-status-int-flag int32 64 return1 ;
 
 ( Data storing )
 
@@ -109,7 +109,7 @@ literal 9 a-def-op a-dec
 ( Push a 16 bit value to the data stack. Has to move dhere back, making a subsequent dpop's high 16 bits contain the value. )
 : int16,
   arg0 dpush
-  dhere literal 2 int-sub dmove
+  dhere int32 2 int-sub dmove
 ;
 
 ( Definition helpers )
@@ -117,16 +117,16 @@ literal 9 a-def-op a-dec
 ( Can't use doasm[ ]doasm so create a sequence of ASM and return it. )
 : exec-data-seq-asm
   start-seq
-  literal 0 literal 0 literal 1 a-load int16,
-  literal 8 int32,
-  literal 1 a-inc int16,
-  literal 4 int32,
-  literal 1 a-ip a-mov int16,
+  int32 0 int32 0 int32 1 a-load int16,
+  int32 8 int32,
+  int32 1 a-inc int16,
+  int32 4 int32,
+  int32 1 a-ip a-mov int16,
   local0 end-seq return1
 ;
 
 ( ideally: exec-data-seq-asm variable exec-data-seq-1 drop )
-literal 0 variable exec-data-seq-1 drop
+int32 0 variable exec-data-seq-1 drop
 
 ( Make the newest dictionary entry jump to the first cell in the data sequence. )
 : does-asm

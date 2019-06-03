@@ -1,18 +1,18 @@
 ( String output: )
 
 : write-string
-  arg0 literal 4 int-add
+  arg0 int32 4 int-add
 
   write-string-loop:
     dup peek dup
     terminator equals IF drop2 return0 THEN
     write-byte
-    literal 4 int-add
+    int32 4 int-add
     literal write-string-loop jump
 ;
 
 : write-string-n
-  arg1 literal 4 int-add
+  arg1 int32 4 int-add
   dup
   arg0 cell* swapdrop
   int-add
@@ -24,7 +24,7 @@
   dup
   terminator equals IF drop2 return0 THEN
   write-byte
-  literal 4 int-add
+  int32 4 int-add
   2dup equals IF drop2 return0 THEN
   literal write-string-n-loop jump
 ;
@@ -37,7 +37,7 @@
 
   write-string-rev-loop:
   dup peek write-byte
-  literal -4 int-add
+  int32 -4 int-add
   2dup equals IF drop2 return0 THEN
   literal write-string-rev-loop jump
 ;
@@ -60,12 +60,12 @@
 
 ( Convert an unsigned integer value to a string. )
 : unsigned-int-to-string ( number ++ str-ptr )
-  literal 0 arg0 unsigned-int-to-string-inner return1
+  int32 0 arg0 unsigned-int-to-string-inner return1
 ;
 
 ( Convert an integer value to a string. )
 : int-to-string ( number ++ str-ptr )
-  arg0 literal 0 <
+  arg0 int32 0 <
   arg0 abs-int
   unsigned-int-to-string-inner return1
 ;
@@ -83,7 +83,7 @@
 ( Line output: )
 
 : crnl
-  literal $0a0d return1
+  int32 $0a0d return1
 ;
 
 : write-crnl
@@ -100,18 +100,18 @@
 
 : write-line-ret
   arg0 write-string write-crnl
-  literal 0 return1
+  int32 0 return1
 ;
 
 ( Common outputs: )
 
-: space literal $20 return1 ;
+: space int32 $20 return1 ;
 : write-space space write-byte ;
 
 : write-tab
-  literal 9 write-byte
+  int32 9 write-byte
 ;
 
 : write-helo
-  literal $4f4c4548 write-word 
+  int32 $4f4c4548 write-word 
 ;

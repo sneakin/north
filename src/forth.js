@@ -204,7 +204,7 @@ function colon_def(asm, token, code)
 function literal_immediate(asm, token, code)
 {
     var tok = next_token(code);
-    var label = genlabel('string');
+    var label = genlabel('data');
     strings[label] = tok[0];
     asm.uint32('literal').uint32(label);
     return tok[1];
@@ -243,7 +243,7 @@ var macros = {
     var tok = next_token(code);
     var v = unslash(tok[0]);
     var l = longify(v);
-    asm.uint32('literal').uint32(l);
+    asm.uint32('uint32').uint32(l);
     return tok[1];
   },
   'longify"': function(asm, token, code) {
@@ -251,7 +251,7 @@ var macros = {
     if(m >= 0) {
       var tok = code.slice(1, m + 1);
       var l = longify(unslash(tok[0]));
-      asm.uint32('literal').uint32(l);
+      asm.uint32('uint32').uint32(l);
       return tok[1];
     } else {
       throw "parse error";
@@ -314,10 +314,10 @@ var macros = {
   '"': function(asm, token, code) {
     var m = code.indexOf('"');
     if(m >= 0) {
-      var label = genlabel('string');
+      var label = genlabel('data');
       strings[label] = code.slice(1, m);
 
-      asm.uint32('literal').uint32(label);
+      asm.uint32('string').uint32(label);
 
       return code.slice(m + 1);
     } else {
@@ -326,7 +326,7 @@ var macros = {
   },
   lit: function(asm, token, code) {
     var tok = next_token(code);
-    var label = genlabel('string');
+    var label = genlabel('data');
     strings[label] = tok[0];
     asm.uint32('literal').uint32(label);
     return tok[1];
@@ -410,6 +410,12 @@ Forth.assembler = function(ds, cs, info, stage) {
   function defop(name, fn) {
     ops.push(name);
     return fn(asm.label(name + "-code"));
+  }
+
+  function defalias(name, calls) {
+    ops.push(name);
+    return asm.label(name + "-code").
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32(calls + '-code');
   }
 
   asm.label('isr_reset').
@@ -719,6 +725,11 @@ Forth.assembler = function(ds, cs, info, stage) {
         ret();
   });
 
+  defalias('string', 'literal');
+  defalias('int32', 'literal');
+  defalias('uint32', 'literal');
+  defalias('float32', 'literal');
+  
   defop('read-byte', function(asm) {
     asm.
         call(0, VM.CPU.REGISTERS.CS).uint32('read_byte').

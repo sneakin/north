@@ -77,10 +77,10 @@
 
 ( Returns the number of definitions in the dictionary. )
 : dict-count ( dictionary -- count )
-  literal 0
+  int32 0
   arg0
   
-  DO arg2 literal 1 int-add set-arg2
+  DO arg2 int32 1 int-add set-arg2
      arg1 dict-entry-next swapdrop dup set-arg1
   null? swapdrop UNTIL
 
