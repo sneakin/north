@@ -152,15 +152,27 @@
   literal 1 return1
 ;
 
-( Test and support procedures: )
+( IPFS helpers )
+
+( Unpads the data and key to make setting IPFS' config and key values easier. )
+: ipfs-put-config ( data key-seq ++ ok )
+  zero literal 256 stack-allot store-local0
+  ipfs-storage-addr
+  arg0 to-byte-string drop swapdrop
+  local0
+  arg1 to-byte-string drop swapdrop
+  literal 0 storage-write
+  ipfs-storage storage-wait-for-ok return1
+;
 
 ( Commands the IPFS storage device to connect to the network. )
-: ipfs-connect
-  ipfs-storage-addr storage-dev-status peek storage-status-none equals IF
+: ipfs-connect ( ipfs-passphrase ++ ok )
+  arg0 " config:pass" ipfs-put-config IF
     ipfs-storage-addr storage-dev-enable
-    ipfs-storage storage-wait
+    ipfs-storage storage-wait-for-ok
+    return1
   THEN
-  ipfs-storage storage-wait-for-ok return1
+  literal 0 return1
 ;
 
 ( Retrieves the IPFS URL from the network and copies it into OUT-SEQ. 1 is
@@ -176,6 +188,8 @@
   ipfs-storage-addr zero arg0 arg1 literal 0 storage-write
   ipfs-storage storage-wait-for-ok return1
 ;
+
+( HTTP Helpers )
 
 ( Performs an HTTP GET request to the URL copying the response body into
   OUT-SEQ and returning 1 on success. )
