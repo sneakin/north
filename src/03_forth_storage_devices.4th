@@ -41,3 +41,10 @@ constant table-storage-irq 20
 : table-storage
   table-storage-irq table-storage-addr return2
 ;
+
+constant fs-storage-addr 4026585088
+constant fs-storage-irq 21
+
+: fs-storage
+  fs-storage-irq fs-storage-addr return2
+;

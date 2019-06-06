@@ -197,3 +197,9 @@
   http-storage-addr arg0 to-byte-string drop swapdrop arg1 int32 0 storage-read/4
   http-storage storage-wait-for-ok return1
 ;
+
+( Byte packs the key and reads the value returning 1 on success. )
+: storage-get ( out-seq key dev-irq dev-addr ++ ok )
+  arg0 arg2 to-byte-string drop swapdrop arg3 int32 0 storage-read/4
+  arg1 arg0 storage-wait-for-ok return1
+;
