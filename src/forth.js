@@ -239,6 +239,23 @@ var macros = {
 
     return tok[1];
   },    
+  "global-var": function(asm, token, code) {
+    // variable NAME NUMBER-VALUE
+    // Adds a dictionary entry with the name and value.
+    var tok = next_token(code);
+    var name = tok[0];
+    tok = next_token(tok[1]);
+    var value = parse_number(tok[0]);
+
+    last_dictionary = name;
+    dictionary[name] = {
+      code: 'variable-peeker-code',
+      data: value,
+      prior: dictionary[name]
+    };
+
+    return tok[1];
+  },    
   longify: function(asm, token, code) {
     var tok = next_token(code);
     var v = unslash(tok[0]);
