@@ -6,6 +6,7 @@ const DevCon = require('vm/devices/console.js');
 const RAM = require('vm/devices/ram.js');
 const Timer = require('vm/devices/timer.js');
 const RTC = require('vm/devices/rtc.js');
+const Sound = require("vm/devices/sound.js");
 const KeyStore = require('vm/devices/keystore.js');
 const KeyValue = require('key_value');
 const VMWorker = require('vm/service_worker');
@@ -192,6 +193,12 @@ function vm_init(mem_size, terminal, callbacks)
   vm.mem.map_memory(output_addr, output_term.ram_size(), output_term);
   vm.add_device(output_term);
 
+  var sound_addr = 0xF000D000;
+  var sound_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 12);
+  var sound = new Sound(32, mem, sound_irq, "Sound");
+  vm.mem.map_memory(sound_addr, sound.ram_size(), sound);
+  vm.add_device(sound);
+
   vm.info = {
     devcon: {
       addr: devcon_addr
@@ -208,6 +215,10 @@ function vm_init(mem_size, terminal, callbacks)
     },
     output: {
       addr: output_addr, irq: output_irq
+    },
+    sound: {
+      addr: sound_addr,
+      irq: sound_irq.toInt()
     }
   };
 
