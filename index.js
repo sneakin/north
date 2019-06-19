@@ -201,7 +201,7 @@ for (var map in colors.maps) {
 
 defineProps(colors, init());
 
-},{"./custom/trap":2,"./custom/zalgo":3,"./maps/america":4,"./maps/rainbow":5,"./maps/random":6,"./maps/zebra":7,"./styles":8,"./system/supports-colors":10,"util":115}],2:[function(require,module,exports){
+},{"./custom/trap":2,"./custom/zalgo":3,"./maps/america":4,"./maps/rainbow":5,"./maps/random":6,"./maps/zebra":7,"./styles":8,"./system/supports-colors":10,"util":120}],2:[function(require,module,exports){
 module['exports'] = function runTheTrap(text, options) {
   var result = '';
   text = text || 'Run the trap, drop the bass';
@@ -524,7 +524,7 @@ module.exports = function(flag, argv) {
 };
 
 }).call(this,require('_process'))
-},{"_process":113}],10:[function(require,module,exports){
+},{"_process":118}],10:[function(require,module,exports){
 (function (process){
 /*
 The MIT License (MIT)
@@ -679,7 +679,7 @@ module.exports = {
 };
 
 }).call(this,require('_process'))
-},{"./has-flag.js":9,"_process":113,"os":112}],11:[function(require,module,exports){
+},{"./has-flag.js":9,"_process":118,"os":117}],11:[function(require,module,exports){
 //
 // Remark: Requiring this file will use the "safe" colors API,
 // which will not touch String.prototype.
@@ -10399,11 +10399,15 @@ if(typeof(window) != 'undefined') {
 
 const TextDecoder = require('util/text_decoder');
 const TextEncoder = require('util/text_encoder');
+const more_util = require('more_util');
 
-function KV(ipfs, repo)
+function KV(ipfs, repo, password)
 {
   this.ipfs = ipfs || global.IPFS;
-  this.repository = repo || "ipfs";
+  this.options = {
+    repo: repo || "ipfs",
+    pass: password
+  };
 }
 
 KV.prototype.enable = function(callback)
@@ -10413,7 +10417,7 @@ KV.prototype.enable = function(callback)
     return this;
   }
   
-  this.node = new this.ipfs({ repo: this.repository });
+  this.node = new this.ipfs(this.options);
   this.node.once('error', () => {
     this.ready = false;
     callback(true);
@@ -10460,37 +10464,82 @@ KV.prototype.pad_key = function(str)
 	return str;
 }
 
+KV.prototype.split_key = function(key)
+{
+  return key.split(':');
+}
 
 KV.prototype.getValue = function(key, offset, max_length, callback)
 {
-  this.node.cat(this.unpack_key(key), {
-    offset: offset,
-    length: max_length
-  }, (err, data) => {
-    if(err) {
-      callback(key, null);
+  var key_str = this.unpack_key(key);
+  var parts = this.split_key(key_str);
+  if(parts[0] == "config") {
+    callback(key, this.options[parts[1]]);
+  } else if(parts[0] == "key") {
+    if(parts[1] == "list") {
+      this.node.key.list().then((keys) => {
+        if(keys.length > 0) {
+          callback(key, this.pad_key(keys.map((k) => `${k.name}\t${k.id}`).join("\n")));
+        } else {
+          callback(key, null);
+        }
+      });
     } else {
-      callback(key, data);
+      this.node.key.export(parts[1], parts[2], (err, ipfs_key) => {
+        callback(key, err ? null : this.pad_key(ipfs_key));
+      });
     }
-  });
-
+  } else if(parts[0] == "publish") {
+    this.node.name.resolve(parts[1], (err, result) => {
+      callback(key, err ? null : this.pad_key(result.path));
+    });
+  } else {
+    this.node.cat(key_str, {
+      offset: offset,
+      length: max_length
+    }, (err, data) => {
+      if(err) {
+        callback(key, null);
+      } else {
+        callback(key, data);
+      }
+    });
+  }
+  
   return this;
 }
 
 KV.prototype.setItem = function(key, value, callback)
 {
-  this.node.add(this.ipfs.Buffer.from(value), (err, res) => {
-    if(err || !res) {
-      callback(key, null);
-    } else {
-      callback(this.pad_key(res[0].hash), true);
-    }
-  });
+  var key_str = this.unpack_key(key);
+  var parts = this.split_key(key_str);
+  if(parts[0] == "config") {
+    this.options[parts[1]] = this.unpack_key(value);
+    callback(key, true);
+  } else if(parts[0] == "key") {
+    this.node.key.import(parts[1], value, parts[2], (err, ipfs_key) => {
+      callback(key, true);
+    });
+  } else if(parts[0] == "publish") {
+    this.node.name.publish(this.unpack_key(value), {
+      key: parts[1]
+    }, (err, ipfs_key) => {
+      callback(key, !(err == null));
+    });
+  } else {
+    this.node.add(this.ipfs.Buffer.from(value), (err, res) => {
+      if(err || !res) {
+        callback(key, null);
+      } else {
+        callback(this.pad_key(res[0].hash), true);
+      }
+    });
+  }
 }
 
 KV.prototype.getSize = function(key, callback)
 {
-  this.getItem(key, (new_key, data) => {
+  this.getValue(key, (new_key, data) => {
     callback(new_key, data ? data.length : null);
   });
   
@@ -10499,7 +10548,18 @@ KV.prototype.getSize = function(key, callback)
 
 KV.prototype.removeItem = function(key, callback)
 {
-  callback(key, null);
+  var key_str = this.unpack_key(key);
+  var parts = this.split_key(key_str);
+  if(parts[0] == "config") {
+    delete this.options[parts[1]];
+    callback(key, null);
+  } else if(parts[0] == "key") {
+    this.node.key.rm(parts[1], (err, key) => {
+      callback(key, !(err == null));
+    });
+  } else {
+    callback(key, null);
+  }
   return this;
 }
 
@@ -10515,7 +10575,7 @@ if(typeof(window) != 'undefined') {
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util/text_decoder":78,"util/text_encoder":79}],73:[function(require,module,exports){
+},{"more_util":75,"util/text_decoder":78,"util/text_encoder":79}],73:[function(require,module,exports){
 // -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 2 -*-
 
 const TextEncoder = require('util/text_encoder');
@@ -11061,7 +11121,7 @@ if(typeof(module) != 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util":115}],79:[function(require,module,exports){
+},{"util":120}],79:[function(require,module,exports){
 (function (global){
 const node_util = require('util');
 
@@ -11087,7 +11147,7 @@ if(typeof(module) != 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util":115}],80:[function(require,module,exports){
+},{"util":120}],80:[function(require,module,exports){
 (function (global){
 const util = require('util.js');
 
@@ -11120,10 +11180,11 @@ if(typeof(module) != 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"assembler":65,"util.js":77,"vm/container.js":81,"vm/cpu.js":82,"vm/devices.js":83,"vm/types.js":104,"vm/vm-c.js":105,"vm/vm-doc.js":106}],81:[function(require,module,exports){
+},{"assembler":65,"util.js":77,"vm/container.js":81,"vm/cpu.js":82,"vm/devices.js":83,"vm/types.js":109,"vm/vm-c.js":110,"vm/vm-doc.js":111}],81:[function(require,module,exports){
 (function (global){
+// -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 4 -*-
 "use strict";
-    
+
 if((typeof(window) != 'undefined' && !window['VM']) ||
    (typeof(global) != 'undefined' && !global['VM'])) {
     VM = {};
@@ -11200,15 +11261,15 @@ VM.Container.prototype.schedule = function(all_asleep, cycles)
     if(!this.stopping) {
         if(this.timer == null) {
             var self = this;
-          
+            
             if(all_asleep) {
-              if(this.debug) console.log("All asleep.");
+                if(this.debug) console.log("All asleep.");
             } else {
-              if(this.debug) console.log("set Timeout.");
-              this.timer = setTimeout(function() {
-                self.timer = null;
-                self.run(cycles);
-              }, 1);
+                if(this.debug) console.log("set Timeout.");
+                this.timer = setTimeout(function() {
+                    self.timer = null;
+                    self.run(cycles);
+                }, 1);
             }
         } else if(this.debug) {
             console.log("Timer exists");
@@ -11216,10 +11277,10 @@ VM.Container.prototype.schedule = function(all_asleep, cycles)
         }
     } else {
         this.stopping = false;
-      this.running = false;
-      if(this.timer) {
-        clearTimeout(this.timer);
-      }
+        this.running = false;
+        if(this.timer) {
+            clearTimeout(this.timer);
+        }
         this.do_callback('stopped');
     }
 }
@@ -11265,10 +11326,10 @@ VM.Container.prototype.step = function()
 {
     this.cycles++;
 
-  if(this.cpu && this.cpu.halted) {
-    this.cpu.halted = false;
-  }
-  
+    if(this.cpu && this.cpu.halted) {
+        this.cpu.halted = false;
+    }
+    
     this.do_callback('step');
     
     var done = 0;
@@ -11328,7 +11389,7 @@ VM.Container.prototype.interrupt = function(n)
 
 VM.Container.prototype.interrupt_handle = function(irq)
 {
-  return new InterruptHandle(this, irq);
+    return new InterruptHandle(this, irq);
 }
 
 VM.Container.prototype.do_callback = function(cb, arg)
@@ -11339,7 +11400,7 @@ VM.Container.prototype.do_callback = function(cb, arg)
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"vm/cpu.js":82,"vm/devices/console":84,"vm/interrupt_handle":98}],82:[function(require,module,exports){
+},{"vm/cpu.js":82,"vm/devices/console":84,"vm/interrupt_handle":103}],82:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -13688,7 +13749,7 @@ VM.CPU.prototype.step = function()
         this.stepping = false;
         if(e == DispatchTable.UnknownKeyError) {
             this.unknown_op(this.regread('ins'), this.regread(REGISTERS.IP));
-        } else if(e instanceof VM.MMU.NotMappedError) {
+        } else if(e instanceof VM.MemoryBus.NotMappedError) {
             this.interrupt(VM.CPU.INTERRUPTS.mem_fault);
         } else if(e instanceof RangedHash.InvalidAddressError) {
             this.interrupt(VM.CPU.INTERRUPTS.mem_fault);
@@ -14057,7 +14118,7 @@ VM.CPU.test_suite = function()
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"asserts.js":66,"paged_hash.js":76,"util.js":77,"vm/devices/ram.js":93,"vm/dispatch_table.js":97,"vm/ranged_hash.js":101,"vm/types.js":104}],83:[function(require,module,exports){
+},{"asserts.js":66,"paged_hash.js":76,"util.js":77,"vm/devices/ram.js":93,"vm/dispatch_table.js":102,"vm/ranged_hash.js":106,"vm/types.js":109}],83:[function(require,module,exports){
 (function (global){
 if((typeof(window) != 'undefined' && !window['VM']) ||
    (typeof(global) != 'undefined' && !global['VM'])) {
@@ -14072,9 +14133,10 @@ require('vm/devices/gfx.js');
 require('vm/devices/keyboard.js');
 require('vm/devices/timer.js');
 require('vm/devices/keystore.js');
+require('vm/devices/sound.js');
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"vm/devices/console.js":84,"vm/devices/gfx.js":85,"vm/devices/keyboard.js":89,"vm/devices/keystore.js":90,"vm/devices/memory_bus.js":91,"vm/devices/mmu.js":92,"vm/devices/ram.js":93,"vm/devices/timer.js":96}],84:[function(require,module,exports){
+},{"vm/devices/console.js":84,"vm/devices/gfx.js":85,"vm/devices/keyboard.js":89,"vm/devices/keystore.js":90,"vm/devices/memory_bus.js":91,"vm/devices/mmu.js":92,"vm/devices/ram.js":93,"vm/devices/sound.js":95,"vm/devices/timer.js":101}],84:[function(require,module,exports){
 const DataStruct = require('data_struct.js');
 const RAM = require('vm/devices/ram.js');
 require('vm/types.js');
@@ -14135,7 +14197,7 @@ if(typeof(module) != 'undefined') {
 	module.exports = Console;
 }
 
-},{"data_struct.js":67,"vm/devices/ram.js":93,"vm/types.js":104}],85:[function(require,module,exports){
+},{"data_struct.js":67,"vm/devices/ram.js":93,"vm/types.js":109}],85:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -14891,7 +14953,7 @@ if(typeof(module) != 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"data_struct.js":67,"enum.js":68,"util.js":77,"vm/devices/gfx/command":86,"vm/devices/gfx/layer":87,"vm/devices/gfx/pixel_buffer":88,"vm/devices/ram.js":93,"vm/ranged_hash.js":101}],86:[function(require,module,exports){
+},{"data_struct.js":67,"enum.js":68,"util.js":77,"vm/devices/gfx/command":86,"vm/devices/gfx/layer":87,"vm/devices/gfx/pixel_buffer":88,"vm/devices/ram.js":93,"vm/ranged_hash.js":106}],86:[function(require,module,exports){
 Command = function(name, arglist)
 {
     this.name = name;
@@ -15212,7 +15274,7 @@ if(typeof(module) != 'undefined') {
 }
 
 
-},{"data_struct.js":67,"enum.js":68,"vm/devices/ram.js":93,"vm/ring_buffer.js":102,"vm/types.js":104}],90:[function(require,module,exports){
+},{"data_struct.js":67,"enum.js":68,"vm/devices/ram.js":93,"vm/ring_buffer.js":107,"vm/types.js":109}],90:[function(require,module,exports){
 require('vm/types.js');
 const DataStruct = require('data_struct.js');
 const Enum = require('enum.js');
@@ -15405,7 +15467,7 @@ KeyStore.Commands[KeyStore.Command.STAT] = function()
 
 KeyStore.Commands[KeyStore.Command.ENABLE] = function()
 {
-  if(this.state.status != KeyStore.Status.NONE) return this;
+  if(this.state.status == KeyStore.Status.BUSY) return this;
   this.state.status = KeyStore.Status.BUSY;
 
   this.storage.enable((err) => {
@@ -15457,7 +15519,7 @@ if(typeof(VM) != 'undefined') {
     VM.LocalKeyStore = KeyStore;
 }
 
-},{"data_struct.js":67,"enum.js":68,"vm/devices/ram.js":93,"vm/types.js":104}],91:[function(require,module,exports){
+},{"data_struct.js":67,"enum.js":68,"vm/devices/ram.js":93,"vm/types.js":109}],91:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -15554,6 +15616,11 @@ VM.MemoryBus.prototype.memreadS = function(addr)
     return this.memread1(addr, VM.TYPES.USHORT);
 }
 
+VM.MemoryBus.prototype.memreadf = function(addr)
+{
+    return this.memread1(addr, VM.TYPES.FLOAT);
+}
+
 VM.MemoryBus.prototype.memwrite = function(addr, data, type)
 {
     if(type) {
@@ -15609,6 +15676,11 @@ VM.MemoryBus.prototype.memwrites = function(addr, n)
 VM.MemoryBus.prototype.memwriteS = function(addr, n)
 {
     return this.memwrite1(addr, n, VM.TYPES.USHORT);
+}
+
+VM.MemoryBus.prototype.memwritef = function(addr, n)
+{
+    return this.memwrite1(addr, n, VM.TYPES.FLOAT);
 }
 
 VM.MemoryBus.prototype.save_state = function()
@@ -15677,8 +15749,9 @@ if(typeof(module) != 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"asserts.js":66,"paged_hash.js":76,"vm/devices/ram":93,"vm/ranged_hash.js":101}],92:[function(require,module,exports){
+},{"asserts.js":66,"paged_hash.js":76,"vm/devices/ram":93,"vm/ranged_hash.js":106}],92:[function(require,module,exports){
 (function (global){
+// -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 4 -*-
 "use strict";
 
 if((typeof(window) != 'undefined' && !window['VM']) ||
@@ -15686,7 +15759,15 @@ if((typeof(window) != 'undefined' && !window['VM']) ||
     VM = {};
 }
 
-VM.MMU = function()
+// TODO The MMU remaps and provides access control to the memory bus.
+// Proction follows the ring model.
+// Each ring having a page descriptor table that describes physical to virtual address mappings and access control bits.
+// A ring needs to be entered by changing a register to the new page table.
+// To exit a ring, an interrupt needs to be triggered and handled.
+// Interrupts get handled in the most permissive ring and may be passed to the next ring for handling or not.
+// Returning from an interrupt needs to restore the ring.
+
+VM.MMU = function(memory)
 {
 }
 
@@ -15902,6 +15983,570 @@ if(typeof(module) != 'undefined') {
 }
 
 },{"data_struct.js":67,"vm.js":80,"vm/devices/ram.js":93}],95:[function(require,module,exports){
+(function (global){
+// -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 4 -*-
+
+require('vm/types.js');
+const DataStruct = require('data_struct.js');
+const Enum = require('enum.js');
+const RAM = require('vm/devices/ram.js');
+const more_util = require('more_util');
+
+const Channel = require('vm/devices/sound/channel');
+const DecodedSample = require('vm/devices/sound/decoded_sample');
+const RawSample = require('vm/devices/sound/raw_sample');
+
+function Sound(num_channels, mem, irq, name)
+{
+    this.name = name || 'Sound';
+    this.mem = mem;
+    this.irq = irq;
+    this.num_channels = num_channels;
+    this.channels = more_util.n_times(num_channels, (n) => new Channel({
+        onended: () => { this.irq.trigger(); }
+    }));
+    this.struct = Sound.DeviceStruct(num_channels);
+    this.ram = new RAM(this.struct.byte_size);
+    this.state = this.struct.proxy(this.ram.data_view());
+    this.samples = {};
+    this.next_sample = 0;
+    
+    this.disable();
+}
+
+Sound.ChannelModes = Channel.Modes;
+
+Sound.BootSound = {
+    URI: "sounds/startup.mp3",
+    mode: Sound.ChannelModes.sine,
+    range: { min: 220, max: 880 },
+    duration: 1000 / 64 * 16,
+    time_step: 1000 / 64 * 4
+};
+
+Sound.ChannelStruct = new DataStruct([
+    [ 'mode', VM.TYPES.UBYTE ],
+    [ 'param', VM.TYPES.UBYTE ],
+    [ 'gain', VM.TYPES.UBYTE ],
+    [ 'pan', VM.TYPES.BYTE ],
+    [ 'rate', VM.TYPES.ULONG ],
+    [ 'start_at', VM.TYPES.ULONG ],
+    [ 'stop_at', VM.TYPES.ULONG ],
+    [ 'loop_start', VM.TYPES.ULONG ],
+    [ 'loop_end', VM.TYPES.ULONG ],
+    [ 'data1', VM.TYPES.ULONG ]
+]);
+
+Sound.SampleFormat = require('vm/devices/sound/sample_format');
+
+Sound.Sampler = new DataStruct([
+    [ 'id', VM.TYPES.ULONG ],
+    [ 'address', VM.TYPES.ULONG ],
+    [ 'length', VM.TYPES.ULONG ],
+    [ 'format', VM.TYPES.ULONG ],
+    [ 'num_channels', VM.TYPES.ULONG ],
+    [ 'byte_rate', VM.TYPES.ULONG ]
+]);
+
+Sound.DeviceStruct = function(num_channels)
+{
+    return new DataStruct([
+        [ 'status', VM.TYPES.UBYTE ],
+        [ 'gain', VM.TYPES.UBYTE ],
+        [ 'current_time', VM.TYPES.ULONG ],
+        [ 'sampler', Sound.Sampler ],
+        [ 'num_channels', VM.TYPES.ULONG ],
+        [ 'channels', num_channels, Sound.ChannelStruct ]
+    ]);
+}
+
+Sound.Status = new Enum([
+    [ 'none', 0 ],
+    [ 'enabled', 1 ],
+    [ 'playing', 2 ],
+    [ 'demo', 4 ],
+    [ 'error', 0x80 ]
+]);
+
+Sound.prototype.disable = function()
+{
+    if(this.context) {
+        this.context.close();
+        delete this.context;
+    }
+
+    this.ram.set(0, this.ram.length, 0);
+    this.state.status = Sound.Status.none;
+    this.state.num_channels = this.num_channels;
+}
+
+Sound.prototype.enable = function()
+{
+    if(this.context == null) {
+        this.context = new AudioContext();
+    }
+    if(this.gainer == null) {
+        this.gainer = this.context.createGain();
+        this.gainer.connect(this.context.destination);
+        this.gainer.gain.value = 0;
+        this.gain = 0;
+    }
+    
+    this.state.status = this.state.status | Sound.Status.enabled;
+    this.dirty = true;
+}
+
+Sound.prototype.push_sample = function(sample)
+{
+    var i = ++this.next_sample;
+    this.samples[i] = sample;
+    return i;
+}
+
+Sound.prototype.boot_sound = function(params)
+{
+    if(params == null) params = Sound.BootSound;
+
+    var osc_chans = this.num_channels - 2;
+    
+    for(var i = 0; i < osc_chans; i++) {
+        this.state.channels[i].mode = params.mode;
+        this.state.channels[i].gain = 255;
+        this.state.channels[i].pan = -128 + i / osc_chans * 256;
+        this.state.channels[i].data1 = params.range.min + i / osc_chans * (params.range.max - params.range.min);
+        var start_at = 1 + i * params.time_step;
+        this.state.channels[i].start_at = start_at;
+        this.state.channels[i].stop_at = start_at + params.duration;
+        this.state.channels[i].loop_start = 0;
+        this.state.channels[i].loop_end = 0;
+    }
+
+    var sample = this.push_sample(new RawSample(Sound.SampleFormat.raw_long,
+                                                this.context,
+                                                this.mem,
+                                                0,
+                                                44100 * 2,
+                                                11025,
+                                                1));
+    var last = this.state.channels[this.num_channels - 1];
+    last.gain = 255;
+    last.pan = 0;
+    last.param = 1;
+    last.data1 = sample;
+    last.loop_start = 0;
+    last.loop_end = 1000 * 44100 * 2 / 11025;
+    last.start_at = 1 + this.num_channels * params.time_step;
+    last.stop_at = 1 + this.num_channels * params.time_step + 10000;
+    last.mode = Sound.ChannelModes.sample;
+
+    global.fetch(Sound.BootSound.URI).then((response) => {
+        response.arrayBuffer().then((body) => {
+            var sample = this.push_sample(new DecodedSample(Sound.SampleFormat.sample,
+                                                            this.context,
+                                                            body,
+                                                            (err) => { if(!err) this.play_sample(this.num_channels - 2, sample, 1 + this.num_channels * params.time_step); }));
+        });
+    });
+}
+
+Sound.prototype.play_sample = function(channel, sample, start_at)
+{
+    var ch = this.state.channels[channel];
+    ch.gain = 255;
+    ch.pan = 0;
+    ch.param = 1;
+    ch.data1 = sample;
+    ch.loop_start = 0;
+    ch.loop_end = 0;
+    ch.start_at = start_at;
+    ch.mode = Sound.ChannelModes.sample;
+}
+
+Sound.prototype.reset = function()
+{
+    this.disable();
+}
+
+Sound.prototype.ram_size = function()
+{
+    return this.ram.length;
+}
+
+Sound.prototype.read = function(addr, count, output, offset)
+{
+    return this.ram.read(addr, count, output, offset);
+}
+
+Sound.prototype.write = function(addr, data)
+{
+    this.dirty = true;
+    return this.ram.write(addr, data);
+}
+
+Sound.prototype.step_channel = function(n)
+{
+    this.channels[n].step(this.mem, this.context, this.gainer, this.state.channels[n], this.samples);
+}
+
+Sound.prototype.create_sample = function()
+{
+    switch(this.state.sampler.format) {
+    case Sound.SampleFormat.raw_byte:
+    case Sound.SampleFormat.raw_short:
+    case Sound.SampleFormat.raw_long:
+    case Sound.SampleFormat.raw_float:
+        return new RawSample(this.state.format,
+                             this.context,
+                             this.mem,
+                             this.state.sampler.address,
+                             this.state.sampler.length,
+                             this.state.sampler.byte_rate,
+                             this.state.sampler.num_channels);
+        break;
+    case Sound.SampleFormat.sample:
+        return new DecodedSample(this.state.format,
+                                 this.context,
+                                 this.mem.memread(this.state.sampler.address, this.state.sampler.length));
+        break;
+    default:
+        return null;
+    }
+}
+
+Sound.prototype.update_sampler = function()
+{
+    var sample = this.samples[this.state.sampler.id];
+
+    if(this.state.sampler.format != Sound.SampleFormat.none) {
+        this.samples[this.state.sampler.id] = this.create_sample();
+        this.state.sampler.format = Sound.SampleFormat.none;
+    }
+}
+
+Sound.prototype.update_status = function()
+{
+    var status = this.state.status;
+    if(this.last_status == status) return false;
+    
+    if(status & Sound.Status.enabled) {
+        this.enable();
+    } else {
+        this.disable();
+    }
+
+    if(this.context) {
+        if(status & Sound.Status.playing) {
+            this.context.resume();
+        } else {
+            this.context.suspend();
+        }
+
+        if(status & Sound.Status.demo) {
+            this.boot_sound();
+            this.state.status = this.state.status & ~Sound.Status.demo;
+        }
+    }
+
+    this.last_status = this.state.status;
+    return true;
+}
+
+Sound.prototype.update_gain = function()
+{
+    if(this.gain != this.state.gain) {
+        this.gainer.gain.value = this.state.gain / 255.0;
+        this.gain = this.state.gain;
+    }
+}
+
+Sound.prototype.step = function()
+{
+    if(this.context) this.state.current_time = Math.floor(this.context.currentTime * 1000);
+    if(!this.dirty) return false;
+    
+    this.update_status();
+    if(this.context == null) return false;
+
+    this.update_gain();
+    this.update_sampler();
+    more_util.n_times(this.num_channels, (n) => this.step_channel(n));
+
+    this.dirty = false;
+    
+    return false;
+}
+
+if(typeof(module) != 'undefined') {
+	  module.exports = Sound;
+}
+if(typeof(VM) != 'undefined') {
+    if(VM['Devices'] == null) VM['Devices'] = {};
+    VM.Devices.Sound = Sound;
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"data_struct.js":67,"enum.js":68,"more_util":75,"vm/devices/ram.js":93,"vm/devices/sound/channel":96,"vm/devices/sound/decoded_sample":97,"vm/devices/sound/raw_sample":98,"vm/devices/sound/sample_format":99,"vm/types.js":109}],96:[function(require,module,exports){
+// -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 4 -*-
+
+require('vm/types.js');
+const Enum = require('enum.js');
+
+function Channel(options)
+{
+    this.mode = null;
+    this.onended = options['onended'];
+}
+
+Channel.Modes = new Enum([
+    'off',
+    'sine',
+    'square',
+    'triangle',
+    'sawtooth',
+    'noise',
+    'raw',
+    'sample'
+]);
+
+const ModeKind = {};
+[ [ Channel.Modes.sine, 'sine' ],
+  [ Channel.Modes.square, 'square' ],
+  [ Channel.Modes.triangle, 'triangle' ],
+  [ Channel.Modes.sawtooth, 'sawtooth' ]
+].map((m) => ModeKind[m[0]] = m[1]);
+
+Channel.prototype.create_oscillator = function(context, mode)
+{
+    var kind = ModeKind[mode];
+    if(kind) {
+        var osc = context.createOscillator();
+        osc.type = kind;
+        return osc;
+    } else {
+        throw { name: "UnknownMode", value: mode };
+    }
+}
+
+Channel.prototype.create_sampler = function(context)
+{
+    var node = context.createBufferSource();
+    return node;
+}
+
+Channel.prototype.wire_node = function(context, destination)
+{
+    if(this.gainer == null) {
+        this.gainer = context.createGain();
+        this.gainer.connect(destination);
+    }
+    
+    if(this.panner == null) {
+        this.panner = context.createStereoPanner();
+        this.panner.connect(this.gainer);
+    }
+    
+    this.node.onended = (ev) => { this.ended(); }
+    this.node.connect(this.panner);
+}
+
+Channel.prototype.ended = function()
+{
+    this.stop();
+    if(this.onended) this.onended();
+}
+
+Channel.prototype.stop = function(when)
+{
+    if(this.node) {
+        try {
+            this.node.stop(when);
+        } catch(e) {
+            if(e.name != 'InvalidStateError') throw(e);
+        }
+        delete this.node;
+    }
+
+    if(this.gainer) {
+        delete this.gainer;
+    }
+    
+    if(this.panner) {
+        delete this.panner;
+    }
+
+    this.started_at = null;
+    this.stop_at = null;
+    this.mode = null;
+    this.rate = null;
+    this.pan = null;
+    this.gain = null;
+}
+
+Channel.prototype.set_mode = function(mode)
+{
+    this.stop();
+    this.mode = mode;
+}
+
+Channel.prototype.update_state = function(mem, context, destination, state, samples)
+{
+    var start_at = context.currentTime + state.start_at / 1000.0;
+    
+    switch(this.mode) {
+    case Channel.Modes.sine:
+    case Channel.Modes.square:
+    case Channel.Modes.triangle:
+    case Channel.Modes.sawtooth:
+        if(this.node == null) {
+            this.node = this.create_oscillator(context, state.mode);
+            this.wire_node(context, destination);
+        }
+
+        if(this.rate != state.data1) {
+            this.rate = state.data1;
+            this.node.frequency.setValueAtTime(state.data1, start_at);
+        }
+
+        break;
+    case Channel.Modes.sample:
+        if(this.node == null) {
+            if(state.data1 > 0) {
+                var sample = samples[state.data1];
+                if(sample) {
+                    this.node = this.create_sampler(context);
+                    this.node.buffer = sample.buffer;
+                    this.wire_node(context, destination);
+                    
+                    state.data1 = 0;
+                }
+            }
+        }
+
+        if(this.node != null) {
+            if(state.loop_end != 0) {
+                this.node.loop = true;
+                this.node.loopStart = state.loop_start / 1000;
+                this.node.loopEnd = state.loop_end / 1000;
+            } else {
+                this.node.loop = false;
+                this.node.loopStart = 0;
+                this.node.loopEnd = 0;
+            }
+        }
+        
+        break;
+    default:
+    }
+
+    if(this.gainer && this.gain != state.gain) {
+        this.gainer.gain.setValueAtTime(state.gain / 255, start_at);
+    }
+    
+    if(this.panner && this.pan != state.pan) {
+        this.panner.pan.setValueAtTime(state.pan / 128, start_at);
+    }
+    
+    if(this.node) {
+        if(state.start_at > 0 && this.started_at == null) {
+            this.node.start(start_at);
+            this.started_at = state.start_at;
+            state.start_at = 0;
+        }
+        if(state.stop_at > 0) {
+            this.stop(context.currentTime + state.stop_at / 1000.0);
+            state.stop_at = 0;
+        }
+    }
+}
+
+Channel.prototype.update_mode = function(mode)
+{
+    if(this.mode != mode) {
+        this.set_mode(mode);
+    }
+}
+
+Channel.prototype.step = function(mem, context, destination, state, samples)
+{
+    this.update_mode(state.mode);
+    this.update_state(mem, context, destination, state, samples);
+}
+
+module.exports = Channel;
+},{"enum.js":68,"vm/types.js":109}],97:[function(require,module,exports){
+// -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 4 -*-
+
+require('vm/types.js');
+
+DecodedSample = function(format, context, data, cb)
+{
+  this.format = format;
+  this.buffer = null;
+  
+  context.decodeAudioData(data,
+                          (decoded_data) => {
+                            this.buffer = decoded_data;
+                            if(cb) cb(false);
+                          },
+                          (err) => { if(cb) cb(err); else throw(err); });
+}
+
+module.exports = DecodedSample;
+},{"vm/types.js":109}],98:[function(require,module,exports){
+// -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 4 -*-
+
+require('vm/types.js');
+const Format = require('vm/devices/sound/sample_format');
+
+function RawSample(format, context, mem, address, length, rate, num_channels)
+{
+  this.format = format;
+  this.buffer = context.createBuffer(num_channels, length, rate);
+  this.copy_sample(mem, address, length);
+}
+
+RawSample.prototype.copy_sample = function(mem, addr, length)
+{
+  var data = this.buffer.getChannelData(0);
+  var type = this.format_type();
+  
+  for(var i = 0; i < length / type.byte_size; i++) {
+    data[i] = mem.memread1(addr + i * type.byte_size, type) / type.max;
+  }
+}
+
+const FormatTypeMap = {};
+[ [ Format.raw_long & Format.unsigned, VM.TYPES.ULONG ],
+  [ Format.raw_long, VM.TYPES.LONG ],
+  [ Format.raw_short & Format.unsigned, VM.TYPES.USHORT ],
+  [ Format.raw_short, VM.TYPES.SHORT ],
+  [ Format.raw_byte & Format.unsigned, VM.TYPES.UBYTE ],
+  [ Format.raw_byte, VM.TYPES.BYTE ],
+  [ Format.raw_float, VM.TYPES.FLOAT ]  
+].map((d) => FormatTypeMap[d[0]] = d[1]);
+
+RawSample.prototype.format_type = function()
+{
+  return FormatTypeMap[this.format] || VM.TYPES.ULONG;
+}
+
+module.exports = RawSample;
+
+},{"vm/devices/sound/sample_format":99,"vm/types.js":109}],99:[function(require,module,exports){
+const Enum = require('enum');
+
+module.exports = new Enum([
+  'none',
+  'ready',
+  'raw_byte',
+  'raw_short',
+  'raw_long',
+  'raw_float',
+  'sample',
+  [ 'unsigned', 0x80 ]
+]);
+
+},{"enum":68}],100:[function(require,module,exports){
 const VM = require("vm.js");
 const Xterm = require('xterm');
 const Colors = require('colors/safe');
@@ -16096,7 +16741,7 @@ if(typeof(VM) != 'undefined') {
 }
 
 
-},{"colors/safe":11,"more_util":75,"util/text_decoder":78,"util/text_encoder":79,"vm.js":80,"vm/node/devices/input_stream":99,"vm/node/devices/output_stream":100,"xterm":35}],96:[function(require,module,exports){
+},{"colors/safe":11,"more_util":75,"util/text_decoder":78,"util/text_encoder":79,"vm.js":80,"vm/node/devices/input_stream":104,"vm/node/devices/output_stream":105,"xterm":35}],101:[function(require,module,exports){
 const Enum = require('enum.js');
 const DataStruct = require('data_struct.js');
 const VMJS = require('vm.js');
@@ -16252,7 +16897,7 @@ if(typeof(module) != 'undefined') {
   module.exports = Timer;
 }
 
-},{"data_struct.js":67,"enum.js":68,"vm.js":80,"vm/devices/ram.js":93}],97:[function(require,module,exports){
+},{"data_struct.js":67,"enum.js":68,"vm.js":80,"vm/devices/ram.js":93}],102:[function(require,module,exports){
 function DispatchTable(mask, shift, ops)
 {
     this.mask = mask;
@@ -16414,7 +17059,7 @@ if(typeof(module) != 'undefined') {
   module.exports = DispatchTable;
 }
 
-},{}],98:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 function InterruptHandle(container, irq)
 {
   this.container = container;
@@ -16441,7 +17086,7 @@ if(typeof(module) != 'undefined') {
   module.exports = InterruptHandle;
 }
 
-},{}],99:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 "use strict";
 
 const DataStruct = require('data_struct.js');
@@ -16577,7 +17222,7 @@ if(typeof(module) != 'undefined') {
   module.exports = InputStream;
 }
 
-},{"data_struct.js":67,"util/text_encoder":79,"vm/devices/ram.js":93,"vm/ring_buffer.js":102,"vm/types.js":104}],100:[function(require,module,exports){
+},{"data_struct.js":67,"util/text_encoder":79,"vm/devices/ram.js":93,"vm/ring_buffer.js":107,"vm/types.js":109}],105:[function(require,module,exports){
 (function (Buffer){
 "use strict";
 
@@ -16723,7 +17368,7 @@ if(typeof(module) != 'undefined') {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":109,"data_struct.js":67,"enum.js":68,"util/text_decoder":78,"vm/devices/ram.js":93,"vm/types.js":104}],101:[function(require,module,exports){
+},{"buffer":114,"data_struct.js":67,"enum.js":68,"util/text_decoder":78,"vm/devices/ram.js":93,"vm/types.js":109}],106:[function(require,module,exports){
 function RangedHashImp()
 {
     this._items = [];
@@ -16856,7 +17501,7 @@ if(typeof(window) != 'undefined') {
   window.RangedHash = RangedHash;
 }
 
-},{}],102:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 (function (global){
 if((typeof(window) != 'undefined' && !window['VM']) ||
    (typeof(global) != 'undefined' && !global['VM'])) {
@@ -17015,7 +17660,7 @@ if(typeof(module) != 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"asserts":66,"data_struct.js":67}],103:[function(require,module,exports){
+},{"asserts":66,"data_struct.js":67}],108:[function(require,module,exports){
 function Worker()
 {
 }
@@ -17050,7 +17695,7 @@ Worker.register = function(script, location)
 if(typeof(module) != 'undefined') {
   module.exports = Worker;
 }
-},{}],104:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -17124,7 +17769,7 @@ VM.TYPE_IDS[VM.TYPE_IDS.DOUBLE | VM.TYPE_SIGNED] = VM.TYPE_IDS.DOUBLE;
 VM.TYPES[VM.TYPE_IDS.DOUBLE | VM.TYPE_SIGNED] = VM.TYPES.DOUBLE;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"util.js":77}],105:[function(require,module,exports){
+},{"util.js":77}],110:[function(require,module,exports){
 require('vm.js');
 
 function vm_generate_c_register_classes()
@@ -17233,7 +17878,7 @@ function vm_generate_c_header()
            ].join("\n");
 }
 
-},{"vm.js":80}],106:[function(require,module,exports){
+},{"vm.js":80}],111:[function(require,module,exports){
 const DispatchTable = require('vm/dispatch_table.js');
 const util = require('util.js');
 require('vm.js');
@@ -17506,7 +18151,7 @@ if(typeof(module) != 'undefined') {
   };
 }
 
-},{"util.js":77,"vm.js":80,"vm/dispatch_table.js":97}],107:[function(require,module,exports){
+},{"util.js":77,"vm.js":80,"vm/dispatch_table.js":102}],112:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -17516,6 +18161,7 @@ const DevCon = require('vm/devices/console.js');
 const RAM = require('vm/devices/ram.js');
 const Timer = require('vm/devices/timer.js');
 const RTC = require('vm/devices/rtc.js');
+const Sound = require("vm/devices/sound.js");
 const KeyStore = require('vm/devices/keystore.js');
 const KeyValue = require('key_value');
 const VMWorker = require('vm/service_worker');
@@ -17702,6 +18348,12 @@ function vm_init(mem_size, terminal, callbacks)
   vm.mem.map_memory(output_addr, output_term.ram_size(), output_term);
   vm.add_device(output_term);
 
+  var sound_addr = 0xF000D000;
+  var sound_irq = vm.interrupt_handle(VM.CPU.INTERRUPTS.user + 12);
+  var sound = new Sound(32, mem, sound_irq, "Sound");
+  vm.mem.map_memory(sound_addr, sound.ram_size(), sound);
+  vm.add_device(sound);
+
   vm.info = {
     devcon: {
       addr: devcon_addr
@@ -17718,6 +18370,10 @@ function vm_init(mem_size, terminal, callbacks)
     },
     output: {
       addr: output_addr, irq: output_irq
+    },
+    sound: {
+      addr: sound_addr,
+      irq: sound_irq.toInt()
     }
   };
 
@@ -17733,7 +18389,7 @@ if(typeof(window) != 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"key_value":69,"vm":116,"vm/devices/console.js":84,"vm/devices/keystore.js":90,"vm/devices/ram.js":93,"vm/devices/rtc.js":94,"vm/devices/terminal":95,"vm/devices/timer.js":96,"vm/service_worker":103}],108:[function(require,module,exports){
+},{"key_value":69,"vm":121,"vm/devices/console.js":84,"vm/devices/keystore.js":90,"vm/devices/ram.js":93,"vm/devices/rtc.js":94,"vm/devices/sound.js":95,"vm/devices/terminal":100,"vm/devices/timer.js":101,"vm/service_worker":108}],113:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -17886,7 +18542,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],109:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -19665,7 +20321,7 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":108,"ieee754":110}],110:[function(require,module,exports){
+},{"base64-js":113,"ieee754":115}],115:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -19751,7 +20407,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],111:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -19776,7 +20432,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],112:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 exports.endianness = function () { return 'LE' };
 
 exports.hostname = function () {
@@ -19827,7 +20483,7 @@ exports.homedir = function () {
 	return '/'
 };
 
-},{}],113:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -20013,14 +20669,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],114:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],115:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -20610,7 +21266,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":114,"_process":113,"inherits":111}],116:[function(require,module,exports){
+},{"./support/isBuffer":119,"_process":118,"inherits":116}],121:[function(require,module,exports){
 var indexOf = function (xs, item) {
     if (xs.indexOf) return xs.indexOf(item);
     else for (var i = 0; i < xs.length; i++) {
@@ -20761,4 +21417,4 @@ exports.createContext = Script.createContext = function (context) {
     return copy;
 };
 
-},{}]},{},[107]);
+},{}]},{},[112]);
