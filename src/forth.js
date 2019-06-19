@@ -223,7 +223,7 @@ var macros = {
         uint32(TERMINATOR);
   },
   constant: function(asm, token, code) {
-    // constant NAME VALUE
+    // constant NAME NUMBER-VALUE
     // Adds a dictionary entry with the name and value.
     var tok = next_token(code);
     var name = tok[0];

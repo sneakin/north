@@ -1,6 +1,12 @@
+: poke-byte ( value addr )
+  arg0 peek int32 $FFFFFF00 logand
+  arg1 int32 255 logand logior
+  arg0 poke
+;
+
 : seq-poke-byte ( v seq n )
   arg2 arg1 arg0 int-add cell+ swapdrop
-  poke
+  poke-byte
 ;
 
 : peek-byte ( addr )
