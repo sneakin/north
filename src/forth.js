@@ -157,6 +157,7 @@ var dictionary = {
 var immediates = {
 };
 var last_dictionary;
+var data_segment_offset = 0;
 
 function unslash(str)
 {
@@ -241,17 +242,19 @@ var macros = {
     return tok[1];
   },    
   "global-var": function(asm, token, code) {
-    // variable NAME NUMBER-VALUE
-    // Adds a dictionary entry with the name and value.
+    // variable NAME
+    // Adds a dictionary entry with the name and space in the data segment
     var tok = next_token(code);
     var name = tok[0];
-    tok = next_token(tok[1]);
-    var value = parse_number(tok[0]);
+    //tok = next_token(tok[1]);
+    //var value = parse_number(tok[0]);
 
+    data_segment_offset += VM.TYPES.ULONG.byte_size;
     last_dictionary = name;
     dictionary[name] = {
       code: 'variable-peeker-code',
-      data: value,
+      data: data_segment_offset,
+      segment: 'data',
       prior: dictionary[name]
     };
 
@@ -453,15 +456,17 @@ Forth.assembler = function(ds, cs, info, stage) {
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(BYE).
       call(0, VM.CPU.REGISTERS.CS).uint32('output_write_word').
       ret();
-  
-  asm.label('input_data_position', 0).
-      label('output_data_position', 4).
-      label('waiting_for_input', 8).
-      label('waiting_for_output', 12).
-      label('heap_top', 16).
-      label('stack_top', 20).
-      label('data_segment_end', 24);
 
+  var offset = data_segment_offset;
+  asm.label('input_data_position', offset).
+      label('output_data_position', offset + 4).
+      label('waiting_for_input', offset + 8).
+      label('waiting_for_output', offset + 12).
+      label('heap_top', offset + 16).
+      label('stack_top', offset + 20).
+      label('data_segment_end', offset + 24);
+  data_segment_offset = 4 + asm.resolve('data_segment_end');
+  
   asm.label('data_init').
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
       load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(0).
@@ -1405,7 +1410,9 @@ Forth.assembler = function(ds, cs, info, stage) {
   for(var n in dictionary) {
     var entry = dictionary[n];
     if(entry == null) continue;
-    last_label = dict_entry(n, n + '-sym', entry.code, entry.data, last_label);
+    var data = entry.data;
+    if(entry.segment == 'data') data += ds;
+    last_label = dict_entry(n, n + '-sym', entry.code, data, last_label);
   }
 
   // Variables
@@ -1413,7 +1420,7 @@ Forth.assembler = function(ds, cs, info, stage) {
     return dict_entry(label, label + '-sym', 'variable-peeker-code', value, last_label);
   }
 
-  var off = ds + asm.resolve('data_segment_end');
+  var off = ds + data_segment_offset;
   last_label = dict_entry_var('*tokenizer*', off, last_label);
   last_label = dict_entry_var('*status*', off+4, last_label);
   last_label = dict_entry_var('*debug*', off+8, last_label);
