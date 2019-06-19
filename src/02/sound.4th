@@ -1,9 +1,11 @@
+( Sound device status bits: )
 constant sound-status-disable 0
 constant sound-status-enabled 1
 constant sound-status-playing 2
 constant sound-status-demo 4
 constant sound-status-error 128
 
+( Default device address and IRQ: )
 constant sound-irq 21
 constant sound-addr 4026585088
 
@@ -11,7 +13,7 @@ constant sound-addr 4026585088
   sound-irq sound-addr return2
 ;
 
-( Device registers )
+( Device registers: )
 
 : sound-dev-status
   arg0 return1
@@ -219,14 +221,15 @@ constant beep-duration 250
   arg1 tone-play
 ;
 
-( set channel to oscillate for half a second )
-global-var *beep-initialized* 0
+global-var *beep-initialized*
 
+( Initialize the beep channel to beep. )
 : beep-init
   beep-frequency tone-init
   int32 1 *beep-initialized* poke
 ;
 
+( Plays the beep for the beep-duration. The channel is initialized if *beep-initialized* is zero. )
 : beep
   *beep-initialized* peek UNLESS beep-init THEN
   beep-duration tone-play
@@ -282,7 +285,7 @@ constant boot-sound-note-length 250
   arg0 local0 int32 1 int-sub int32 10000 sound-channel-stop
 ;
 
-: boot-sound/0
+: boot-sound
   sound-addr boot-sound/1
   beep-init
 ;
