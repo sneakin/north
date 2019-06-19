@@ -27,6 +27,7 @@ outputs = [ 'north-stage0.bin',
             'ipfs.js',
             'manifest.webmanifest',
       	    'unscii-8.ttf',
+            'sounds/startup.mp3',
             'index.css',
             'index.js',
             'index.html'
@@ -115,10 +116,13 @@ task :stage2 => STAGE2_TARGET
 [ 'forth.css',
   'index.css',
   'unscii-8.ttf',
+  'sounds/startup.mp3',
   'manifest.webmanifest'
 ].each do |name|
   output = buildroot.join(name)
   src = root.join('www', name)
+
+  directory File.dirname(output)
   
   file output => [ src, buildroot, File.dirname(output) ] do |t|
     FileUtils.copy(t.sources[0], t.name)
