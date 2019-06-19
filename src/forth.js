@@ -36,6 +36,7 @@ const forth_sources = {
   "03-storage-devices": fs.readFileSync(__dirname + '/03_forth_storage_devices.4th', 'utf-8'),
   "03-storage": fs.readFileSync(__dirname + '/03_forth_storage.4th', 'utf-8'),
   "03-storage-test": fs.readFileSync(__dirname + '/03_forth_storage_test.4th', 'utf-8'),
+  "02-sound": fs.readFileSync(__dirname + '/02_forth_sound.4th', 'utf-8'),
   "core-4": fs.readFileSync(__dirname + '/04_forth_core.4th', 'utf-8'),
   "core-constants": fs.readFileSync(__dirname + '/04_forth_constants.4th', 'utf-8'),
   extra: fs.readFileSync(__dirname + '/forth_extra.4th', 'utf-8'),
@@ -1318,6 +1319,7 @@ Forth.assembler = function(ds, cs, info, stage) {
     interp(asm, forth_sources['03-storage-devices']);
     interp(asm, forth_sources['03-storage']);
     interp(asm, forth_sources['03-storage-test']);
+    interp(asm, forth_sources['02-sound']);
     //interp(asm, forth_sources['02-misc']);
 
     //interp(asm, forth_sources['assembler']);
