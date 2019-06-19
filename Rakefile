@@ -35,11 +35,11 @@ outputs = [ 'north-stage0.bin',
 directory buildroot
 
 STAGE0_SRC = [ 'forth.js',
-                '00_forth_core.4th',
-                '00_forth_compiler.4th',
-                '00_forth_output.4th',
-                '00_forth_init.4th',
-                '00_forth_ui.4th'
+                '00/core.4th',
+                '00/compiler.4th',
+                '00/output.4th',
+                '00/init.4th',
+                '00/ui.4th'
              ].collect { |s| root.join('src', s) }
 STAGE0_TARGET = buildroot.join('north-stage0.bin')
 
@@ -59,28 +59,28 @@ task :stage0 => [ STAGE0_TARGET, STAGE0_MIN_TARGET ]
 
 STAGE1_SRC = [ 'forth.js',
                *STAGE0_SRC,
-               '01_forth_atoi.4th',
-               '01_forth_tty.4th',
-               '01_forth_dict.4th',
-               '01_forth_seq.4th',
-               '01_forth_ui.4th',
-               '02_forth_memdump.4th',
-               '02_forth_decompiler.4th',
-               '02_forth_misc.4th',
-               '02_forth_assembler.4th',
-               '03_forth_assembler.4th',
-               '03_forth_byte_string.4th',
-               '03_forth_sequence.4th',
+               '01/atoi.4th',
+               '01/tty.4th',
+               '01/dict.4th',
+               '01/seq.4th',
+               '01/ui.4th',
+               '02/memdump.4th',
+               '02/decompiler.4th',
+               '02/misc.4th',
+               '02/assembler.4th',
+               '03/assembler.4th',
+               '03/byte_string.4th',
+               '03/sequence.4th',
                'forth_interrupts.js',
-               '03_forth_interrupts.4th',
-               '03_forth_storage.4th',
-               '03_forth_storage_devices.4th',
-               '03_forth_storage_test.4th',
-               '02_forth_sound.4th',
+               '03/interrupts.4th',
+               '03/storage.4th',
+               '03/storage_devices.4th',
+               '03/storage_test.4th',
+               '02/sound.4th',
                'forth_extra.4th',
-               '04_forth_core.4th',
-               '04_forth_constants.4th',
-               '02_forth_ops.4th'
+               '04/core.4th',
+               '04/constants.4th',
+               '02/ops.4th'
              ].collect { |s| root.join('src', s) }
 STAGE1_TARGET = buildroot.join('north-stage1.bin')
 
@@ -100,8 +100,8 @@ desc "Build stage1: most everything metacompiled"
 task :stage1 => [ STAGE1_TARGET, STAGE1_MIN_TARGET ]
 
 STAGE2_SRC = [ 'build-stage2.4th',
-               '02_forth_assembler.4th',
-               '02_forth_ops.4th'
+               '02/assembler.4th',
+               '02/ops.4th'
              ].collect { |s| root.join('src', s) }
 STAGE2_TARGET = buildroot.join('north-stage2.bin')
 
