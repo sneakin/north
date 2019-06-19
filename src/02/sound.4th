@@ -292,4 +292,5 @@ constant boot-sound-note-length 250
 
 : sound-init
   sound-device sound-dev-init
+  int32 0 *beep-initialized* poke
 ;

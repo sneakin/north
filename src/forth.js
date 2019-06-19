@@ -1196,6 +1196,11 @@ Forth.assembler = function(ds, cs, info, stage) {
     asm.pop(FP_REG).
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   })
+
+  defop('data-segment', function(asm) {
+    asm.push(VM.CPU.REGISTERS.DS).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  });
   
   defop('dict', function(asm) {
     asm.
@@ -1420,7 +1425,7 @@ Forth.assembler = function(ds, cs, info, stage) {
     return dict_entry(label, label + '-sym', 'variable-peeker-code', value, last_label);
   }
 
-  var off = ds + data_segment_offset;
+  var off = ds + data_segment_offset + 4;
   last_label = dict_entry_var('*tokenizer*', off, last_label);
   last_label = dict_entry_var('*status*', off+4, last_label);
   last_label = dict_entry_var('*debug*', off+8, last_label);
