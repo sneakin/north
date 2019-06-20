@@ -13,17 +13,30 @@ bits 32
 %define dict 0
 
 %macro defop 1
-%1: dd $+entry_code
+section .rdata_dict
 %1_link: dd dict
+%1: dd %1_op
 %define dict %1
+section .text
 %1_op:
 %endmacro
 
-%macro def 1
-%1: dd dcall+entry_code
+%macro defalias 2
+section .rdata_dict
 %1_link: dd dict
+%1: dd %2_op
 %define dict %1
-%1_data:
+%endmacro
+
+%macro def 1
+section .rdata_dict
+%1_link: dd dict
+;%1: dd ncall,%1_data
+%1: dd dcall_op
+%1_data: dd %1_op
+%define dict %1
+section .rdata_pcode
+%1_op:
 %endmacro
 
 defop next
@@ -39,7 +52,8 @@ defop ncall
 	jmp [acall]
 
 defop dcall
-	add eax, entry_code
+	;add eax, entry_code
+	mov eax, [eax+entry_code]
 	jmp [acall]
 
 defop acall
@@ -56,13 +70,14 @@ defop dup
 	push eax
 	jmp [next]
 
-pointer:
-string:
-int32:
 defop literal
 	lodsd
 	push eax
 	jmp [next]
+
+defalias pointer,literal
+defalias string,literal
+defalias int32,literal
 
 defop swap
 	pop eax
@@ -121,7 +136,7 @@ section .data
 
 ptrsize equ 4
 cellsize equ 4
-entry_code equ ptrsize*2
+entry_code equ ptrsize*1
 returnaddr equ 4
 
 section .rdata
@@ -162,7 +177,7 @@ def boot
 		writen,\
 		string,boo,\
 		int32,4,\
-		ncall,writen_data,\
+		ncall,writen_op,\
 		string,world,\
 		int32,worldlen,\
 		literal,writen,opcall,\
