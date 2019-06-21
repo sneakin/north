@@ -1,6 +1,15 @@
 section .text
-global _start
+global main
 bits 32
+
+ptrsize equ 4
+cellsize equ 4
+entry_code equ ptrsize*1
+returnaddr equ 4
+
+main:
+	mov eax, boot
+	jmp [dcall]
 
 %macro syscall_macro 4
     mov     edx,%4
@@ -12,30 +21,51 @@ bits 32
 
 %define dict 0
 
-%macro defop 1
-section .rdata_dict
+; todo make op code pointer a pointer load of the data field
+; todo definition code pointers should be at the entry, not the data
+; todo primary label should include the link.
+; todo raw sequence calls and dictionary entry calls? ncall and opcall mainly
+; todo finish the names by creating a dictionary entry macro shared by the defs
+
+; Define a ststic dictionary entry. 
+%macro dict_entry 3 ; name, code pointer, data pointer
+; create the entry
+section .data_dict
 %1_link: dd dict
-%1: dd %1_op
-%define dict %1
+dd %1_name
+%1: dd %2
+%1_data: dd %3
+
+; update last link
+%define dict %1_link
+
+; store the name string
+section .rodata_dict_names
+align 4
+%defstr %1_str %1
+%strlen %1_name_len %1_str
+%1_name: dd %1_name_len
+db %1_str,0
+
+; back to sanity...
+section .text
+%endmacro
+
+; Define an assembly implemented function.
+%macro defop 1
+dict_entry %1,%1_op,0
 section .text
 %1_op:
 %endmacro
 
+; Copy a definiyion under a new name.
 %macro defalias 2
-section .rdata_dict
-%1_link: dd dict
-%1: dd %2_op
-%define dict %1
+dict_entry %1,%2_op,%2_data
 %endmacro
 
 %macro def 1
-section .rdata_dict
-%1_link: dd dict
-;%1: dd ncall,%1_data
-%1: dd dcall_op
-%1_data: dd %1_op
-%define dict %1
-section .rdata_pcode
+dict_entry %1,dcall_op,%1_op
+section .rodata_pcode
 %1_op:
 %endmacro
 
@@ -101,11 +131,8 @@ defop syscall
 	pop ecx
 	pop edx
 	int 0x80
+	push eax
 	jmp [next]
-
-_start:
-	mov eax, boot
-	jmp [dcall]
 
 defop hello
 	syscall_macro 4, 1, msg, len
@@ -132,14 +159,53 @@ defop int_add
 	push eax
 	jmp [next]
 
-section .data
+defop zerop
+	pop eax
+	cmp eax, 0
+	jz .zeropskip
+	push 0
+	jmp [next]
+	.zeropskip:
+	push 1
+	jmp [next]
 
-ptrsize equ 4
-cellsize equ 4
-entry_code equ ptrsize*1
-returnaddr equ 4
+%ifdef LIBC
+extern puts
+defop writeln
+	call puts
+	jmp [next]
 
-section .rdata
+extern dlopen
+defop libopen
+	call dlopen
+	push eax
+	jmp [next]
+
+extern dlsym
+defop libproc
+	call dlsym
+	push eax
+	jmp [next]
+
+extern dlclose
+defop libclose
+	call dlclose
+	jmp [next]
+
+defop fficall
+	pop eax
+	call eax
+	push eax
+	jmp [next]
+
+section .rodata
+testlib db 'libc.so.6',0
+testfn db 'puts',0
+section .data5~
+testlib_h dd 0
+%endif
+
+section .rodata
 
 msg db 'Hello',0xA
 len equ $ - msg
@@ -147,7 +213,7 @@ boo db 'BOO',0xA,0
 world db 'world',0xA,0
 worldlen equ $ - world
 
-section .rdata_forth
+section .rodata_forth
 
 ;sysexit:  dd $+ptrsize
 ;	dd dict
@@ -160,14 +226,14 @@ def sysexit
 		int32,0,\
 		rot,\
 		int32,1,\
-		syscall,\
+		syscall,drop,\
 		exit
 
 def writen
 	dd	rot,\
 		int32,1,\
 		int32,4,\
-		syscall,\
+		syscall,drop,\
 		exit
 
 def boot
@@ -180,6 +246,14 @@ def boot
 		ncall,writen_op,\
 		string,world,\
 		int32,worldlen,\
-		literal,writen,opcall,\
-		literal,3,literal,2,int_add,\
-		sysexit
+		literal,writen,opcall
+%ifdef LIBC
+	dd	string,testlib,writeln
+	dd	int32,1,string,testlib,libopen
+	dd	string,testfn,swap,libproc
+	dd	string,boo,swap,fficall
+	dd	literal,1,int_add
+%else
+	dd	literal,3,literal,2,int_add
+%endif
+	dd	sysexit
