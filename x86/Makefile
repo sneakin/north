@@ -1,12 +1,16 @@
+ifndef BITS
+BITS=32
+endif
+
 ifdef LIBC
 LD=gcc
-LDFLAGS=-m32 -ldl
+LDFLAGS=-m$(BITS) -no-pie -ldl
 else
 LDFLAGS=-m elf_i386 -e main
 endif
 
 NASM=nasm
-NASMFLAGS=-f elf32
+NASMFLAGS=-f elf$(BITS)
 
 ifdef LIBC
 NASMFLAGS+=-DLIBC
@@ -19,17 +23,26 @@ LDFLAGS+=-g
 NASMFLAGS+=-g -DDEBUG
 endif
 
-BINARY=north
-OBJECTS=north.o
+PROGRAMS=north
 
-$(BINARY): $(OBJECTS)
-	$(LD) $(LDFLAGS) -o $@ $<
+LINK=$(LD) $(LDFLAGS) -o $@ $<
 
-run: $(BINARY)
-	./$(BINARY)
+all: north-$(BITS)
+north-$(BITS): north-$(BITS).o
+	$(LINK)
+
+ifdef LIBC
+PROGRAMS+=pcoder-$(BITS)
+all: pcoder-$(BITS)
+pcoder-$(BITS): pcoder-$(BITS).o
+	$(LINK)
+endif
 
 %.o: %.S
 	$(NASM) $(NASMFLAGS) -o $@ $<
 
+%.o: %.asm
+	$(NASM) $(NASMFLAGS) -o $@ $<
+
 clean:
-	rm -rf $(BINARY) $(OBJECTS)
+	rm -rf $(PROGRAMS) *.o
