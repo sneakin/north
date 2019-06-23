@@ -23,7 +23,7 @@ LDFLAGS+=-g
 NASMFLAGS+=-g -DDEBUG
 endif
 
-PROGRAMS=north
+PROGRAMS=north-$(BITS)
 
 LINK=$(LD) $(LDFLAGS) -o $@ $<
 
@@ -34,6 +34,9 @@ north-$(BITS): north-$(BITS).o
 ifdef LIBC
 PROGRAMS+=pcoder-$(BITS)
 all: pcoder-$(BITS)
+
+pcoder-$(BITS).o: test-1.popped.$(BITS)
+
 pcoder-$(BITS): pcoder-$(BITS).o
 	$(LINK)
 endif
@@ -44,5 +47,8 @@ endif
 %.o: %.asm
 	$(NASM) $(NASMFLAGS) -o $@ $<
 
+%.popped.$(BITS): %.pop
+	ruby preproc.rb $< > $@
+
 clean:
-	rm -rf $(PROGRAMS) *.o
+	rm -rf $(PROGRAMS) *.o *.popped*

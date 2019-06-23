@@ -192,6 +192,10 @@ pushsi:
 	push r9
 	ret
 
+sysexit:
+	syscall_macro 60, 0, 0, 0
+	ret
+
 %macro def 1
 section .text
 %1: call liteval
@@ -200,89 +204,4 @@ section .rdata_forth
 %1_ops:
 %endmacro
 
-section .rdata
-
-testlib db 'libc.so.6',0
-testfn db 'puts',0
-
-section .data
-testlib_h: dq 0
-
-section .data
-msg db 'Hello',0
-len equ $ - msg
-boo db 'BOO',0
-world db 'world',0
-worldlen equ $ - world
-num db '12',0
-args db '%i %s %x',0xA,0
-yesstr db 'YES',0
-noostr db 'NOO',0
-
-section .text
-
-sysexit:
-	syscall_macro 60, 0, 0, 0
-	ret
-
-extern printf
-extern puts
-extern atoi
-extern exit
-
-extern dlopen
-extern dlsym
-
-def dltest
-	dq	literal,1,literal,testlib,puts,dlopen,apush
-	dq	literal,testfn,swap,dlsym,apush
-	dq	literal,testfn,swap,opcall
-	dq	literal,5,dropn
-	dq	fexit
-
-def writeboo
-	dq	literal,boo,puts,drop,fexit
-
-def noo
-	dq	literal,noostr,puts,drop,fexit
-
-def yes
-	dq	literal,yesstr,puts,drop,fexit
-
-def test_ifzero
-	dq	literal,0,drop,ifzero,yes
-	dq	literal,1,drop,ifzero,noo
-	dq	fexit
-
-def test_ifnotzero
-	dq	literal,0,drop,ifnotzero,noo
-	dq	literal,1,drop,ifnotzero,yes
-	dq	fexit
-
-def write_stack
-	dq	here,literal,.fmt,printf,drop,drop
-	dq	fexit
-.fmt:	db	'%x: %x %x | %x %x | %x %x %x %x %x %x',0xA,0
-
-def main
-	dq	pushdi,pushsi
-	dq	hello,yes,noo
-	; call ra, eval ra, argc, argv
-	dq	test_ifzero,test_ifnotzero
-	; print yes or no if there are any command line args or not
-	; dq	literal,2,overn,literal,-1,int_add,ifzero,noo,drop,ifnotzero,yes
-	; print the stack
-	dq	write_stack
-	; print argc, argv[0], and the ??
-	; todo frame pointer for argn
-	; dq	literal,4,overn,literal,4,overn,peek,literal,4,overn,literal,args,printf,literal,4,dropn
-	; make some calls internally and externally
-	dq	hello,literal,msg,literal,boo,puts,puts,drop,puts,drop
-	; external calls with args and a return
-	dq	literal,num,atoi,apush,writeboo,writeboo
-	; try dlopen
-	dq	dltest
-	; exit with atoi's return value
-	;dq	exit
-	dq	swap,drop,drop
-	dq	fexit
+%include "test-1.popped.64"

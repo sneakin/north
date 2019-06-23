@@ -63,6 +63,10 @@ hello:
 	syscall_macro 4, 1, msg, len
 	ret
 
+sysexit:
+	syscall_macro 1, 0, 0, 0
+	ret
+
 peek:
 	pop ebx
 	pop eax
@@ -167,87 +171,4 @@ section .rdata_forth
 %1_ops:
 %endmacro
 
-section .rodata
-
-testlib db 'libc.so.6',0
-testfn db 'puts',0
-
-section .data
-testlib_h: dd 0
-
-section .data
-msg db 'Hello',0
-len equ $ - msg
-boo db 'BOO',0
-world db 'world',0
-worldlen equ $ - world
-num db '12',0
-args db '%i %s %x',0xA,0
-yesstr db 'YES',0
-noostr db 'NOO',0
-
-section .text
-
-sysexit:
-	syscall_macro 1, 0, 0, 0
-	ret
-
-extern printf
-extern puts
-extern atoi
-extern exit
-
-extern dlopen
-extern dlsym
-
-def dltest
-	dd	literal,1,literal,testlib,puts,dlopen,apush
-	dd	literal,testfn,swap,dlsym,apush
-	dd	literal,testfn,swap,opcall
-	dd	literal,5,dropn
-	dd	fexit
-
-def writeboo
-	dd	literal,boo,puts,drop,fexit
-
-def noo
-	dd	literal,noostr,puts,drop,fexit
-
-def yes
-	dd	literal,yesstr,puts,drop,fexit
-
-def test_ifzero
-	dd	literal,0,drop,ifzero,yes
-	dd	literal,1,drop,ifzero,noo
-	dd	fexit
-
-def test_ifnotzero
-	dd	literal,0,drop,ifnotzero,noo
-	dd	literal,1,drop,ifnotzero,yes
-	dd	fexit
-
-def write_stack
-	dd	here,literal,.fmt,printf,drop,drop
-	dd	fexit
-.fmt:	db	'%x: %x %x | %x %x | %x %x %x %x %x %x',0xA,0
-
-def main
-	; call ra, eval ra, argc, argv
-	dd	test_ifzero,test_ifnotzero
-	; print yes or no if there are any command line args or not
-	dd	literal,2,overn,literal,-1,int_add,ifzero,noo,drop,ifnotzero,yes
-	; print the stack
-	dd	write_stack
-	; print argc, argv[0], and the ??
-	; todo frame pointer for argn
-	dd	literal,4,overn,literal,4,overn,peek,literal,4,overn,literal,args,printf,literal,4,dropn
-	; make some calls internally and externally
-	dd	hello,literal,msg,literal,boo,puts,puts,drop,puts,drop
-	; external calls with args and a return
-	dd	literal,num,atoi,apush,writeboo,writeboo
-	; try dlopen
-	dd	dltest
-	; exit with atoi's return value
-	;dd	exit
-	dd	swap,drop,drop
-	dd	fexit
+%include "test-1.popped.32"
