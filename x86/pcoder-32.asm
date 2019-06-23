@@ -38,7 +38,19 @@ fexit:
 	pop esi
 	ret
 
-opcall:
+fficall_0:
+	pop eax
+	jmp [eax]
+
+fficall_1:
+	pop eax
+	pop ebx
+	call [eax]
+	push eax
+	jmp next
+
+opcall_0:
+opcall_1:
 	pop ebx
 	pop eax
 	push ebx
@@ -162,13 +174,24 @@ here:
 	push esp
 	push ebx
 	ret
-	
+
 %macro def 1
 section .text
 %1: call liteval
 %1_data: dd %1_ops
 section .rdata_forth
 %1_ops:
+%endmacro
+
+%macro export 1
+global %1
+%endmacro
+
+%macro defc 3
+section .text
+extern %1
+c%1: call fficall_%3
+c%1_data: dd %1
 %endmacro
 
 %include "test-1.popped.32"

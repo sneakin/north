@@ -34,7 +34,14 @@ ARGF.each do |line|
     # import library functions...
     puts ";; #{$1}"
     $2.split(/[, ]+/).each do |fn|
-      puts "extern #{fn}"
+      name, ari, returns = fn.split('/')
+      ari = 0 unless ari
+      returns = 0 unless returns
+      puts "defc #{name},#{ari},#{returns}"
+    end
+  elsif line =~ /^export\s+(.*)/
+    $1.split(/\s+/).each do |fn|
+      puts "export #{fn}"
     end
   else
     # inside a definition

@@ -31,12 +31,6 @@ liteval: ; eval the pointer at the return address, used to make interpreted func
 	push r15
 	mov r15, [rbx]
 next:
-	mov rdi, [rsp+ptrsize*0]
-	mov rsi, [rsp+ptrsize*1]
-	mov rdx, [rsp+ptrsize*2]
-	mov rcx, [rsp+ptrsize*3]
-	mov r8, [rsp+ptrsize*4]
-	mov r9, [rsp+ptrsize*5]
 	add r15, ptrsize
 	call [r15-ptrsize]
 	jmp next
@@ -46,9 +40,16 @@ fexit:
 	pop r15
 	ret
 
-opcall:
+opcall_0:
 	pop rbx
 	pop rax
+	push rbx
+	jmp rax
+
+opcall_1:
+	pop rbx
+	pop rax
+	mov rdi, [rsp]
 	push rbx
 	jmp rax
 
@@ -196,12 +197,66 @@ sysexit:
 	syscall_macro 60, 0, 0, 0
 	ret
 
+fficall_0_0:
+	pop rax
+	jmp [rax]
+
+fficall_0_1:
+	pop rax
+	pop rdi
+	call [rax]
+	push rax
+	jmp next
+
+fficall_1_1:
+	pop rax
+	pop rdi
+	mov rdi, [rsp]
+	call [rax]
+	push rax
+	jmp next
+
+fficall_2_1:
+	pop rax
+	pop rdi
+	mov rdi, [rsp]
+	mov rsi, [rsp+ptrsize]
+	call [rax]
+	push rax
+	jmp next
+
+fficall_1_0:
+	pop rax
+	mov rdi, [rsp+ptrsize*1]
+	jmp [rax]
+
+fficall_n_0:
+	pop rax
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
+	mov rdx, [rsp+ptrsize*3]
+	mov rcx, [rsp+ptrsize*4]
+	mov r8, [rsp+ptrsize*5]
+	mov r9, [rsp+ptrsize*6]
+	jmp [rax]
+
 %macro def 1
 section .text
 %1: call liteval
 %1_data: dq %1_ops
 section .rdata_forth
 %1_ops:
+%endmacro
+
+%macro export 1
+global %1
+%endmacro
+
+%macro defc 3
+section .text
+extern %1
+c%1: call fficall_%2_%3
+c%1_data: dq %1
 %endmacro
 
 %include "test-1.popped.64"
