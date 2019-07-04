@@ -17661,6 +17661,7 @@ if(typeof(module) != 'undefined') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"asserts":66,"data_struct.js":67}],108:[function(require,module,exports){
+
 function Worker()
 {
 }
