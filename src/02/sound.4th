@@ -290,7 +290,13 @@ constant boot-sound-note-length 250
   beep-init
 ;
 
-: sound-init
+: sound-init-always
   sound-device sound-dev-init
   int32 0 *beep-initialized* poke
+;
+
+: sound-init
+  *beep-initialized* peek dup
+  IF beep THEN
+  UNLESS sound-init-always boot-sound THEN
 ;
