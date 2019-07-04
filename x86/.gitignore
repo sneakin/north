@@ -1,0 +1,6 @@
+*.o
+*.popped*
+pcoder-32
+pcoder-64
+north-32
+north-64

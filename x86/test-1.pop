@@ -1,0 +1,68 @@
+import libc printf puts atoi exit
+import libdl dlopen dlsym
+
+string testlib 'libc.so.6'
+string testfn 'puts'
+
+def dltest
+	literal,1,literal,testlib,puts,dlopen,apush
+	literal,testfn,swap,dlsym,apush
+	literal,testfn,swap,opcall
+	literal,5,dropn
+	fexit
+
+string msg "Hello",0xA
+const len $ - msg
+
+string boo "BOO"
+string world "world"
+const worldlen $ - world
+string num "12"
+string args "%i %s %x",0xA
+string yesstr "YES"
+string noostr "NOO"
+
+def writeboo
+	literal boo puts drop fexit
+
+def noo
+	literal noostr puts drop fexit
+
+def yes
+	literal yesstr puts drop fexit
+
+def test_ifzero
+	literal 0 drop ifzero yes
+	literal 1 drop ifzero noo
+	fexit
+
+def test_ifnotzero
+	literal 0 drop ifnotzero noo
+	literal 1 drop ifnotzero yes
+	fexit
+
+def write_stack
+	here literal .fmt printf drop drop
+	fexit
+.fmt:	db	'%x: %x %x | %x %x | %x %x %x %x %x %x',0xA,0
+
+def main
+	; call ra, eval ra, argc, argv
+	test_ifzero test_ifnotzero
+	; print yes or no if there are any command line args or not
+	literal 2 overn literal -1 int_add ifzero noo drop ifnotzero yes
+	; print the stack
+	write_stack
+	; print argc, argv[0], and the ??
+	; todo frame pointer for argn
+	literal 4 overn literal 4 overn peek literal 4 overn literal args printf literal 4 dropn
+	; make some calls internally and externally
+	hello literal msg literal boo puts puts drop puts drop
+	; external calls with args and a return
+	literal num atoi apush writeboo writeboo
+	; try dlopen
+	dltest
+	; exit with atoi's return value
+	;dd	exit
+	swap drop drop
+	fexit
