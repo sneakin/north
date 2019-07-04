@@ -16003,7 +16003,11 @@ function Sound(num_channels, mem, irq, name)
     this.irq = irq;
     this.num_channels = num_channels;
     this.channels = more_util.n_times(num_channels, (n) => new Channel({
-        onended: () => { this.irq.trigger(); }
+        onended: () => {
+            if(this.state.status & Sound.Status.irq_enabled) {
+                this.irq.trigger();
+            }
+        }
     }));
     this.struct = Sound.DeviceStruct(num_channels);
     this.ram = new RAM(this.struct.byte_size);
@@ -16065,6 +16069,7 @@ Sound.Status = new Enum([
     [ 'enabled', 1 ],
     [ 'playing', 2 ],
     [ 'demo', 4 ],
+    [ 'irq_enabled', 8 ]
     [ 'error', 0x80 ]
 ]);
 
@@ -16509,7 +16514,7 @@ RawSample.prototype.copy_sample = function(mem, addr, length)
 {
   var data = this.buffer.getChannelData(0);
   var type = this.format_type();
-  
+
   for(var i = 0; i < length / type.byte_size; i++) {
     data[i] = mem.memread1(addr + i * type.byte_size, type) / type.max;
   }
