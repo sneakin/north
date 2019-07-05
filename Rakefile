@@ -175,9 +175,17 @@ directory release_root do
   sh("git branch -f gh-pages origin/gh-pages && git clone -b gh-pages #{root} #{release_root}")
 end
 
-desc "Build and update the gh-pages branch."
-task :release => [ :default, release_root ] do
-  sh("cp -rav #{buildroot}/* #{release_root}")
-  sh("cd #{release_root} && git add -A #{release_root} && git commit && git push origin gh-pages")
+namespace :release do
+  task :deps => [ :default, release_root ]
+
+  task :sync => [ 'release:deps' ] do
+    sh("cp -rav #{buildroot}/* #{release_root}")
+    sh("cd #{release_root} && git add -A #{release_root} && git commit && git push origin gh-pages")
+  end
 end
 
+desc "Build and update the gh-pages branch."
+task :release do
+  ENV['ENV'] = 'production'
+  sh("rake release:sync")
+end
