@@ -24,6 +24,7 @@ eval: ; the pointer in eax
 	mov esi, eax
 	jmp next
 
+
 liteval: ; eval the pointer at the return address, used to make interpreted functions callable
 	pop ebx
 	push esi
@@ -175,8 +176,19 @@ here:
 	push ebx
 	ret
 
+constant:
+	pop ebx
+	mov eax, [ebp]
+	push eax
+	push ebx
+	ret
+
+section .text_dict
+dictionary: call constant
+dictionary_data: dd $
+
 %macro def 1
-section .text
+section .text_dict
 %1: call liteval
 %1_data: dd %1_ops
 section .rdata_forth
@@ -188,7 +200,7 @@ global %1
 %endmacro
 
 %macro defc 3
-section .text
+section .text_dict
 extern %1
 c%1: call fficall_%3
 c%1_data: dd %1

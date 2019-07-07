@@ -197,6 +197,13 @@ sysexit:
 	syscall_macro 60, 0, 0, 0
 	ret
 
+constant:
+	pop rbx
+	mov rax, [rbp]
+	push rax
+	push rbx
+	ret
+
 fficall_0_0:
 	pop rax
 	jmp [rax]
@@ -240,8 +247,12 @@ fficall_n_0:
 	mov r9, [rsp+ptrsize*6]
 	jmp [rax]
 
+section .text_dict
+dictionary: call constant
+dictionary_data: dq $
+
 %macro def 1
-section .text
+section .text_dict
 %1: call liteval
 %1_data: dq %1_ops
 section .rdata_forth
@@ -253,7 +264,7 @@ global %1
 %endmacro
 
 %macro defc 3
-section .text
+section .text_dict
 extern %1
 c%1: call fficall_%2_%3
 c%1_data: dq %1
