@@ -6,7 +6,11 @@ ifdef LIBC
 LD=gcc
 LDFLAGS=-m$(BITS) -no-pie -ldl
 else
+ifeq ($(BITS),32)
 LDFLAGS=-m elf_i386 -e main
+else
+LDFLAGS=-m elf_x86_64 -e main
+endif
 endif
 
 NASM=nasm
@@ -30,6 +34,8 @@ LINK=$(LD) $(LDFLAGS) -o $@ $<
 all: north-$(BITS)
 north-$(BITS): north-$(BITS).o
 	$(LINK)
+
+north-64.o: test-north.popped.64
 
 ifdef LIBC
 PROGRAMS+=pcoder-$(BITS)

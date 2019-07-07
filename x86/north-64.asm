@@ -1,259 +1,307 @@
+;; A basic call threaded interpreter. The op code is just a list of function addresses.
+
 section .text
 global main
-bits 32
+bits 64
 
-ptrsize equ 4
-cellsize equ 4
-entry_code equ ptrsize*1
-returnaddr equ 4
+ptrsize equ 8
+dict_code equ 0
+dict_data equ ptrsize
+dict_name equ ptrsize*2
+dict_link equ ptrsize*3
 
 main:
-	mov eax, boot
-	jmp [dcall]
+	call [hello+dict_code]
+	mov rax, init
+	call [eval+dict_code]
+	ret
 
 %macro syscall_macro 4
-    mov     edx,%4
-	    mov     ecx,%3
-	    mov     ebx,%2
-	    mov     eax,%1
-	    int     0x80                                ;call kernel
+	push rsi ; eval ip
+	mov     rdx,%4
+	mov     rsi,%3
+	mov     rdi,%2
+	mov     rax,%1
+	syscall
+	pop rsi
 %endmacro
 
-%define dict 0
+%define eip r12
+%define dictionary 0
 
-; todo make op code pointer a pointer load of the data field
-; todo definition code pointers should be at the entry, not the data
-; todo primary label should include the link.
-; todo raw sequence calls and dictionary entry calls? ncall and opcall mainly
-; todo finish the names by creating a dictionary entry macro shared by the defs
+%macro create 3
+section .text_dict
+%1:
+%1_code: dq %2
+%1_data: dq %3
+%1_name: dq %1_name_str
+%1_link: dq dictionary
+%define dictionary %1
 
-; Define a ststic dictionary entry. 
-%macro dict_entry 3 ; name, code pointer, data pointer
-; create the entry
-section .data_dict
-%1_link: dd dict
-dd %1_name
-%1: dd %2
-%1_data: dd %3
+section .rdata
+%defstr %1_name_str_str %1
+%strlen %1_name_str_len %1_name_str_str
+%1_name_str:
+	dq %1_name_str_len
+	db %1_name_str_str,0
 
-; update last link
-%define dict %1_link
-
-; store the name string
-section .rodata_dict_names
-align 4
-%defstr %1_str %1
-%strlen %1_name_len %1_str
-%1_name: dd %1_name_len
-db %1_str,0
-
-; back to sanity...
 section .text
 %endmacro
 
-; Define an assembly implemented function.
 %macro defop 1
-dict_entry %1,%1_op,0
+create %1, %1_asm, 0
 section .text
-%1_op:
+%1_asm:
 %endmacro
 
-; Copy a definiyion under a new name.
-%macro defalias 2
-dict_entry %1,%2_op,%2_data
-%endmacro
-
-%macro def 1
-dict_entry %1,dcall_op,%1_op
-section .rodata_pcode
-%1_op:
-%endmacro
+defop eval ; the pointer in eax
+	push eip
+	mov eip, [rax+dict_data]
+	jmp [next+dict_code]
 
 defop next
-	lodsd
-	jmp [eax]
+	mov rax, [eip]
+	add eip, ptrsize
+	call [rax+dict_code]
+	jmp [next+dict_code]
 
-defop opcall
-	pop eax
-	jmp [eax]
+defop fexit
+	add rsp, ptrsize
+	pop eip
+	ret
 
-defop ncall
-	lodsd
-	jmp [acall]
+defop opcall_0
+	pop rbx
+	pop rax
+	push rbx
+	jmp [rax]
 
-defop dcall
-	;add eax, entry_code
-	mov eax, [eax+entry_code]
-	jmp [acall]
-
-defop acall
-	push esi
-	mov esi, eax
-	jmp [next]
-
-defop exit
-	pop esi
-	jmp [next]
-
-defop dup
-	mov eax, [esp]
-	push eax
-	jmp [next]
+defop opcall_1
+	pop rbx
+	pop rax
+	mov rdi, [rsp]
+	push rbx
+	jmp [rax]
 
 defop literal
-	lodsd
-	push eax
-	jmp [next]
+	mov rax, [eip]
+	add eip, ptrsize
+	pop rbx
+	push rax
+	push rbx
+	ret
 
-defalias pointer,literal
-defalias string,literal
-defalias int32,literal
-
-defop swap
-	pop eax
-	pop ebx
-	push eax
-	push ebx
-	jmp [next]
-
-defop rot
-	pop eax
-	pop ebx
-	pop ecx
-	push eax
-	push ebx
-	push ecx
-	jmp [next]
-
-defop syscall
-	pop eax
-	pop ebx
-	pop ecx
-	pop edx
-	int 0x80
-	push eax
-	jmp [next]
+defop syscallop
+	mov rax, [rsp+ptrsize*1]
+	mov rdi, [rsp+ptrsize*2]
+	mov rsi, [rsp+ptrsize*3]
+	mov rdx, [rsp+ptrsize*4]
+	syscall
+	ret
 
 defop hello
-	syscall_macro 4, 1, msg, len
-	jmp [next]
+	syscall_macro 1, 1, msg, len
+	ret
 
-defop arg0
-	mov eax, [esp+returnaddr]
-	push eax
-	jmp [next]
+defop peek
+	pop rbx
+	pop rax
+	mov rax, [rax]
+	push rax
+	push rbx
+	ret
 
-defop arg1
-	mov eax, [esp+returnaddr+cellsize]
-	push eax
-	jmp [next]
+defop dup
+	pop rbx
+	mov rax, [rsp]
+	push rax
+	push rbx
+	ret
+
+defop over
+	pop rbx
+	mov rax, [rsp+ptrsize]
+	push rax
+	push rbx
+	ret
+
+defop overn
+	pop rbx
+	pop rax
+	imul rax, ptrsize
+	add rax, rsp
+	mov rax, [rax]
+	push rax
+	push rbx
+	ret
 
 defop drop
-	pop eax
-	jmp [next]
+	pop rbx
+	pop rax
+	push rbx
+	ret
+
+defop dropn
+	pop rax
+	pop rbx
+	imul rbx, ptrsize
+	add rsp, rbx
+	push rax
+	ret
+
+defop swap
+	pop rax
+	pop rbx
+	pop rcx
+	push rbx
+	push rcx
+	push rax
+	ret
+
+defop rot
+	mov rax, [rsp+ptrsize]
+	mov rbx, [rsp+ptrsize*3]
+	mov [rsp+ptrsize], rbx
+	mov [rsp+ptrsize*3], rax
+	ret
+
+defop apush
+	pop rbx
+	push rax
+	push rbx
+	ret
+
+defop ifzero
+	pop rbx
+	pop rax
+	test rax, rax
+	jz .done
+	add eip, ptrsize
+.done:
+	push rbx
+	ret
+
+defop ifnotzero
+	pop rbx
+	pop rax
+	test rax, rax
+	jnz .done
+	add eip, ptrsize
+.done:
+	push rbx
+	ret
 
 defop int_add
-	pop ebx
-	pop eax
-	add eax, ebx
-	push eax
-	jmp [next]
+	pop rbx
+	pop rax
+	add rax, [rsp]
+	mov [rsp], rax
+	push rbx
+	ret
 
-defop zerop
-	pop eax
-	cmp eax, 0
-	jz .zeropskip
-	push 0
-	jmp [next]
-	.zeropskip:
-	push 1
-	jmp [next]
+defop here
+	pop rbx
+	push rsp
+	push rbx
+	ret
 
-%ifdef LIBC
-extern puts
-defop writeln
-	call puts
-	jmp [next]
+defop pusha
+	pop r9
+	push rax
+	push r9
+	ret	
 
-extern dlopen
-defop libopen
-	call dlopen
-	push eax
-	jmp [next]
+defop pushb
+	pop r9
+	push rax
+	push r9
+	ret
 
-extern dlsym
-defop libproc
-	call dlsym
-	push eax
-	jmp [next]
+defop pushdi
+	pop r9
+	push rdi
+	push r9
+	ret
 
-extern dlclose
-defop libclose
-	call dlclose
-	jmp [next]
+defop pushsi
+	pop r9
+	push rsi
+	push r9
+	ret
 
-defop fficall
-	pop eax
-	call eax
-	push eax
-	jmp [next]
+defop sysexit
+	syscall_macro 60, 0, 0, 0
+	ret
 
-section .rodata
-testlib db 'libc.so.6',0
-testfn db 'puts',0
-section .data5~
-testlib_h dd 0
-%endif
+defop constant
+	pop rbx
+	mov rax, [rbx]
+	push rax
+	push rbx
+	ret
 
-section .rodata
+defop fficall_0_0
+	jmp [rax+dict_data]
 
-msg db 'Hello',0xA
-len equ $ - msg
-boo db 'BOO',0xA,0
-world db 'world',0xA,0
-worldlen equ $ - world
+defop fficall_0_1
+	call [rax+dict_data]
+	pop rbx
+	push rax
+	push rbx
+	ret
 
-section .rodata_forth
+defop fficall_1_1
+	mov rdi, [rsp+ptrsize*1]
+	call [rax+dict_data]
+	pop rbx
+	push rax
+	push rbx
+	ret
 
-;sysexit:  dd $+ptrsize
-;	dd dict
-;	%assign dict dict + 1
-;	syscall_macro 1, 0, 0, 0
-;	jmp [next]
-def sysexit
-	dd	swap,\
-		int32,0,\
-		int32,0,\
-		rot,\
-		int32,1,\
-		syscall,drop,\
-		exit
+defop fficall_2_1
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
+	call [rax+dict_data]
+	jmp [ffiexit_1+dict_code]
 
-def writen
-	dd	rot,\
-		int32,1,\
-		int32,4,\
-		syscall,drop,\
-		exit
+defop ffiexit_1
+	pop rbx
+	push rax
+	push rbx
+	ret
 
-def boot
-	dd	hello,\
-		string,world,\
-		int32,worldlen,\
-		writen,\
-		string,boo,\
-		int32,4,\
-		ncall,writen_op,\
-		string,world,\
-		int32,worldlen,\
-		literal,writen,opcall
-%ifdef LIBC
-	dd	string,testlib,writeln
-	dd	int32,1,string,testlib,libopen
-	dd	string,testfn,swap,libproc
-	dd	string,boo,swap,fficall
-	dd	literal,1,int_add
-%else
-	dd	literal,3,literal,2,int_add
-%endif
-	dd	sysexit
+defop fficall_1_0
+	mov rdi, [rsp+ptrsize*1]
+	call [rax+dict_data]
+	ret
+
+defop fficall_n_0
+	pop r13
+	mov rdi, [rsp+ptrsize*0]
+	mov rsi, [rsp+ptrsize*1]
+	mov rdx, [rsp+ptrsize*2]
+	mov rcx, [rsp+ptrsize*3]
+	mov r8, [rsp+ptrsize*4]
+	mov r9, [rsp+ptrsize*5]
+	call [rax+dict_data]
+	push r13
+	ret
+
+section .text_dict
+
+%macro def 1
+create %1, eval_asm, %1_ops
+section .rdata_forth
+%1_ops:
+%endmacro
+
+%macro export 1
+global %1
+%endmacro
+
+%macro defc 3
+extern %1
+create c%1, fficall_%2_%3_asm, %1
+%endmacro
+
+%include "test-north.popped.64"

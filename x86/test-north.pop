@@ -1,0 +1,74 @@
+import libc printf/n puts/1 atoi/1/1 exit/1
+import libdl dlopen/2/1 dlsym/2/1
+
+export yes noo
+
+string testlib 'libc.so.6'
+string testfn 'puts'
+
+def dltest
+	literal,1,literal,testlib,cputs,cdlopen
+	literal,testfn,swap,cdlsym
+	literal,testfn,swap,opcall_1
+	literal,5,dropn
+	fexit
+
+string msg "Hello",0xA
+const len $ - msg
+
+string boo "BOO"
+string world "world"
+const worldlen $ - world
+string num "12"
+string args "%i %s %x",0xA
+string yesstr "YES"
+string noostr "NOO"
+
+def hellohello
+	hello hello fexit
+
+def writeboo
+	literal boo cputs drop fexit
+
+def noo
+	literal noostr cputs drop fexit
+
+def yes
+	literal yesstr cputs drop fexit
+
+def test_ifzero
+	literal 0 ifzero yes
+	literal 1 ifzero noo
+	fexit
+
+def test_ifnotzero
+	literal 0 ifnotzero noo
+	literal 1 ifnotzero yes
+	fexit
+
+def write_stack
+	here literal .fmt cprintf drop drop
+	fexit
+.fmt:	db	'%x: %x %x | %x %x | %x %x %x %x %x %x',0xA,0
+
+def init
+	hello hello hellohello hellohello yes noo
+	; call ra, eval ra, argc, argv
+	test_ifzero test_ifnotzero
+	; print yes or no if there are any command line args or not
+	literal 2 overn literal -1 int_add dup ifzero noo ifnotzero yes
+	; print the stack
+	literal 65 write_stack drop
+	; print argc, argv[0], and the ??
+	; todo frame pointer for argn
+	literal 4 overn literal 4 overn peek literal 4 overn hello literal args cprintf literal 4 dropn
+	; make some calls internally and externally
+	hello literal msg literal boo cputs cputs drop cputs drop
+	; external calls with args and a return
+	literal num catoi writeboo writeboo
+	; try dlopen
+	dltest
+	; exit with atoi's return value
+	;dd	exit
+	swap drop drop
+	fexit
