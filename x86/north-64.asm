@@ -1,8 +1,11 @@
 ;; A basic call threaded interpreter. The op code is just a list of function addresses.
 
-section .text
-global main
 bits 64
+
+section .text
+
+global main
+global outer_eval
 
 ptrsize equ 8
 dict_code equ 0
@@ -10,24 +13,32 @@ dict_data equ ptrsize
 dict_name equ ptrsize*2
 dict_link equ ptrsize*3
 
+%define eip r12
+%define fp r10
+
 main:
-	call [hello+dict_code]
+	push rsi ; argv
+	push rdi ; argc
 	mov rax, init
-	call [eval+dict_code]
+	call outer_eval
+	pop rax ; return value
+	add rsp, ptrsize*2
 	ret
 
+outer_eval:
+	jmp [eval+dict_code]
+
 %macro syscall_macro 4
-	push rsi ; eval ip
+	push eip
 	mov     rdx,%4
 	mov     rsi,%3
 	mov     rdi,%2
 	mov     rax,%1
 	syscall
-	pop rsi
+	pop eip
 %endmacro
 
-%define eip r12
-%define dictionary 0
+%define next_dict_link 0
 
 %macro create 3
 section .text_dict
@@ -35,8 +46,8 @@ section .text_dict
 %1_code: dq %2
 %1_data: dq %3
 %1_name: dq %1_name_str
-%1_link: dq dictionary
-%define dictionary %1
+%1_link: dq next_dict_link
+%define next_dict_link %1
 
 section .rdata
 %defstr %1_name_str_str %1
@@ -70,18 +81,8 @@ defop fexit
 	pop eip
 	ret
 
-defop opcall_0
-	pop rbx
-	pop rax
-	push rbx
-	jmp [rax]
-
-defop opcall_1
-	pop rbx
-	pop rax
-	mov rdi, [rsp]
-	push rbx
-	jmp [rax]
+defop break
+	ret
 
 defop literal
 	mov rax, [eip]
@@ -90,6 +91,13 @@ defop literal
 	push rax
 	push rbx
 	ret
+
+defop asmcall_1
+	pop rbx
+	pop rax
+	push rbx
+	mov rdi, [rsp+ptrsize]
+	jmp rax
 
 defop syscallop
 	mov rax, [rsp+ptrsize*1]
@@ -104,11 +112,9 @@ defop hello
 	ret
 
 defop peek
-	pop rbx
-	pop rax
+	mov rax, [rsp+ptrsize]
 	mov rax, [rax]
-	push rax
-	push rbx
+	mov [rsp+ptrsize], rax
 	ret
 
 defop dup
@@ -150,18 +156,25 @@ defop dropn
 	ret
 
 defop swap
-	pop rax
-	pop rbx
-	pop rcx
-	push rbx
-	push rcx
-	push rax
+	mov rax, [rsp+ptrsize]
+	mov rbx, [rsp+ptrsize*2]
+	mov [rsp+ptrsize*2], rax
+	mov [rsp+ptrsize], rbx
 	ret
 
-defop rot
+defop rot ; ( a b c -- c b a )
 	mov rax, [rsp+ptrsize]
 	mov rbx, [rsp+ptrsize*3]
 	mov [rsp+ptrsize], rbx
+	mov [rsp+ptrsize*3], rax
+	ret
+
+defop roll ; ( a b c -- c a b )
+	mov rax, [rsp+ptrsize]
+	mov rbx, [rsp+ptrsize*2]
+	mov rcx, [rsp+ptrsize*3]
+	mov [rsp+ptrsize], rbx
+	mov [rsp+ptrsize*2], rcx
 	mov [rsp+ptrsize*3], rax
 	ret
 
@@ -174,21 +187,21 @@ defop apush
 defop ifzero
 	pop rbx
 	pop rax
+	push rbx
 	test rax, rax
 	jz .done
 	add eip, ptrsize
 .done:
-	push rbx
 	ret
 
 defop ifnotzero
 	pop rbx
 	pop rax
+	push rbx
 	test rax, rax
 	jnz .done
 	add eip, ptrsize
 .done:
-	push rbx
 	ret
 
 defop int_add
@@ -243,26 +256,22 @@ defop constant
 defop fficall_0_0
 	jmp [rax+dict_data]
 
-defop fficall_0_1
-	call [rax+dict_data]
-	pop rbx
-	push rax
-	push rbx
-	ret
-
-defop fficall_1_1
+defop fficall_1_0
 	mov rdi, [rsp+ptrsize*1]
-	call [rax+dict_data]
-	pop rbx
-	push rax
-	push rbx
-	ret
+	jmp [rax+dict_data]
 
-defop fficall_2_1
+defop fficall_n_0
 	mov rdi, [rsp+ptrsize*1]
 	mov rsi, [rsp+ptrsize*2]
-	call [rax+dict_data]
-	jmp [ffiexit_1+dict_code]
+	mov rdx, [rsp+ptrsize*3]
+	mov rcx, [rsp+ptrsize*4]
+	mov r8, [rsp+ptrsize*5]
+	mov r9, [rsp+ptrsize*6]
+	mov r11, rax
+	mov rax, 0 ; number of vector args
+	jmp [r11+dict_data]
+	;push r13
+	;ret
 
 defop ffiexit_1
 	pop rbx
@@ -270,22 +279,20 @@ defop ffiexit_1
 	push rbx
 	ret
 
-defop fficall_1_0
+defop fficall_0_1
+	call [rax+dict_data]
+	jmp [ffiexit_1+dict_code]
+
+defop fficall_1_1
 	mov rdi, [rsp+ptrsize*1]
 	call [rax+dict_data]
-	ret
+	jmp [ffiexit_1+dict_code]
 
-defop fficall_n_0
-	pop r13
-	mov rdi, [rsp+ptrsize*0]
-	mov rsi, [rsp+ptrsize*1]
-	mov rdx, [rsp+ptrsize*2]
-	mov rcx, [rsp+ptrsize*3]
-	mov r8, [rsp+ptrsize*4]
-	mov r9, [rsp+ptrsize*5]
+defop fficall_2_1
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
 	call [rax+dict_data]
-	push r13
-	ret
+	jmp [ffiexit_1+dict_code]
 
 section .text_dict
 
@@ -305,3 +312,5 @@ create c%1, fficall_%2_%3_asm, %1
 %endmacro
 
 %include "test-north.popped.64"
+
+dictionary: dq next_dict_link

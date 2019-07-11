@@ -9,7 +9,7 @@ string testfn 'puts'
 def dltest
 	literal,1,literal,testlib,cputs,cdlopen
 	literal,testfn,swap,cdlsym
-	literal,testfn,swap,opcall_1
+	literal,testfn,swap,asmcall_1
 	literal,5,dropn
 	fexit
 
@@ -19,8 +19,8 @@ const len $ - msg
 string boo "BOO"
 string world "world"
 const worldlen $ - world
-string num "12"
-string args "%i %s %x",0xA
+string num "254"
+string args "%x %s %x",0xA
 string yesstr "YES"
 string noostr "NOO"
 
@@ -47,28 +47,47 @@ def test_ifnotzero
 	fexit
 
 def write_stack
-	here literal .fmt cprintf drop drop
+	here literal .fmt cprintf literal 2 dropn
 	fexit
-.fmt:	db	'%x: %x %x | %x %x | %x %x %x %x %x %x',0xA,0
+.fmt:	db	'%x: %x %x | %x %x || %x %x %x %x | %x %x | %x %x %x %x %x %x %x %x',0xA,0
+
+def write_here
+	literal 1 here literal .fmt cprintf literal 3 dropn
+	fexit
+.fmt:	db	'here = %x %x',0xA,0
+
+def test_printf
+	write_here
+	literal 6 literal 5 literal 4 literal 3 literal 2 literal 1 swap
+	literal .fmt cprintf
+	literal 7 dropn
+	write_here
+	fexit
+.fmt:	db	'Hey %x %x %x %x %x %x %x',0xA,0
 
 def init
+	write_stack
 	hello hello hellohello hellohello yes noo
 	; call ra, eval ra, argc, argv
 	test_ifzero test_ifnotzero
 	; print yes or no if there are any command line args or not
 	literal 2 overn literal -1 int_add dup ifzero noo ifnotzero yes
+	literal 1 literal 2 test_printf drop drop
 	; print the stack
-	literal 65 write_stack drop
+	write_stack
+	noo
+	; literal 65 write_stack drop
+	literal 1 literal 2 test_printf drop drop
 	; print argc, argv[0], and the ??
 	; todo frame pointer for argn
-	literal 4 overn literal 4 overn peek literal 4 overn hello literal args cprintf literal 4 dropn
+	write_stack literal 4 overn literal 4 overn peek literal 4 overn literal args cprintf literal 4 dropn
 	; make some calls internally and externally
 	hello literal msg literal boo cputs cputs drop cputs drop
 	; external calls with args and a return
-	literal num catoi writeboo writeboo
+	literal num catoi swap drop
 	; try dlopen
 	dltest
 	; exit with atoi's return value
-	;dd	exit
-	swap drop drop
+	roll
+	break
 	fexit
