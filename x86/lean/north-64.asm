@@ -108,8 +108,10 @@ defop syscallop
 	ret
 
 defop hello
-	syscall_macro 1, 1, msg, len
+	syscall_macro 1, 1, .msg, .len
 	ret
+.msg db "Hello",0xA,0
+.len equ $ - .msg
 
 defop peek
 	mov rax, [rsp+ptrsize]
@@ -311,6 +313,8 @@ extern %1
 create c%1, fficall_%2_%3_asm, %1
 %endmacro
 
-%include "test-north.popped.64"
-
+section .rdata
+global dictionary
 dictionary: dq next_dict_link
+
+section .text

@@ -206,4 +206,5 @@ c%1: call fficall_%3
 c%1_data: dd %1
 %endmacro
 
-%include "test-1.popped.32"
+section .text
+

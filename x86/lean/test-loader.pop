@@ -1,0 +1,21 @@
+%include "north.h"
+
+import libc printf/n puts/1 atoi/1/1 exit/1
+import libdl dlopen/2/1 dlsym/2/1
+
+def init
+	; check number command line arguments
+	; open and read / memory map first command line argument
+	;
+	; instead of remapping:
+	; fixed index op codes into a table with a standard set of ops: relative to start of dictionary segment instead of absolute
+	; eval the file which load libraries, leaves functions pointers on stack, op codes index into that table
+	; change from predefined table to copied and extended table
+	; or chain tables
+	;
+	; files begin with a list of libraries and a list of functions for each library
+	; each library is opened and each function is resolved
+	; the op codes index that table making dictionary addresses unknown.
+	; the op codes need to be mapped ( may need a different #next )
+	literal 0 roll
+	fexit

@@ -270,4 +270,4 @@ c%1: call fficall_%2_%3
 c%1_data: dq %1
 %endmacro
 
-%include "test-1.popped.64"
+section .text
