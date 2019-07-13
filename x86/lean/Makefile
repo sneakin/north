@@ -44,7 +44,7 @@ clean:
 %.o: %.asm
 	$(NASM) $(NASMFLAGS) -o $@ $<
 
-%.popped.$(BITS): %.pop
+%.popped.$(BITS): %.pop north-$(BITS).asm north.h
 	$(POPPER) $< > $@
 
 %.o: %.popped.$(BITS)

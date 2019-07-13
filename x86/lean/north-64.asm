@@ -13,7 +13,7 @@ dict_data equ ptrsize
 dict_name equ ptrsize*2
 dict_link equ ptrsize*3
 
-%define eip r12
+%define eval_ip r12
 %define fp r10
 
 main:
@@ -29,13 +29,13 @@ outer_eval:
 	jmp [eval+dict_code]
 
 %macro syscall_macro 4
-	push eip
+	push eval_ip
 	mov     rdx,%4
 	mov     rsi,%3
 	mov     rdi,%2
 	mov     rax,%1
 	syscall
-	pop eip
+	pop eval_ip
 %endmacro
 
 %define next_dict_link 0
@@ -66,27 +66,27 @@ section .text
 %endmacro
 
 defop eval ; the pointer in eax
-	push eip
-	mov eip, [rax+dict_data]
+	push eval_ip
+	mov eval_ip, [rax+dict_data]
 	jmp [next+dict_code]
 
 defop next
-	mov rax, [eip]
-	add eip, ptrsize
+	mov rax, [eval_ip]
+	add eval_ip, ptrsize
 	call [rax+dict_code]
 	jmp [next+dict_code]
 
 defop fexit
 	add rsp, ptrsize
-	pop eip
+	pop eval_ip
 	ret
 
 defop break
 	ret
 
 defop literal
-	mov rax, [eip]
-	add eip, ptrsize
+	mov rax, [eval_ip]
+	add eval_ip, ptrsize
 	pop rbx
 	push rax
 	push rbx
@@ -192,7 +192,7 @@ defop ifzero
 	push rbx
 	test rax, rax
 	jz .done
-	add eip, ptrsize
+	add eval_ip, ptrsize
 .done:
 	ret
 
@@ -202,7 +202,7 @@ defop ifnotzero
 	push rbx
 	test rax, rax
 	jnz .done
-	add eip, ptrsize
+	add eval_ip, ptrsize
 .done:
 	ret
 

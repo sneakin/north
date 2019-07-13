@@ -51,7 +51,7 @@ def test_ifnotzero
 def write_stack
 	here literal .fmt cprintf literal 2 dropn
 	fexit
-.fmt:	db	'%x: %x %x | %x %x || %x %x %x %x | %x %x | %x %x %x %x %x %x %x %x',0xA,0
+.fmt:	db	'%x: %x %x | %x %x || %x %x %x %x | %x %x | %x %x %x %x %x %x %x %x %x %x %x',0xA,0
 
 def write_here
 	literal 1 here literal .fmt cprintf literal 3 dropn
@@ -68,7 +68,6 @@ def test_printf
 .fmt:	db	'Hey %x %x %x %x %x %x %x',0xA,0
 
 def init
-	write_stack
 	hello hello hellohello hellohello yes noo
 	; call ra, eval ra, argc, argv
 	test_ifzero test_ifnotzero
@@ -82,7 +81,8 @@ def init
 	literal 1 literal 2 test_printf drop drop
 	; print argc, argv[0], and the ??
 	; todo frame pointer for argn
-	write_stack literal 4 overn literal 4 overn peek literal 4 overn literal args cprintf literal 4 dropn
+	write_stack
+	literal 4 overn literal 4 overn peek literal 4 overn literal args cprintf literal 4 dropn
 	; make some calls internally and externally
 	hello literal msg literal boo cputs cputs drop cputs drop
 	; external calls with args and a return
@@ -92,4 +92,5 @@ def init
 	; exit with atoi's return value
 	roll
 	break
+	write_stack
 	fexit
