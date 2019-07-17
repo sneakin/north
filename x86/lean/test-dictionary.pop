@@ -1,0 +1,55 @@
+%include "north.h"
+
+import libc printf/n
+
+string fmt "%x %i %i",0xA
+string stack_fmt "%x %x %x %x %x %x %x | %x %x %x %x %x %x %x",0xA
+
+def map_dict ; ( fn dict num-entries )
+	literal 3 overn literal 5 overn call
+	literal 5 overn swap
+	cell_size int_add cell_size int_add cell_size int_add
+	literal 4 overn
+	dup literal 1 int_sub
+	swap ifnotzero map_dict
+	literal 3 dropn
+	fexit
+
+string dict_entry_fmt "%s: %8x %8x %8x",0xA
+
+def print_dict_entry
+	; entry addr
+	literal 2 overn
+	dup
+	; entry code
+	dup peek swap
+	; entry data
+	cell_size int_add dup peek swap
+	; entry name
+	cell_size int_add peek cell_size int_add
+	; print
+	literal dict_entry_fmt cprintf
+	literal 5 dropn
+	fexit
+
+string heading "Word: Data Code Address",0xA
+
+def seq_data
+	rot
+	cell_size int_add
+	rot
+	fexit
+
+def init
+	dict_entry_length dictionary_size dictionary literal fmt cprintf
+	literal 4 dropn
+	; try the first two entries
+	dictionary seq_data print_dict_entry
+	cell_size int_add cell_size int_add cell_size int_add print_dict_entry
+	literal 1 dropn
+	; for real
+	literal heading cprintf drop
+	literal print_dict_entry dictionary seq_data dictionary_size map_dict
+	literal 3 dropn
+	literal 0 roll
+	fexit
