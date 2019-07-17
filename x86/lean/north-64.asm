@@ -8,10 +8,11 @@ global main
 global outer_eval
 
 ptrsize equ 8
+index_size equ 4
 dict_code equ 0
 dict_data equ ptrsize
 dict_name equ ptrsize*2
-dict_link equ ptrsize*3
+dict_entry_size equ ptrsize*3
 
 %define eval_ip r12
 %define fp r10
@@ -26,7 +27,7 @@ main:
 	ret
 
 outer_eval:
-	jmp [eval+dict_code]
+	jmp [eax+dict_code]
 
 %macro syscall_macro 4
 	push eval_ip
@@ -38,7 +39,11 @@ outer_eval:
 	pop eval_ip
 %endmacro
 
-%define next_dict_link 0
+section .text_dict
+%define m_dictionary_size 0
+
+dictionary_start:
+	dq m_dictionary_size
 
 %macro create 3
 section .text_dict
@@ -46,8 +51,9 @@ section .text_dict
 %1_code: dq %2
 %1_data: dq %3
 %1_name: dq %1_name_str
-%1_link: dq next_dict_link
-%define next_dict_link %1
+
+%assign m_dictionary_size m_dictionary_size + 1
+%define %1_i %1-dictionary_start
 
 section .rdata
 %defstr %1_name_str_str %1
@@ -65,7 +71,13 @@ section .text
 %1_asm:
 %endmacro
 
-defop eval ; the pointer in eax
+defop call ; the ToS
+	pop rbx
+	pop rax
+	push rbx
+	jmp [eval+dict_code]
+
+defop eval ; the pointer in rax
 	push eval_ip
 	mov eval_ip, [rax+dict_data]
 	jmp [next+dict_code]
@@ -75,6 +87,18 @@ defop next
 	add eval_ip, ptrsize
 	call [rax+dict_code]
 	jmp [next+dict_code]
+
+defop eval_index ; the entry in rax
+	push eval_ip
+	mov eval_ip, [rax+dict_data]
+	jmp [next_index+dict_code]
+
+defop next_index
+	mov eax, [eval_ip]
+	add rax, [dictionary+dict_data]
+	add eval_ip, index_size
+	call [rax+dict_code]
+	jmp [next_index+dict_code]
 
 defop fexit
 	add rsp, ptrsize
@@ -87,6 +111,30 @@ defop break
 defop literal
 	mov rax, [eval_ip]
 	add eval_ip, ptrsize
+	pop rbx
+	push rax
+	push rbx
+	ret
+
+defop int32
+	mov eax, dword [eval_ip]
+	add eval_ip, 4
+	pop rbx
+	push rax
+	push rbx
+	ret
+
+defop int64
+	mov rax, [eval_ip]
+	add eval_ip, 8
+	pop rbx
+	push rax
+	push rbx
+	ret
+
+defop pointer
+	mov rax, [eval_ip]
+	add eval_ip, 8
 	pop rbx
 	push rax
 	push rbx
@@ -206,11 +254,40 @@ defop ifnotzero
 .done:
 	ret
 
+defop ifpositive
+	pop rbx
+	pop rax
+	push rbx
+	cmp rax, 0
+	jge .done
+	add eval_ip, ptrsize
+.done:
+	ret
+
+defop ifnegative
+	pop rbx
+	pop rax
+	push rbx
+	cmp rax, 0
+	jl .done
+	add eval_ip, ptrsize
+.done:
+	ret
+
 defop int_add
 	pop rbx
 	pop rax
 	add rax, [rsp]
 	mov [rsp], rax
+	push rbx
+	ret
+
+defop int_sub
+	pop rbx
+	pop rcx
+	pop rax
+	sub rax, rcx
+	push rax
 	push rbx
 	ret
 
@@ -250,7 +327,15 @@ defop sysexit
 
 defop constant
 	pop rbx
-	mov rax, [rbx]
+	mov rax, [rax+dict_data]
+	push rax
+	push rbx
+	ret
+
+defop constant_pointer
+	pop rbx
+	mov rax, [rax+dict_data]
+	mov rax, [rax]
 	push rax
 	push rbx
 	ret
@@ -271,35 +356,66 @@ defop fficall_n_0
 	mov r9, [rsp+ptrsize*6]
 	mov r11, rax
 	mov rax, 0 ; number of vector args
-	jmp [r11+dict_data]
-	;push r13
-	;ret
+	call [r11+dict_data]
+	mov rax, r11
+	ret
 
-defop ffiexit_1
+defop fficall_0_1
+	call [rax+dict_data]
 	pop rbx
 	push rax
 	push rbx
 	ret
 
-defop fficall_0_1
-	call [rax+dict_data]
-	jmp [ffiexit_1+dict_code]
-
 defop fficall_1_1
 	mov rdi, [rsp+ptrsize*1]
-	call [rax+dict_data]
-	jmp [ffiexit_1+dict_code]
+	jmp [fficall_0_1+dict_code]
 
 defop fficall_2_1
 	mov rdi, [rsp+ptrsize*1]
 	mov rsi, [rsp+ptrsize*2]
-	call [rax+dict_data]
-	jmp [ffiexit_1+dict_code]
+	jmp [fficall_0_1+dict_code]
+
+defop fficall_3_1
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
+	mov rdx, [rsp+ptrsize*3]
+	jmp [fficall_0_1+dict_code]
+
+defop fficall_4_1
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
+	mov rdx, [rsp+ptrsize*3]
+	mov rcx, [rsp+ptrsize*4]
+	jmp [fficall_0_1+dict_code]
+
+defop fficall_5_1
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
+	mov rdx, [rsp+ptrsize*3]
+	mov rcx, [rsp+ptrsize*4]
+	mov r8, [rsp+ptrsize*5]
+	jmp [fficall_0_1+dict_code]
+
+defop fficall_n_1
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
+	mov rdx, [rsp+ptrsize*3]
+	mov rcx, [rsp+ptrsize*4]
+	mov r8, [rsp+ptrsize*5]
+	mov r9, [rsp+ptrsize*6]
+	jmp [fficall_0_1+dict_code]
 
 section .text_dict
 
 %macro def 1
 create %1, eval_asm, %1_ops
+section .rdata_forth
+%1_ops:
+%endmacro
+
+%macro defi 1
+create %1, eval_index_asm, %1_ops
 section .rdata_forth
 %1_ops:
 %endmacro
@@ -313,8 +429,9 @@ extern %1
 create c%1, fficall_%2_%3_asm, %1
 %endmacro
 
-section .rdata
-global dictionary
-dictionary: dq next_dict_link
-
 section .text
+
+create cell_size,constant_asm,ptrsize
+create dictionary,constant_asm,dictionary_start
+create dict_entry_length,constant_asm,dict_entry_size
+create dictionary_size,constant_asm,m_dictionary_size
