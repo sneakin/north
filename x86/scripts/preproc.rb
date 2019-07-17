@@ -7,16 +7,29 @@
 bits=ENV.fetch('BITS', 32).to_i
 word_prefix='dd'
 
-if bits == 64
-  word_prefix = 'dq'
-end
+#if bits == 64
+#  word_prefix = 'dq'
+#end
 
 definition = nil
+suffix = ''
 
 ARGF.each do |line|
-  if line =~ /^def/
+  if line =~ /^def(\w?)/
     # Detect lines that start a function definition:
     definition = line
+    suffix = case $1
+      when 'i' then '_i'
+      else ''
+    end
+    word_prefix = case $1
+      when 'i' then 'dd'
+      else if bits == 64
+          'dq'
+        else
+          'dd'
+        end
+      end
     puts line
   elsif line =~ /^string\s+(\w+)\s+(['"].*)/
     # string name "Value...","and more",...
@@ -54,7 +67,18 @@ ARGF.each do |line|
         puts line
       else
         # Treat any other lines as part of the space or comma separated call sequence.
-        puts "  #{word_prefix} #{line.split(/[ ,]+/).join(',')}"
+        tokens = line.gsub(/;.*$/, '').strip.split(/[ ,]+/)
+        tokens.each_with_index { |t, i|
+          # Specially treat the literal values.
+          prefix = case tokens[i - 1]
+            when /^int32/ then 'dd'
+            when /^int64/ then 'dq'
+            when /^pointer/ then 'dq'
+            else word_prefix
+            end
+          t = t + suffix if t =~ /^[a-zA-Z][_a-zA-Z0-9]*/
+          puts "  #{prefix} #{t}"
+        }
       end
     else
       # Print all other lines
