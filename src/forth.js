@@ -26,6 +26,7 @@ const forth_sources = {
   "01-seq": fs.readFileSync(__dirname + '/01/seq.4th', 'utf-8'),  
   "01-stack": fs.readFileSync(__dirname + '/01/stack.4th', 'utf-8'),  
   "01-ui": fs.readFileSync(__dirname + '/01/ui.4th', 'utf-8'),  
+  "02-init": fs.readFileSync(__dirname + '/02/init.4th', 'utf-8'),  
   "02-memdump": fs.readFileSync(__dirname + '/02/memdump.4th', 'utf-8'),  
   "02-decompiler": fs.readFileSync(__dirname + '/02/decompiler.4th', 'utf-8'),  
   "02-misc": fs.readFileSync(__dirname + '/02/misc.4th', 'utf-8'),
@@ -1320,6 +1321,7 @@ Forth.assembler = function(ds, cs, info, stage) {
     interp(asm, forth_sources['01-stack']);
     interp(asm, forth_sources['01-ui']);
 
+    interp(asm, forth_sources['02-init']);
     interp(asm, forth_sources['02-memdump']);
     interp(asm, forth_sources['02-decompiler']);
     interp(asm, forth_sources['03-interrupts']);

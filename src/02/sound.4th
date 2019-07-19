@@ -263,7 +263,7 @@ constant boot-sound-note-length 250
   RECURSE
 ;
 
-: boot-static/1 ( device channel )
+: boot-static/2 ( device channel )
   ( calculate loop length in ms )
   int32 11025 int32 100000 int-mul int32 1000 int-mul
   ( load sample )
@@ -277,8 +277,9 @@ constant boot-sound-note-length 250
 
 : boot-sound/1 ( device )
   arg0 sound-dev-num-channels swapdrop peek
-  ( todo one channel to play the code segment )
-  arg0 local0 int32 1 int-sub boot-static/1
+  ( one channel to play the code segment as static )
+  ( brings Firefox to a crawl when copying the sample from RAM to sound device )
+  ( arg0 local0 int32 1 int-sub boot-static/2 )
   ( all other channels oscillate )
   arg0 local0 int32 2 int-sub boot-sound/2
   ( stop static )
@@ -287,10 +288,15 @@ constant boot-sound-note-length 250
 
 : boot-sound
   sound-addr boot-sound/1
-  beep-init
+;
+
+: sound-init-always
+  sound-device sound-dev-init
+  int32 0 *beep-initialized* poke
 ;
 
 : sound-init
-  sound-device sound-dev-init
-  int32 0 *beep-initialized* poke
+  *beep-initialized* peek dup
+  IF beep THEN
+  UNLESS sound-init-always boot-sound beep-init THEN
 ;
