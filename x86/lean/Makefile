@@ -1,4 +1,5 @@
-PROGRAMS=test-north test-loader test-index test-dictionary bammer.bin
+PROGRAMS=test-hello test-north test-loader test-index test-dictionary bammer.bin
+HEADERS=north.h ffi.h indexed.h
 
 #
 # Flags:
@@ -74,7 +75,7 @@ clean:
 %.o: %.asm
 	$(NASM) $(NASMFLAGS) -o $@ $<
 
-%.popped.$(BITS): %.pop north-$(BITS).asm north.h
+%.popped.$(BITS): %.pop north-$(BITS).asm $(HEADERS)
 	$(POPPER) $< > $@
 
 %.o: %.popped.$(BITS)

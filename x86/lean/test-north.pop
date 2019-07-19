@@ -6,7 +6,12 @@ import libc atoi/1/1 exit/1
 
 export yes noo
 
+%ifdef WINDOWS
+string testlib 'msys-2.0.dll'
+%else
 string testlib 'libc.so.6'
+%endif
+
 string testfn 'puts'
 
 def dltest

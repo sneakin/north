@@ -17,8 +17,13 @@ dict_entry_size equ ptrsize*3
 %define fp r10
 
 main:
+%ifdef WINDOWS
+	push rdx
+	push rcx
+%else
 	push rsi ; argv
 	push rdi ; argc
+%endif
 	mov rax, init
 	call outer_eval
 	pop rax ; return value
@@ -145,13 +150,33 @@ defop pointer
 	push rbx
 	ret
 
+%ifdef WINDOWS
+defop asmcall_1
+	pop rbx
+	pop rax
+	push rbx
+	mov rcx, [rsp+ptrsize]
+	add rsp, -32
+	call rax
+	add rsp, 32
+	ret
+%else
 defop asmcall_1
 	pop rbx
 	pop rax
 	push rbx
 	mov rdi, [rsp+ptrsize]
 	jmp rax
+%endif
 
+%ifdef WINDOWS
+defop hello
+	mov rcx, .msg
+	add rsp, -32
+	call printf
+	add rsp, 32
+	ret
+%else
 defop syscallop
 	mov rax, [rsp+ptrsize*1]
 	mov rdi, [rsp+ptrsize*2]
@@ -163,6 +188,7 @@ defop syscallop
 defop hello
 	syscall_macro 1, 1, .msg, .len
 	ret
+%endif
 .msg db "Hello",0xA,0
 .len equ $ - .msg
 
@@ -347,87 +373,6 @@ defop dovar
 	push rbx
 	ret
 
-defop fficall_0_0
-	jmp [rax+dict_data]
-
-defop fficall_1_0
-	mov rdi, [rsp+ptrsize*1]
-	jmp [rax+dict_data]
-
-defop fficall_n_0
-	mov rdi, [rsp+ptrsize*1]
-	mov rsi, [rsp+ptrsize*2]
-	mov rdx, [rsp+ptrsize*3]
-	mov rcx, [rsp+ptrsize*4]
-	mov r8, [rsp+ptrsize*5]
-	mov r9, [rsp+ptrsize*6]
-	mov r11, rax
-	mov rax, 0 ; number of vector args
-	jmp [r11+dict_data]
-  ;; 	mov rax, r11
-  ;; 	ret
-
-defop fficall_0_1
-	call [rax+dict_data]
-	pop rbx
-	push rax
-	push rbx
-	ret
-
-defop fficall_1_1
-	mov rdi, [rsp+ptrsize*1]
-	jmp [fficall_0_1+dict_code]
-
-defop fficall_2_1
-	mov rdi, [rsp+ptrsize*1]
-	mov rsi, [rsp+ptrsize*2]
-	jmp [fficall_0_1+dict_code]
-
-defop fficall_3_1
-	mov rdi, [rsp+ptrsize*1]
-	mov rsi, [rsp+ptrsize*2]
-	mov rdx, [rsp+ptrsize*3]
-	jmp [fficall_0_1+dict_code]
-
-defop fficall_4_1
-	mov rdi, [rsp+ptrsize*1]
-	mov rsi, [rsp+ptrsize*2]
-	mov rdx, [rsp+ptrsize*3]
-	mov rcx, [rsp+ptrsize*4]
-	jmp [fficall_0_1+dict_code]
-
-defop fficall_5_1
-	mov rdi, [rsp+ptrsize*1]
-	mov rsi, [rsp+ptrsize*2]
-	mov rdx, [rsp+ptrsize*3]
-	mov rcx, [rsp+ptrsize*4]
-	mov r8, [rsp+ptrsize*5]
-	jmp [fficall_0_1+dict_code]
-
-defop fficall_6_1
-	mov rdi, [rsp+ptrsize*1]
-	mov rsi, [rsp+ptrsize*2]
-	mov rdx, [rsp+ptrsize*3]
-	mov rcx, [rsp+ptrsize*4]
-	mov r8, [rsp+ptrsize*5]
-	mov r9, [rsp+ptrsize*6]
-	jmp [fficall_0_1+dict_code]
-
-defop fficall_n_1
-	mov rdi, [rsp+ptrsize*1]
-	mov rsi, [rsp+ptrsize*2]
-	mov rdx, [rsp+ptrsize*3]
-	mov rcx, [rsp+ptrsize*4]
-	mov r8, [rsp+ptrsize*5]
-	mov r9, [rsp+ptrsize*6]
-	mov r11, rax
-	mov rax, 0 ; number of vector args
-	call [r11+dict_data]
-  pop rbx
-  push rax
-  push rbx
-	ret
-
 section .text_dict
 
 %macro def 1
@@ -438,11 +383,6 @@ section .rdata_forth
 
 %macro export 1
 global %1
-%endmacro
-
-%macro defc 3
-extern %1
-create c%1, fficall_%2_%3_asm, %1
 %endmacro
 
 %macro constant 2
@@ -459,11 +399,12 @@ section .text
 
 section .text
 
+%include "ffi.h"
+%include "dynlibs.asm"
+
 defc puts,1,0
 defc printf,n,0
 defc gets,1,1
-
-%include "dynlibs.asm"
 
 constant cpu_bits,BITS
 constant cell_size,ptrsize

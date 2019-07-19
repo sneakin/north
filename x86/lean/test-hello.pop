@@ -1,0 +1,10 @@
+%include "north.h"
+
+string hey "Hey there!"
+
+def init
+	literal hey cputs cputs
+	hello
+	cputs drop
+	fexit
+
