@@ -1,7 +1,8 @@
 %include "north.h"
 
-import libc printf/n puts/1 atoi/1/1 exit/1
-import libdl dlopen/2/1 dlsym/2/1
+; import libc printf/n puts/1
+import libc atoi/1/1 exit/1
+; import libdl dlopen/2/1 dlsym/2/1
 
 export yes noo
 
@@ -94,3 +95,5 @@ def init
 	break
 	write_stack
 	fexit
+
+finalize_dictionary

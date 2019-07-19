@@ -1,38 +1,55 @@
 %include "north.h"
+%include "indexed.h"
 
-import libc printf/n
+; import libc printf/n
 
 string fmt "%x %i %i",0xA
 string stack_fmt "%x %x %x %x %x %x %x | %x %x %x %x %x %x %x",0xA
 
 def map_dict ; ( fn dict num-entries )
-	literal 3 overn literal 5 overn call
+	literal 3 overn literal 5 overn eval
 	literal 5 overn swap
 	cell_size int_add cell_size int_add cell_size int_add
 	literal 4 overn
-	dup literal 1 int_sub
-	swap ifnotzero map_dict
+	literal 1 int_sub
+	dup ifnotzero map_dict
 	literal 3 dropn
 	fexit
 
-string dict_entry_fmt "%s: %8x %8x %8x",0xA
+string dict_entry_fmt "%4i %4x %20s %8x %8x %8x %x",0xA
 
 def print_dict_entry
 	; entry addr
 	literal 2 overn
-	dup
+	dup dup
 	; entry code
 	dup peek swap
 	; entry data
 	cell_size int_add dup peek swap
 	; entry name
 	cell_size int_add peek cell_size int_add
+	; entry index number
+  literal 7 overn dict_entry_index dup
 	; print
 	literal dict_entry_fmt cprintf
-	literal 5 dropn
+	literal 8 dropn
 	fexit
 
-string heading "Word: Data Code Address",0xA
+string short_dict_entry_fmt "%s_i equ %i",0xA
+
+def short_print_dict_entry
+	; entry addr
+	literal 2 overn
+  ; entry index number
+  dup dict_entry_index swap
+	; entry name
+	cell_size int_add cell_size int_add peek seq_data
+	; print
+	literal short_dict_entry_fmt cprintf
+	literal 3 dropn
+	fexit
+
+string heading "Index Hex Word Data Code Address",0xA
 
 def seq_data
 	rot
@@ -40,16 +57,33 @@ def seq_data
 	rot
 	fexit
 
-def init
+def print_dict_stats
 	dict_entry_length dictionary_size dictionary literal fmt cprintf
 	literal 4 dropn
-	; try the first two entries
-	dictionary seq_data print_dict_entry
-	cell_size int_add cell_size int_add cell_size int_add print_dict_entry
-	literal 1 dropn
-	; for real
+  fexit
+  
+def print_dict
+  print_dict_stats
 	literal heading cprintf drop
 	literal print_dict_entry dictionary seq_data dictionary_size map_dict
 	literal 3 dropn
+  fexit
+  
+def short_print_dict
+	literal short_print_dict_entry dictionary seq_data dictionary_size map_dict
+	literal 3 dropn
+  fexit
+  
+def init
+	; try the first two entries
+	; dictionary seq_data short_print_dict_entry
+	; cell_size int_add cell_size int_add cell_size int_add short_print_dict_entry
+	; literal 1 dropn
+	; print the short list if a command line arg is supplied
+  literal 2 overn literal 1 eq dup ifzero short_print_dict
+  ifnotzero print_dict
+  ; clean exit
 	literal 0 roll
 	fexit
+
+finalize_dictionary

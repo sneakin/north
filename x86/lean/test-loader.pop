@@ -1,21 +1,83 @@
 %include "north.h"
+%include "indexed.h"
 
-import libc printf/n puts/1 atoi/1/1 exit/1
-import libdl dlopen/2/1 dlsym/2/1
+; import libc printf/n puts/1
+import libc atoi/1/1 exit/1
+import libc malloc/1/1 free/1
+import libc open/3/1 close/1/1 read/3/1 mmap/6/1 munmap/2/1 perror/0
+; import libdl dlopen/2/1 dlsym/2/1
+
+const O_RDONLY 0
+const O_WRONLY 1
+const O_RDWR 2
+
+string ok "OK"
+string error "ERROR"
+string bye "BYE"
+
+def write_ok
+	literal ok cputs drop
+	fexit
+
+def write_bye
+	literal bye cputs drop
+	fexit
+
+def failed
+	literal error cputs
+  cperror
+	literal -1 cexit
+
+string int_fmt "%i",0xA
+
+def write_int
+	literal 2 overn literal int_fmt cprintf drop drop
+	fexit
+
+string hex_fmt "%x",0xA
+
+def write_hex
+	literal 2 overn literal hex_fmt cprintf drop drop
+	fexit
+
+const MAP_PRIVATE 2
+const PROT_READ 1
+
+def write_stack
+	here literal .fmt cprintf literal 2 dropn
+	fexit
+.fmt:	db	'%x: %x %x | %x %x || %x %x %x %x | %x %x | %x %x %x %x %x %x %x %x %x %x %x',0xA,0
+
+def map_fd
+	literal 0 literal 3 overn literal MAP_PRIVATE literal PROT_READ
+	literal 8192 ; 6 overn ; size
+	literal 0 cmmap
+	rot drop drop rot drop drop rot drop drop
+	roll
+	fexit
 
 def init
 	; check number command line arguments
+	literal 2 overn write_int literal 2 eq ifzero failed
+	literal 3 overn literal ptrsize int_add peek cputs
 	; open and read / memory map first command line argument
-	;
-	; instead of remapping:
-	; fixed index op codes into a table with a standard set of ops: relative to start of dictionary segment instead of absolute
-	; eval the file which load libraries, leaves functions pointers on stack, op codes index into that table
-	; change from predefined table to copied and extended table
-	; or chain tables
-	;
-	; files begin with a list of libraries and a list of functions for each library
-	; each library is opened and each function is resolved
-	; the op codes index that table making dictionary addresses unknown.
-	; the op codes need to be mapped ( may need a different #next )
+	literal 0 swap literal O_RDONLY swap copen roll drop drop swap drop
+	write_int
+	dup ifnegative failed
+	; map file
+	map_fd dup literal -1 eq ifnotzero failed
+  write_ok
+  ; cputs dup peek write_hex drop
+	; copy argc, argv, and exec
+  dup literal 5 overn literal 5 overn rot
+  eval_ptr_index
+  literal 2 dropn
+	; unmap and close the file
+	literal 8192 swap cmunmap ifnegative failed literal 2 dropn
+	cclose ifnegative failed drop
+  ; clean exit
+	write_bye
 	literal 0 roll
 	fexit
+
+finalize_dictionary

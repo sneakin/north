@@ -8,7 +8,6 @@ global main
 global outer_eval
 
 ptrsize equ 4
-index_size equ 4
 dict_code equ 0
 dict_data equ ptrsize
 dict_name equ ptrsize*2
@@ -33,17 +32,17 @@ outer_eval:
 
 %macro syscall_macro 4
 	push eval_ip
-	mov     edx,%4
-	mov     ecx,%3
-	mov     ebx,%2
-	mov     eax,%1
+	mov edx,%4
+	mov ecx,%3
+	mov ebx,%2
+	mov eax,%1
 	int	0x80
 	pop eval_ip
 %endmacro
 
 section .text_dict
 
-%define m_dictionary_size 0
+%define m_dictionary_size 1
 
 dictionary_start:
 	dd m_dictionary_size
@@ -55,7 +54,7 @@ section .text_dict
 %1_data: dd %3
 %1_name: dd %1_name_str
 %assign m_dictionary_size m_dictionary_size + 1
-%define %1_i %1-dictionary_start
+%define %1_i (%1-dictionary_start+ptrsize)/dict_entry_size
 
 section .rdata
 %defstr %1_name_str_str %1
@@ -75,13 +74,13 @@ section .text
 
 section .text
 
-defop call ; the ToS
+defop eval ; the ToS
 	pop ebx
 	pop eax
 	push ebx
-	jmp [eval+dict_code]
+	jmp [eval_op+dict_code]
 
-defop eval ; the entry in eax
+defop eval_op ; the entry in eax
 	push eval_ip
 	mov eval_ip, [eax+dict_data]
 	jmp [next+dict_code]
@@ -91,18 +90,6 @@ defop next
 	add eval_ip, ptrsize
 	call [eax+dict_code]
 	jmp [next+dict_code]
-
-defop eval_index ; the entry in eax
-	push eval_ip
-	mov eval_ip, [eax+dict_data]
-	jmp [next_index+dict_code]
-
-defop next_index
-	mov eax, [eval_ip]
-	add eax, [dictionary+dict_data]
-	add eval_ip, index_size
-	call [eax+dict_code]
-	jmp [next_index+dict_code]
 
 defop fexit
 	add esp, ptrsize
@@ -130,6 +117,24 @@ defop int32
 
 defop int64
 	mov eax, dword [eval_ip]
+	add eval_ip, 8
+	pop ebx
+	push eax
+	push ebx
+	ret
+
+defop offset32
+	mov eax, dword [eval_ip]
+  add eax, eval_ip
+	add eval_ip, 4
+	pop ebx
+	push eax
+	push ebx
+	ret
+
+defop offset64
+	mov eax, dword [eval_ip]
+  add eax, eval_ip
 	add eval_ip, 8
 	pop ebx
 	push eax
@@ -232,12 +237,6 @@ defop roll ; ( a b c -- c a b )
 	mov [esp+ptrsize*3], eax
 	ret
 
-defop apush
-	pop ebx
-	push eax
-	push ebx
-	ret
-
 defop ifzero
 	pop ebx
 	pop eax
@@ -289,7 +288,6 @@ defop eq
 	pop ecx
 	pop ebx
 	pop eax
-	push ebx
 	cmp eax, ebx
 	je .equal
 	push 0
@@ -310,17 +308,35 @@ defop sysexit
 	syscall_macro 1, 0, 0, 0
 	ret
 
-defop constant_pointer
+defop dict_offset_a
+  imul eax, dict_entry_size
+  add eax, ptrsize
+	add eax, [dictionary+dict_data]
+  ret
+
+defop dict_entry_index
+  pop ebx
+  pop eax
+  sub eax, ptrsize
+  sub eax, [dictionary+dict_data]
+  mov ecx, dict_entry_size
+  mov edx, 0
+  div ecx
+  push eax
+  push ebx
+  ret
+  
+defop doconstant
 	pop ebx
 	mov eax, [eax+dict_data]
-	mov eax, [eax]
 	push eax
 	push ebx
 	ret
 
-defop constant
+defop dovar
 	pop ebx
 	mov eax, [eax+dict_data]
+	mov eax, [eax]
 	push eax
 	push ebx
 	ret
@@ -355,13 +371,7 @@ defop fficall_%+ num_args %+_1
 section .text_dict
 
 %macro def 1
-create %1, eval_asm, %1_ops
-section .rdata_forth
-%1_ops:
-%endmacro
-
-%macro defi 1
-create %1, eval_index_asm, %1_ops
+create %1, eval_op_asm, %1_ops
 section .rdata_forth
 %1_ops:
 %endmacro
@@ -377,7 +387,31 @@ create c%1, fficall_%2_%3_asm, %1
 
 section .text
 
-create cell_size,constant_asm,ptrsize
-create dictionary,constant_asm,dictionary_start
-create dict_entry_length,constant_asm,dict_entry_size
-create dictionary_size,constant_asm,m_dictionary_size
+defc puts,1,0
+defc printf,n,0
+defc gets,1,1
+
+defc dlopen,2,1
+defc dlsym,2,1
+
+%macro constant 2
+create %1,doconstant_asm,%2  
+%endmacro
+
+%macro variable 2
+create %1,dovar_asm,%1_value
+section .data
+%1_value dd %2
+
+section .text
+%endmacro
+
+constant cpu_bits,BITS
+constant cell_size,ptrsize
+constant dictionary,dictionary_start
+constant dict_entry_length,dict_entry_size
+constant builtin_size,m_dictionary_size
+
+%macro finalize_dictionary 0
+constant dictionary_size,m_dictionary_size
+%endmacro

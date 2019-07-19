@@ -1,10 +1,18 @@
-PROGRAMS=test-north test-loader
+PROGRAMS=test-north test-loader test-index test-dictionary bammer.bin
+
+#
+# Flags:
+#
+
+POPPER=ruby ../scripts/preproc.rb
 
 ifndef BITS
 BITS=32
 endif
 
-POPPER=ruby ../scripts/preproc.rb
+ifndef LIBC
+LIBC=1
+endif
 
 ifdef LIBC
 LD=gcc
@@ -18,20 +26,27 @@ endif
 endif
 
 NASM=nasm
-NASMFLAGS=-f elf$(BITS) -DBITS=$(BITS)
+NASMDEFS=-DBITS=$(BITS)
 
 ifdef LIBC
-NASMFLAGS+=-DLIBC
+NASMDEFS+=-DLIBC
 endif
 
 ifdef RELEASE
-NASMFLAGS+=-DRELEASE
+NASMDEFS+=-DRELEASE
 else
 LDFLAGS+=-g
-NASMFLAGS+=-g -DDEBUG
+NASMFLAGS+=-g
+NASMDEFS+=-DDEBUG
 endif
 
+NASMFLAGS+=-f elf$(BITS) $(NASMDEFS)
+
 LINK=$(LD) $(LDFLAGS) -o $@ $<
+
+#
+# Rules
+#
 
 all: $(PROGRAMS)
 
@@ -49,3 +64,14 @@ clean:
 
 %.o: %.popped.$(BITS)
 	$(NASM) $(NASMFLAGS) -o $@ $<
+
+%.bin: %.popped.$(BITS) opcodes-$(BITS).h
+	$(NASM) $(NASMDEFS) -o $@ $<
+
+#
+# Individual files:
+#
+
+opcodes-$(BITS).h: test-dictionary
+	./test-dictionary 1 > $@
+

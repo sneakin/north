@@ -1,0 +1,14 @@
+%include "opcodes.h"
+
+%macro defi 1
+%endmacro
+
+defi start
+  hello
+  int32 1 int32 2 int_add
+  hello
+  offset32 (fmt-$) cprintf
+  int32 2 dropn
+  fexit
+
+string fmt "1 + 2 = %i",0xA

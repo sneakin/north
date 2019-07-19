@@ -8,7 +8,6 @@ global main
 global outer_eval
 
 ptrsize equ 8
-index_size equ 4
 dict_code equ 0
 dict_data equ ptrsize
 dict_name equ ptrsize*2
@@ -40,7 +39,7 @@ outer_eval:
 %endmacro
 
 section .text_dict
-%define m_dictionary_size 0
+%define m_dictionary_size 1
 
 dictionary_start:
 	dq m_dictionary_size
@@ -53,7 +52,7 @@ section .text_dict
 %1_name: dq %1_name_str
 
 %assign m_dictionary_size m_dictionary_size + 1
-%define %1_i %1-dictionary_start
+%define %1_i (%1-dictionary_start+ptrsize)/dict_entry_size 
 
 section .rdata
 %defstr %1_name_str_str %1
@@ -71,13 +70,13 @@ section .text
 %1_asm:
 %endmacro
 
-defop call ; the ToS
+defop eval ; the ToS
 	pop rbx
 	pop rax
 	push rbx
-	jmp [eval+dict_code]
+	jmp [eval_op+dict_code]
 
-defop eval ; the pointer in rax
+defop eval_op ; the pointer in rax
 	push eval_ip
 	mov eval_ip, [rax+dict_data]
 	jmp [next+dict_code]
@@ -87,18 +86,6 @@ defop next
 	add eval_ip, ptrsize
 	call [rax+dict_code]
 	jmp [next+dict_code]
-
-defop eval_index ; the entry in rax
-	push eval_ip
-	mov eval_ip, [rax+dict_data]
-	jmp [next_index+dict_code]
-
-defop next_index
-	mov eax, [eval_ip]
-	add rax, [dictionary+dict_data]
-	add eval_ip, index_size
-	call [rax+dict_code]
-	jmp [next_index+dict_code]
 
 defop fexit
 	add rsp, ptrsize
@@ -132,6 +119,24 @@ defop int64
 	push rbx
 	ret
 
+defop offset32
+	mov eax, dword [eval_ip]
+  add rax, eval_ip
+	add eval_ip, 4
+	pop rbx
+	push rax
+	push rbx
+	ret
+
+defop offset64
+	mov rax, [eval_ip]
+  add rax, eval_ip
+	add eval_ip, 8
+	pop rbx
+	push rax
+	push rbx
+	ret
+  
 defop pointer
 	mov rax, [eval_ip]
 	add eval_ip, 8
@@ -274,6 +279,20 @@ defop ifnegative
 .done:
 	ret
 
+defop eq
+	pop rcx
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	je .equal
+	push 0
+	push rcx
+	ret
+.equal:
+	push 1
+	push rcx
+	ret
+
 defop int_add
 	pop rbx
 	pop rax
@@ -297,42 +316,36 @@ defop here
 	push rbx
 	ret
 
-defop pusha
-	pop r9
-	push rax
-	push r9
-	ret	
-
-defop pushb
-	pop r9
-	push rax
-	push r9
-	ret
-
-defop pushdi
-	pop r9
-	push rdi
-	push r9
-	ret
-
-defop pushsi
-	pop r9
-	push rsi
-	push r9
-	ret
-
 defop sysexit
 	syscall_macro 60, 0, 0, 0
 	ret
 
-defop constant
+defop dict_offset_a
+  imul rax, dict_entry_size
+  add rax, ptrsize
+	add rax, [dictionary+dict_data]
+  ret
+
+defop dict_entry_index
+  pop rbx
+  pop rax
+  sub rax, ptrsize
+  sub rax, [dictionary+dict_data]
+  mov rcx, dict_entry_size
+  mov rdx, 0
+  div rcx
+  push rax
+  push rbx
+  ret
+  
+defop doconstant
 	pop rbx
 	mov rax, [rax+dict_data]
 	push rax
 	push rbx
 	ret
 
-defop constant_pointer
+defop dovar
 	pop rbx
 	mov rax, [rax+dict_data]
 	mov rax, [rax]
@@ -356,9 +369,9 @@ defop fficall_n_0
 	mov r9, [rsp+ptrsize*6]
 	mov r11, rax
 	mov rax, 0 ; number of vector args
-	call [r11+dict_data]
-	mov rax, r11
-	ret
+	jmp [r11+dict_data]
+  ;; 	mov rax, r11
+  ;; 	ret
 
 defop fficall_0_1
 	call [rax+dict_data]
@@ -397,7 +410,7 @@ defop fficall_5_1
 	mov r8, [rsp+ptrsize*5]
 	jmp [fficall_0_1+dict_code]
 
-defop fficall_n_1
+defop fficall_6_1
 	mov rdi, [rsp+ptrsize*1]
 	mov rsi, [rsp+ptrsize*2]
 	mov rdx, [rsp+ptrsize*3]
@@ -406,16 +419,25 @@ defop fficall_n_1
 	mov r9, [rsp+ptrsize*6]
 	jmp [fficall_0_1+dict_code]
 
+defop fficall_n_1
+	mov rdi, [rsp+ptrsize*1]
+	mov rsi, [rsp+ptrsize*2]
+	mov rdx, [rsp+ptrsize*3]
+	mov rcx, [rsp+ptrsize*4]
+	mov r8, [rsp+ptrsize*5]
+	mov r9, [rsp+ptrsize*6]
+	mov r11, rax
+	mov rax, 0 ; number of vector args
+	call [r11+dict_data]
+  pop rbx
+  push rax
+  push rbx
+	ret
+
 section .text_dict
 
 %macro def 1
-create %1, eval_asm, %1_ops
-section .rdata_forth
-%1_ops:
-%endmacro
-
-%macro defi 1
-create %1, eval_index_asm, %1_ops
+create %1, eval_op_asm, %1_ops
 section .rdata_forth
 %1_ops:
 %endmacro
@@ -429,9 +451,33 @@ extern %1
 create c%1, fficall_%2_%3_asm, %1
 %endmacro
 
+%macro constant 2
+create %1,doconstant_asm,%2  
+%endmacro
+
+%macro variable 2
+create %1,dovar_asm,%1_value
+section .data
+%1_value dd %2
+
+section .text
+%endmacro
+
 section .text
 
-create cell_size,constant_asm,ptrsize
-create dictionary,constant_asm,dictionary_start
-create dict_entry_length,constant_asm,dict_entry_size
-create dictionary_size,constant_asm,m_dictionary_size
+defc puts,1,0
+defc printf,n,0
+defc gets,1,1
+
+defc dlopen,2,1
+defc dlsym,2,1
+
+constant cpu_bits,BITS
+constant cell_size,ptrsize
+constant dict_entry_length,dict_entry_size
+constant dictionary,dictionary_start
+constant builtin_size,m_dictionary_size
+
+%macro finalize_dictionary 0
+constant dictionary_size,m_dictionary_size
+%endmacro
