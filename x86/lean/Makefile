@@ -14,9 +14,16 @@ ifndef LIBC
 LIBC=1
 endif
 
-ifdef LIBC
-LD=gcc
+ifndef DYNAMIC
+DYNAMIC=1
+endif
+
+ifeq ($(LIBC),1)
+ifdef WINDOWS
+LDFLAGS=-m$(BITS) -no-pie
+else
 LDFLAGS=-m$(BITS) -no-pie -ldl
+endif
 else
 ifeq ($(BITS),32)
 LDFLAGS=-m elf_i386 -e main
@@ -26,21 +33,29 @@ endif
 endif
 
 NASM=nasm
-NASMDEFS=-DBITS=$(BITS)
+DEFINES=-DBITS=$(BITS)
 
-ifdef LIBC
-NASMDEFS+=-DLIBC
+ifeq ($(DYNAMIC),1)
+DEFINES+=-DDYNAMIC
 endif
 
-ifdef RELEASE
-NASMDEFS+=-DRELEASE
+ifeq ($(LIBC),1)
+DEFINES+=-DLIBC
+endif
+
+ifeq ($(WINDOWS),1)
+DEFINES+=-DWINDOWS
+endif
+
+ifeq ($(RELEASE),1)
+DEFINES+=-DRELEASE
 else
 LDFLAGS+=-g
 NASMFLAGS+=-g
-NASMDEFS+=-DDEBUG
+DEFINES+=-DDEBUG
 endif
 
-NASMFLAGS+=-f elf$(BITS) $(NASMDEFS)
+NASMFLAGS+=-f elf$(BITS) $(DEFINES)
 
 LINK=$(LD) $(LDFLAGS) -o $@ $<
 
@@ -66,7 +81,7 @@ clean:
 	$(NASM) $(NASMFLAGS) -o $@ $<
 
 %.bin: %.popped.$(BITS) opcodes-$(BITS).h
-	$(NASM) $(NASMDEFS) -o $@ $<
+	$(NASM) $(DEFINES) -o $@ $<
 
 #
 # Individual files:

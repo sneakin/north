@@ -233,12 +233,6 @@ defop roll ; ( a b c -- c a b )
 	mov [rsp+ptrsize*3], rax
 	ret
 
-defop apush
-	pop rbx
-	push rax
-	push rbx
-	ret
-
 defop ifzero
 	pop rbx
 	pop rax
@@ -469,8 +463,7 @@ defc puts,1,0
 defc printf,n,0
 defc gets,1,1
 
-defc dlopen,2,1
-defc dlsym,2,1
+%include "dynlibs.asm"
 
 constant cpu_bits,BITS
 constant cell_size,ptrsize

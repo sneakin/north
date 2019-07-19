@@ -391,8 +391,7 @@ defc puts,1,0
 defc printf,n,0
 defc gets,1,1
 
-defc dlopen,2,1
-defc dlsym,2,1
+%include "dynlibs.asm"
 
 %macro constant 2
 create %1,doconstant_asm,%2  
