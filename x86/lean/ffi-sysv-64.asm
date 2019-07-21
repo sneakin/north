@@ -1,5 +1,12 @@
 bits 64
 
+defop asmcall_1
+	pop rbx
+	pop rax
+	push rbx
+	mov rdi, [rsp+ptrsize]
+	jmp rax
+
 defop fficall_0_0
 	jmp [rax+dict_data]
 
@@ -65,18 +72,17 @@ defop fficall_6_1
 	jmp [fficall_0_1+dict_code]
 
 defop fficall_n_1
-	; todo fails with more than 6 arguments as they're not copied for the new call
 	mov rdi, [rsp+ptrsize*1]
 	mov rsi, [rsp+ptrsize*2]
 	mov rdx, [rsp+ptrsize*3]
 	mov rcx, [rsp+ptrsize*4]
 	mov r8, [rsp+ptrsize*5]
 	mov r9, [rsp+ptrsize*6]
+  pop r12
 	mov r11, rax
 	mov rax, 0 ; number of vector args
 	call [r11+dict_data]
-	pop rbx
 	push rax
-	push rbx
+	push r12
 	ret
 

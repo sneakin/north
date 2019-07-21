@@ -4,10 +4,10 @@
 import libc atoi/1/1 exit/1
 ; import libdl dlopen/2/1 dlsym/2/1
 
-export yes noo
+; export yes noo
 
 %ifdef WINDOWS
-string testlib 'msys-2.0.dll'
+string testlib 'msvcrt.dll'
 %else
 string testlib 'libc.so.6'
 %endif
@@ -15,9 +15,9 @@ string testlib 'libc.so.6'
 string testfn 'puts'
 
 def dltest
-	literal,1,literal,testlib,cputs,cdlopen
+	literal,1,literal,testlib,cputs,break,cdlopen,break
 	literal,testfn,swap,cdlsym
-	literal,testfn,swap,asmcall_1
+	literal,testfn,swap,asmcall_1_0
 	literal,5,dropn
 	fexit
 

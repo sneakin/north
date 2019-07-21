@@ -3,8 +3,9 @@
 string hey "Hey there!"
 
 def init
-	literal hey cputs cputs
+	literal 12
+  literal hey cputs cputs
 	hello
-	cputs drop
-	fexit
-
+	cputs
+  drop
+	roll fexit

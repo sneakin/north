@@ -76,9 +76,9 @@ def short_print_dict
   
 def init
 	; try the first two entries
-	; dictionary seq_data short_print_dict_entry
-	; cell_size int_add cell_size int_add cell_size int_add short_print_dict_entry
-	; literal 1 dropn
+	;dictionary seq_data print_dict_entry
+	;cell_size int_add cell_size int_add cell_size int_add short_print_dict_entry
+	;literal 1 dropn
 	; print the short list if a command line arg is supplied
   literal 2 overn literal 1 eq dup ifzero short_print_dict
   ifnotzero print_dict

@@ -21,7 +21,7 @@ endif
 
 ifeq ($(LIBC),1)
 ifdef WINDOWS
-LDFLAGS=-m$(BITS) -no-pie
+LDFLAGS=-mconsole -no-pie
 else
 LDFLAGS=-m$(BITS) -no-pie -ldl
 endif
@@ -37,26 +37,32 @@ NASM=nasm
 DEFINES=-DBITS=$(BITS)
 
 ifeq ($(DYNAMIC),1)
-DEFINES+=-DDYNAMIC
+DEFINES+=-DDYNAMIC=1
 endif
 
 ifeq ($(LIBC),1)
-DEFINES+=-DLIBC
+DEFINES+=-DLIBC=1
 endif
 
 ifeq ($(WINDOWS),1)
-DEFINES+=-DWINDOWS
+DEFINES+=-DWINDOWS=1
 endif
 
 ifeq ($(RELEASE),1)
-DEFINES+=-DRELEASE
+DEFINES+=-DRELEASE=1
 else
 LDFLAGS+=-g
 NASMFLAGS+=-g
-DEFINES+=-DDEBUG
+DEFINES+=-DDEBUG=1
 endif
 
-NASMFLAGS+=-f elf$(BITS) $(DEFINES)
+ifeq ($(WINDOWS),1)
+NASMFLAGS+=-f win$(BITS)
+else
+NASMFLAGS+=-f elf$(BITS)
+endif
+
+NASMFLAGS+=$(DEFINES)
 
 LINK=$(LD) $(LDFLAGS) -o $@ $<
 
