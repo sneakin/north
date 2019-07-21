@@ -52,9 +52,9 @@ ARGF.each do |line|
       returns = 0 unless returns
       puts "defc #{name},#{ari},#{returns}"
     end
-  elsif line =~ /^export\s+(.*)/
-    $1.split(/\s+/).each do |fn|
-      puts "export #{fn}"
+  elsif line =~ /^(export|global)\s+(.*)/
+    $2.split(/\s+/).each do |fn|
+      puts "global #{fn}"
     end
   else
     # inside a definition
