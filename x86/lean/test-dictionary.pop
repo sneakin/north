@@ -29,10 +29,10 @@ def print_dict_entry
 	; entry name
 	cell_size int_add peek cell_size int_add
 	; entry index number
-  literal 7 overn dict_entry_index dup
+	literal 7 overn dict_entry_index dup
 	; print
-	literal dict_entry_fmt cprintf
-	literal 8 dropn
+	literal dict_entry_fmt literal 8 cprintf
+	literal 9 dropn
 	fexit
 
 string short_dict_entry_fmt "%s_i equ %i",0xA
@@ -40,13 +40,13 @@ string short_dict_entry_fmt "%s_i equ %i",0xA
 def short_print_dict_entry
 	; entry addr
 	literal 2 overn
-  ; entry index number
-  dup dict_entry_index swap
+	; entry index number
+	dup dict_entry_index swap
 	; entry name
 	cell_size int_add cell_size int_add peek seq_data
 	; print
-	literal short_dict_entry_fmt cprintf
-	literal 3 dropn
+	literal short_dict_entry_fmt literal 3 cprintf
+	literal 4 dropn
 	fexit
 
 string heading "Index Hex Word Data Code Address",0xA
@@ -58,21 +58,21 @@ def seq_data
 	fexit
 
 def print_dict_stats
-	dict_entry_length dictionary_size dictionary literal fmt cprintf
-	literal 4 dropn
-  fexit
+	dict_entry_length dictionary_size dictionary literal fmt literal 4 cprintf
+	literal 5 dropn
+	fexit
   
 def print_dict
-  print_dict_stats
-	literal heading cprintf drop
+	print_dict_stats
+	literal heading literal 1 cprintf literal 2 dropn
 	literal print_dict_entry dictionary seq_data dictionary_size map_dict
 	literal 3 dropn
-  fexit
+	fexit
   
 def short_print_dict
 	literal short_print_dict_entry dictionary seq_data dictionary_size map_dict
 	literal 3 dropn
-  fexit
+	fexit
   
 def init
 	; try the first two entries
@@ -80,9 +80,9 @@ def init
 	;cell_size int_add cell_size int_add cell_size int_add short_print_dict_entry
 	;literal 1 dropn
 	; print the short list if a command line arg is supplied
-  literal 2 overn literal 1 eq dup ifzero short_print_dict
-  ifnotzero print_dict
-  ; clean exit
+	literal 2 overn literal 1 eq dup ifzero short_print_dict
+	ifnotzero print_dict
+	; clean exit
 	literal 0 roll
 	fexit
 

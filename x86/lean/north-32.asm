@@ -4,10 +4,12 @@ bits 32
 
 section .text
 
-%if WINDOWS==1 && BITS==32
-%define MAIN _main
-%else
 %define MAIN main
+
+%ifdef WINDOWS
+%if BITS==32
+%assign MAIN _main
+%endif
 %endif
 
 global MAIN

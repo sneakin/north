@@ -17,7 +17,7 @@ string testfn 'puts'
 def dltest
 	literal,1,literal,testlib,cputs,break,cdlopen,break
 	literal,testfn,swap,cdlsym
-	literal,testfn,swap,asmcall_1_0
+	literal,testfn,swap,fficall_1_0
 	literal,5,dropn
 	fexit
 
@@ -55,20 +55,20 @@ def test_ifnotzero
 	fexit
 
 def write_stack
-	here literal .fmt cprintf literal 2 dropn
+	here literal .fmt literal 2 cprintf literal 3 dropn
 	fexit
 .fmt:	db	'%x: %x %x | %x %x || %x %x %x %x | %x %x | %x %x %x %x %x %x %x %x %x %x %x',0xA,0
 
 def write_here
-	literal 1 here literal .fmt cprintf literal 3 dropn
+	literal 1 here literal .fmt literal 3 cprintf literal 4 dropn
 	fexit
 .fmt:	db	'here = %x %x',0xA,0
 
 def test_printf
 	write_here
 	literal 6 literal 5 literal 4 literal 3 literal 2 literal 1 swap
-	literal .fmt cprintf
-	literal 7 dropn
+	literal .fmt literal 7 cprintf
+	literal 8 dropn
 	write_here
 	fexit
 .fmt:	db	'Hey %x %x %x %x %x %x %x',0xA,0
@@ -84,11 +84,11 @@ def init
 	write_stack
 	noo
 	; literal 65 write_stack drop
-	literal 1 literal 2 test_printf drop drop
+	literal 10 literal 20 test_printf drop drop
 	; print argc, argv[0], and the ??
 	; todo frame pointer for argn
 	write_stack
-	literal 4 overn literal 4 overn peek literal 4 overn literal args cprintf literal 4 dropn
+	literal 4 overn literal 4 overn peek literal 4 overn literal args literal 4 cprintf literal 5 dropn
 	; make some calls internally and externally
 	hello literal msg literal boo cputs cputs drop cputs drop
 	; external calls with args and a return

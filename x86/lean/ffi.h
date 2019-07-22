@@ -1,26 +1,32 @@
 %ifndef FFI_H
 %define FFI_H 1
 
-%if WINDOWS == 1 && BITS == 32
+%ifdef WINDOWS
+%if BITS == 32
 
-%macro defc 3
-extern _%1
-create c%1, fficall_%2_%3_asm, _%1
+%macro defc 4
+extern _%4
+create c%1, fficall_op_%2_%3_asm, _%4
 %endmacro
 
-%else
+%endif
+%endif
+
+%ifndef defc
 
 %macro defc 4
 extern %4
-create c%1, fficall_%2_%3_asm, %4
+create c%1, fficall_op_%2_%3_asm, %4
 %endmacro
 
+%endif
+
+  
 %macro defc 3
 defc %1,%2,%3,%1
 %endmacro
 
-%endif
-  
+
 %ifdef WINDOWS
 %defstr PLATFORM_STR win
 %else
@@ -32,4 +38,3 @@ defc %1,%2,%3,%1
 %include FFI_PATH
 
 %endif
-  
