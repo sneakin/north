@@ -4,6 +4,8 @@
 %ifdef WINDOWS
 %if BITS == 32
 
+%define HAS_DEFC 1
+
 %macro defc 4
 extern _%4
 create c%1, fficall_op_%2_%3_asm, _%4
@@ -12,7 +14,7 @@ create c%1, fficall_op_%2_%3_asm, _%4
 %endif
 %endif
 
-%ifndef defc
+%ifndef HAS_DEFC
 
 %macro defc 4
 extern %4

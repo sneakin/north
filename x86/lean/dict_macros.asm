@@ -65,7 +65,12 @@ section .text
 %endmacro
 
 %macro finalize_dictionary 0
+%ifndef DICTIONARY_FINALIZED
+%define DICTIONARY_FINALIZED
 constant dictionary_size,m_dictionary_size
+%else
+%fatal "Dictionary already finalized."
+%endif
 %endmacro
 
 %macro defalias 2

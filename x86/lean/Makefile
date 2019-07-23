@@ -1,4 +1,4 @@
-PROGRAMS=test-hello test-north test-loader test-index test-dictionary bammer.bin
+PROGRAMS=test-hello test-printf test-dictionary test-north test-index test-loader bammer.bin
 HEADERS=north.h ffi.h indexed.h
 
 #

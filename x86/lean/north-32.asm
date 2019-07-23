@@ -4,15 +4,7 @@ bits 32
 
 section .text
 
-%define MAIN main
-
-%ifdef WINDOWS
-%if BITS==32
-%assign MAIN _main
-%endif
-%endif
-
-global MAIN
+global main
 global outer_eval
 
 ptrsize equ 4
@@ -22,7 +14,14 @@ ptrsize equ 4
 %define eval_ip edi
 %define fp ebp
 
-MAIN:
+%ifdef WINDOWS
+%if BITS==32
+global _main
+_main:
+%endif
+%endif
+  
+main:
 	mov eax, [esp+ptrsize*2]
 	push eax ; argv
 	mov eax, [esp+ptrsize*2]
