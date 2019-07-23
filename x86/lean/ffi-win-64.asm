@@ -37,7 +37,7 @@ defop fficall_rax_any_0
 	mov rdx, [rsp+ptrsize*2]
 	mov r8, [rsp+ptrsize*3]
 	mov r9, [rsp+ptrsize*4]
-	jmp rax
+	jmp [fficall_rax_0_0+dict_code]
 
 defop fficall_rax_n_0
   pop r13

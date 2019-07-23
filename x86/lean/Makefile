@@ -1,5 +1,14 @@
-PROGRAMS=test-hello test-printf test-dictionary test-north test-index test-loader bammer.bin
+PROGRAMS=test-hello test-printf test-dictionary test-north test-index test-loader
+OUTPUTS=bammer.bin
 HEADERS=north.h ffi.h indexed.h
+
+EXEC_SUFFIX=
+ifdef WINDOWS
+EXEC_SUFFIX=.exe
+endif
+
+PROGRAMS_OUT=$(foreach n,$(PROGRAMS),$(n)$(EXEC_SUFFIX))
+OUTPUTS+=$(PROGRAMS_OUT)
 
 #
 # Flags:
@@ -64,16 +73,19 @@ endif
 
 NASMFLAGS+=$(DEFINES)
 
-LINK=$(LD) $(LDFLAGS) -o $@ $<
+LINK=$(CC) $(LDFLAGS)
 
 #
 # Rules
 #
 
-all: $(PROGRAMS)
+all: $(OUTPUTS)
 
 clean:
-	rm -f $(PROGRAMS) *.o *.popped.*
+	rm -f $(OUTPUTS) *.o *.popped.*
+
+%$(EXEC_SUFFIX): %.o
+	$(LINK) -o $@ $<
 
 %.o: %.S
 	$(NASM) $(NASMFLAGS) -o $@ $<
@@ -95,5 +107,5 @@ clean:
 #
 
 opcodes-$(BITS).h: test-dictionary
-	./test-dictionary 1 > $@
+	$(EXEC) ./test-dictionary$(EXEC_SUFFIX) 1 > $@
 

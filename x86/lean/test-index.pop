@@ -6,8 +6,8 @@
 string fmt_i "Hello %i",0xA
 
 defi init
-  hello
-	int32 123 dup int_add pointer fmt literal 2 cprintf
+	hello
+	int32 123 dup int_add pointer fmt int32 2 cprintf
 	int32 3 dropn
 	int32 0 roll
 	fexit
