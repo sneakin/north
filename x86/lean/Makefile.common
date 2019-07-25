@@ -1,0 +1,112 @@
+all: build
+
+#
+# Flags:
+#
+
+# srcdir=$(shell pwd)
+
+POPPER=ruby $(srcdir)/../scripts/preproc.rb
+
+ifndef PLATFORM
+PLATFORM=posix
+endif
+
+ifndef BITS
+BITS=64
+endif
+
+ifndef LIBC
+LIBC=1
+endif
+
+ifndef DYNAMIC
+DYNAMIC=1
+endif
+
+DEFINES+=-DPLATFORM=$(PLATFORM)
+DEFINES+=-DDYNAMIC=$(DYNAMIC)
+DEFINES+=-DBITS=$(BITS)
+
+ifeq ($(LIBC),1)
+ifeq ($(PLATFORM),windows)
+LDFLAGS=-m$(BITS) -mconsole -no-pie
+else
+LDFLAGS=-m$(BITS) -no-pie -ldl
+endif
+else
+ifeq ($(BITS),32)
+LDFLAGS=-m elf_i386 -e main
+else
+LDFLAGS=-m elf_x86_64 -e main
+endif
+endif
+
+#
+# Output directories
+#
+
+OUTDIR=$(srcdir)/build/$(PLATFORM)-$(BITS)
+OBJDIR=$(OUTDIR)/objects
+SRC=$(srcdir)/src
+TESTDIR=$(srcdir)/tests
+INCDIR=$(srcdir)/include
+
+define directory
+$1 : $(patsubst %/,%,$(dir $1))
+	mkdir -p $$@
+endef
+
+# $(eval $(call directory,$(OUTDIR)))
+
+DIRECTORIES=$(OUTDIR) $(OUTDIR)/bin $(OUTDIR)/lib $(OUTDIR)/objects $(OUTDIR)/tests $(OUTDIR)/popped
+
+$(foreach d,$(DIRECTORIES),$(eval $(call directory,$(d))))
+
+outdirs: $(DIRECTORIES)
+
+#
+# Patterns
+#
+
+EXEC_SUFFIX=
+LIB_SUFFIX=.a
+ifeq ($(PLATFORM),windows)
+EXEC_SUFFIX=.exe
+LIB_SUFFIX=.lib
+endif
+
+LD=$(CC)
+
+include $(srcdir)/Makefile.nasm
+
+$(OUTDIR)/bin/%$(EXEC_SUFFIX) : $(OUTDIR)/objects/%.o
+	mkdir -p $(dir $@)
+	$(LD) $(LDFLAGS) -o $@ $^
+
+$(OUTDIR)/objects/%.o : %.asm
+	mkdir -p $(dir $@)
+	$(NASM) $(NASMFLAGS) -o $@ $<
+
+$(OUTDIR)/objects/%.o : $(OUTDIR)/popped/%.popped
+	mkdir -p $(dir $@)
+	$(NASM) $(NASMFLAGS) -o $@ $<
+
+$(OUTDIR)/popped/%.popped : %.pop
+	mkdir -p $(dir $@)
+	$(POPPER) < $< > $@
+
+$(OUTDIR)/bin/%.bin : %.pop
+	mkdir -p $(dir $@)
+	$(POPPER) < $< > $@
+
+#
+# Rules
+#
+
+clean:
+	rm -rf $(OUTDIR)
+
+dist-clean:
+	rm -rf $(srcdir)/build
+

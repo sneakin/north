@@ -1,4 +1,4 @@
-;; A basic call threaded interpreter. The op code is just a list of function addresses.
+p;; A basic call threaded interpreter. The op code is just a list of function addresses.
 
 bits 64
 
@@ -9,13 +9,13 @@ global outer_eval
 
 ptrsize equ 8
 
-%include "dict_macros.asm"
+%include "dict_macros.h"
 
 %define eval_ip r12
 %define fp r10
 
 main:
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 	push rdx
 	push rcx
 %else
@@ -116,7 +116,7 @@ defop pointer
 	push rbx
 	ret
 
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 defop hello
 	mov rcx, .msg
 	add rsp, -32
@@ -324,9 +324,9 @@ defop dovar
 
 section .text
 
-%include "ffi.h"
+%include "../ffi.asm"
 %include "dynlibs.asm"
-%include "libc.h"  
+%include "../libc.asm"
 
 constant cpu_bits,BITS
 constant cell_size,ptrsize

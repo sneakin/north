@@ -1,111 +1,29 @@
-PROGRAMS=test-hello test-printf test-dictionary test-north test-index test-loader
-OUTPUTS=bammer.bin
-HEADERS=north.h ffi.h indexed.h
+MINGW32_CC=i686-w32-mingw32-gcc
+MINGW64_CC=x86_64-w64-mingw32-gcc
+POSIX32_CC=$(CC)
+POSIX64_CC=$(CC)
 
-EXEC_SUFFIX=
-ifdef WINDOWS
-EXEC_SUFFIX=.exe
-endif
+srcdir=.
 
-PROGRAMS_OUT=$(foreach n,$(PROGRAMS),$(n)$(EXEC_SUFFIX))
-OUTPUTS+=$(PROGRAMS_OUT)
+PHONY=dir-tests clean
 
-#
-# Flags:
-#
-
-POPPER=ruby ../scripts/preproc.rb
-
-ifndef BITS
-BITS=32
-endif
-
-ifndef LIBC
-LIBC=1
-endif
-
-ifndef DYNAMIC
-DYNAMIC=1
-endif
-
-ifeq ($(LIBC),1)
-ifdef WINDOWS
-LDFLAGS=-mconsole -no-pie
+ifdef BITS
+all: tests-$(PLATFORM)-$(BITS)
 else
-LDFLAGS=-m$(BITS) -no-pie -ldl
+all: tests-posix-64 tests-posix-32 tests-windows-64 tests-windows-32
 endif
-else
-ifeq ($(BITS),32)
-LDFLAGS=-m elf_i386 -e main
-else
-LDFLAGS=-m elf_x86_64 -e main
-endif
-endif
-
-NASM=nasm
-DEFINES=-DBITS=$(BITS)
-
-ifeq ($(DYNAMIC),1)
-DEFINES+=-DDYNAMIC=1
-endif
-
-ifeq ($(LIBC),1)
-DEFINES+=-DLIBC=1
-endif
-
-ifeq ($(WINDOWS),1)
-DEFINES+=-DWINDOWS=1
-endif
-
-ifeq ($(RELEASE),1)
-DEFINES+=-DRELEASE=1
-else
-LDFLAGS+=-g
-NASMFLAGS+=-g
-DEFINES+=-DDEBUG=1
-endif
-
-ifeq ($(WINDOWS),1)
-NASMFLAGS+=-f win$(BITS)
-else
-NASMFLAGS+=-f elf$(BITS)
-endif
-
-NASMFLAGS+=$(DEFINES)
-
-LINK=$(CC) $(LDFLAGS)
-
-#
-# Rules
-#
-
-all: $(OUTPUTS)
 
 clean:
-	rm -f $(OUTPUTS) *.o *.popped.*
+	rm -rf $(srcdir)/build
 
-%$(EXEC_SUFFIX): %.o
-	$(LINK) -o $@ $<
+tests-posix-32:
+	$(MAKE) -C tests BITS=32 PLATFORM=posix CC=$(POSIX32_CC) all
 
-%.o: %.S
-	$(NASM) $(NASMFLAGS) -o $@ $<
+tests-posix-64:
+	$(MAKE) -C tests BITS=64 PLATFORM=posix CC=$(POSIX64_CC) all
 
-%.o: %.asm
-	$(NASM) $(NASMFLAGS) -o $@ $<
+tests-windows-32:
+	$(MAKE) -C tests BITS=32 PLATFORM=windows CC=$(MINGW32_CC) all
 
-%.popped.$(BITS): %.pop north-$(BITS).asm $(HEADERS)
-	$(POPPER) $< > $@
-
-%.o: %.popped.$(BITS)
-	$(NASM) $(NASMFLAGS) -o $@ $<
-
-%.bin: %.popped.$(BITS) opcodes-$(BITS).h
-	$(NASM) $(DEFINES) -o $@ $<
-
-#
-# Individual files:
-#
-
-opcodes-$(BITS).h: test-dictionary
-	$(EXEC) ./test-dictionary$(EXEC_SUFFIX) 1 > $@
-
+tests-windows-64:
+	$(MAKE) -C tests BITS=64 PLATFORM=windows CC=$(MINGW64_CC) all

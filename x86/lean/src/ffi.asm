@@ -1,7 +1,7 @@
 %ifndef FFI_H
 %define FFI_H 1
 
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 %if BITS == 32
 
 %define HAS_DEFC 1
@@ -29,7 +29,7 @@ defc %1,%2,%3,%1
 %endmacro
 
 
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 %defstr PLATFORM_STR win
 %else
 %defstr PLATFORM_STR sysv

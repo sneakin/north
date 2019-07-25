@@ -6,7 +6,7 @@ import libc atoi/1/1 exit/1
 
 ; export yes noo
 
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 string testlib 'msvcrt.dll'
 %else
 string testlib 'libc.so.6'

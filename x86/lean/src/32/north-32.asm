@@ -9,12 +9,12 @@ global outer_eval
 
 ptrsize equ 4
 
-%include "dict_macros.asm"
+%include "dict_macros.h"
 
 %define eval_ip edi
 %define fp ebp
 
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 %if BITS==32
 global _main
 _main:
@@ -122,7 +122,7 @@ defop pointer
 	push ebx
 	ret
 
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 extern _printf
 extern _fflush
 defop hello
@@ -285,7 +285,7 @@ defop here
 	push ebx
 	ret
 
-%ifdef WINDOWS
+%ifidni PLATFORM,windows
 extern _exit
 defop sysexit
   jmp _exit
@@ -330,9 +330,9 @@ defop dovar
 
 section .text
 
-%include "ffi.h"
+%include "../ffi.asm"
 %include "dynlibs.asm"
-%include "libc.h"  
+%include "../libc.asm"
 
 constant cpu_bits,BITS
 constant cell_size,ptrsize

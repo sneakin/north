@@ -1,4 +1,4 @@
-%include "opcodes.h"
+%include "north/opcodes.h"
 
 %macro defi 1
 %endmacro
