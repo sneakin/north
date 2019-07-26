@@ -7,7 +7,7 @@ string fmt "%x %i %i",0xA
 string stack_fmt "%x %x %x %x %x %x %x | %x %x %x %x %x %x %x",0xA
 
 def map_dict ; ( fn dict num-entries )
-	literal 3 overn literal 5 overn eval
+	literal 3 overn literal 5 overn direct_eval
 	literal 5 overn swap
 	cell_size int_add cell_size int_add cell_size int_add
 	literal 4 overn

@@ -42,11 +42,11 @@ defop fficall_eax_%+ num_args %+_1
 %endrep
 	call eax
 	add esp, ptrsize*num_args
-	jmp [ffiexit_1+dict_code]
+	jmp [d_ffiexit_1+dict_code]
 
 defop fficall_op_%+ num_args %+_1
 	mov eax, [eax+dict_data]
-	jmp [fficall_eax_%+ num_args %+_1+dict_code]
+	jmp [d_fficall_eax_%+ num_args %+_1+dict_code]
 
 %assign num_args num_args + 1
 %endrep

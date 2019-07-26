@@ -96,9 +96,13 @@ $(OUTDIR)/popped/%.popped : %.pop
 	mkdir -p $(dir $@)
 	$(POPPER) < $< > $@
 
-$(OUTDIR)/bin/%.bin : %.pop
+$(OUTDIR)/preproc/%.asm : $(OUTDIR)/popped/%.popped
 	mkdir -p $(dir $@)
-	$(POPPER) < $< > $@
+	$(NASM) $(NASMFLAGS) -E $< > $@
+
+$(OUTDIR)/bin/%.bin : $(OUTDIR)/popped/%.popped
+	mkdir -p $(dir $@)
+	$(NASM) $(NASMFLAGS) -f bin -o $@ $<
 
 #
 # Rules

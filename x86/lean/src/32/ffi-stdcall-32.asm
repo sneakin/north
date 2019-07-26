@@ -17,7 +17,7 @@ defop ffi_stdcall_op_%+ num_args %+_1
 	push ebx
 %endrep
 	call [eax+dict_data]
-	jmp [ffiexit_1+dict_code]
+	jmp [d_ffiexit_1+dict_code]
 
 %assign num_args num_args + 1
 %endrep

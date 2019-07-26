@@ -4,9 +4,6 @@
 
 bits 64
 
-copy_args_0:
-	ret
-
 copy_args_1:
 	mov rdi, [rsp+ptrsize*2]
 	ret
@@ -56,8 +53,8 @@ defop dofficall_r11_1
 %define num_args 0
 %rep 7
 
-%define op0 fficall_r11_%+ num_args %+ _0
-%define op1 fficall_r11_%+ num_args %+ _1
+%define op0 d_fficall_r11_%+ num_args %+ _0
+%define op1 d_fficall_r11_%+ num_args %+ _1
 
 defop fficall_r11_%+ num_args %+ _0
 %if num_args > 0
@@ -79,7 +76,7 @@ defop fficall_r11_%+ num_args %+ _1
 %if num_args > 0
 	call copy_args_%+ num_args
 %endif
-	jmp [dofficall_r11_1+dict_code]
+	jmp [d_dofficall_r11_1+dict_code]
 
 defop fficall_%+ num_args %+ _1
 	pop rbx
@@ -96,7 +93,7 @@ defop fficall_op_%+ num_args %+ _1
 %undef num_args
 
 fficall_r11_table:
-	dq copy_args_0
+	dq 0
 	dq copy_args_1
 	dq copy_args_2
 	dq copy_args_3
@@ -111,7 +108,7 @@ defop fficall_r11_n_%+ counter
 	mov rbp, rsp
 	mov rax, [rsp+ptrsize*1] ; num args
 	cmp rax, 6
-	jle .dispatch
+	jle .predispatch
 	;; more than 6 arguments
 	pop r14
 	call copy_args_6
@@ -131,6 +128,9 @@ defop fficall_r11_n_%+ counter
 	sub rax, 1
 	sub r14, ptrsize
 	jmp .copyloop
+.predispatch:
+  cmp rax, 0
+  je .exec
 .dispatch:
 	pop r13 ; return address
 	call [fficall_r11_table + rax * ptrsize]
@@ -147,7 +147,7 @@ defop fficall_r11_n_%+ counter
 
 defop fficall_op_n_%+ counter
 	mov r11, [rax+dict_data]
-	jmp [fficall_r11_n_%+ counter +dict_code]
+	jmp [d_fficall_r11_n_%+ counter +dict_code]
 
 %assign counter counter + 1
 %endrep

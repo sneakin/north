@@ -31,20 +31,20 @@ def failed
 string int_fmt "%i",0xA
 
 def write_int
-	literal 2 overn literal int_fmt cprintf drop drop
+	literal 2 overn literal int_fmt literal 2 cprintf literal 3 dropn
 	fexit
 
 string hex_fmt "%x",0xA
 
 def write_hex
-	literal 2 overn literal hex_fmt cprintf drop drop
+	literal 2 overn literal hex_fmt literal 2 cprintf literal 3 dropn
 	fexit
 
 const MAP_PRIVATE 2
 const PROT_READ 1
 
 def write_stack
-	here literal .fmt cprintf literal 2 dropn
+	here literal .fmt literal 2 cprintf literal 3 dropn
 	fexit
 .fmt:	db	'%x: %x %x | %x %x || %x %x %x %x | %x %x | %x %x %x %x %x %x %x %x %x %x %x',0xA,0
 

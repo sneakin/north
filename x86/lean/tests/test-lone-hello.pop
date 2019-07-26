@@ -1,0 +1,7 @@
+%include "north.h"
+
+string hey "Hey there!"
+
+def init
+	hello
+	literal 0 roll fexit

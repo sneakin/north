@@ -23,12 +23,12 @@ dictionary_start:
 
 %macro create 3
 section .text_dict
-%1:
+d_%1:
 %1_code: POINTER %2
 %1_data: POINTER %3
 %1_name: POINTER %1_name_str
 %assign m_dictionary_size m_dictionary_size + 1
-%define %1_i (%1-dictionary_start+ptrsize)/dict_entry_size
+%define %1_i (d_%1-dictionary_start+ptrsize)/dict_entry_size
 
 section .rdata
 %defstr %1_name_str_str %1
@@ -38,6 +38,13 @@ section .rdata
 	db %1_name_str_str,0
 
 section .text
+%1:
+%if BITS==32
+  mov eax, d_%1
+%else
+  mov rax, d_%1
+%endif
+  jmp %2
 %endmacro
 
 %macro defop 1
@@ -47,7 +54,7 @@ section .text
 %endmacro
 
 %macro def 1
-create %1, doop_asm, %1_ops
+create %1, dodirect_asm, %1_ops
 section .rdata_forth
 %1_ops:
 %endmacro
