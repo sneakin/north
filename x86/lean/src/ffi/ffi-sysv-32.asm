@@ -1,6 +1,6 @@
 bits 32
-  
-defop fficall_op_n_0
+
+defop ffi_sysv_32_op_n_0
 	pop ebx ; return address
 	pop ebp ; number args, not needed in 32 bit
 	call [eax+dict_data]
@@ -8,7 +8,13 @@ defop fficall_op_n_0
 	push ebx
 	ret
 
-defop fficall_op_n_1
+defop ffi_sysv_32_n_0
+  pop ebx
+  pop eax
+  push ebx
+  jmp [ffi_sysv_32_op_n_0+dict_code]
+  
+defop ffi_sysv_32_op_n_1
 	pop ebx ; return address
 	pop ebp ; number args, not needed in 32 bit
 	call [eax+dict_data]
@@ -17,6 +23,12 @@ defop fficall_op_n_1
 	push ebx
 	ret
 
+defop ffi_sysv_32_n_1           ; could be buggy by dropping fn
+  pop ebx
+  pop eax
+  push ebx
+  jmp [ffi_sysv_32_op_n_1+dict_code]
+  
 defop ffiexit_1
 	pop ebx
 	push eax
@@ -26,16 +38,22 @@ defop ffiexit_1
 %define num_args 0
 %rep 8
 
-defop fficall_%+ num_args %+_0
+defop ffi_sysv_32_%+ num_args %+_0
 	pop ebx
 	pop eax
 	push ebx
 	jmp eax
 
-defop fficall_op_%+ num_args %+_0
+defop ffi_sysv_32_%+ num_args %+_1 ; could be buggy
+  pop ebx
+  pop eax
+  push ebx
+  jmp ffi_sysv_32_op_%+ num_args %+_1
+
+defop ffi_sysv_32_op_%+ num_args %+_0
 	jmp [eax+dict_data]
 
-defop fficall_eax_%+ num_args %+_1
+defop ffi_sysv_32_eax_%+ num_args %+_1
 %rep num_args
 	mov ebx, [esp+ptrsize*num_args]
 	push ebx
@@ -44,9 +62,9 @@ defop fficall_eax_%+ num_args %+_1
 	add esp, ptrsize*num_args
 	jmp [d_ffiexit_1+dict_code]
 
-defop fficall_op_%+ num_args %+_1
+defop ffi_sysv_32_op_%+ num_args %+_1
 	mov eax, [eax+dict_data]
-	jmp [d_fficall_eax_%+ num_args %+_1+dict_code]
+	jmp [d_ffi_sysv_32_eax_%+ num_args %+_1+dict_code]
 
 %assign num_args num_args + 1
 %endrep

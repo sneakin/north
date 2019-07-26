@@ -43,7 +43,7 @@ copy_args_6:
 	mov r9, [rsp+ptrsize*7]
 	ret
 
-defop dofficall_r11_1
+defop doffi_sysv_64_r11_1
 	call r11
 	pop rbx
 	push rax
@@ -53,38 +53,38 @@ defop dofficall_r11_1
 %define num_args 0
 %rep 7
 
-%define op0 d_fficall_r11_%+ num_args %+ _0
-%define op1 d_fficall_r11_%+ num_args %+ _1
+%define op0 d_ffi_sysv_64_r11_%+ num_args %+ _0
+%define op1 d_ffi_sysv_64_r11_%+ num_args %+ _1
 
-defop fficall_r11_%+ num_args %+ _0
+defop ffi_sysv_64_r11_%+ num_args %+ _0
 %if num_args > 0
 	call copy_args_%+ num_args
 %endif
 	jmp r11
 
-defop fficall_%+ num_args %+ _0
+defop ffi_sysv_64_%+ num_args %+ _0
 	pop rbx
 	pop r11
 	push rbx
 	jmp [op0+dict_code]
 
-defop fficall_op_%+ num_args %+ _0
+defop ffi_sysv_64_op_%+ num_args %+ _0
 	mov r11, [rax+dict_data]
 	jmp [op0+dict_code]
 
-defop fficall_r11_%+ num_args %+ _1
+defop ffi_sysv_64_r11_%+ num_args %+ _1
 %if num_args > 0
 	call copy_args_%+ num_args
 %endif
-	jmp [d_dofficall_r11_1+dict_code]
+	jmp [d_doffi_sysv_64_r11_1+dict_code]
 
-defop fficall_%+ num_args %+ _1
+defop ffi_sysv_64_%+ num_args %+ _1
 	pop rbx
 	pop r11
 	push rbx
 	jmp [op1+dict_code]
 
-defop fficall_op_%+ num_args %+ _1
+defop ffi_sysv_64_op_%+ num_args %+ _1
 	mov r11, [rax+dict_data]
 	jmp [op1+dict_code]
 
@@ -92,7 +92,7 @@ defop fficall_op_%+ num_args %+ _1
 %endrep
 %undef num_args
 
-fficall_r11_table:
+ffi_sysv_64_r11_table:
 	dq 0
 	dq copy_args_1
 	dq copy_args_2
@@ -104,7 +104,7 @@ fficall_r11_table:
 %define counter 0
 %rep 2
 
-defop fficall_r11_n_%+ counter
+defop ffi_sysv_64_r11_n_%+ counter
 	mov rbp, rsp
 	mov rax, [rsp+ptrsize*1] ; num args
 	cmp rax, 6
@@ -133,7 +133,7 @@ defop fficall_r11_n_%+ counter
   je .exec
 .dispatch:
 	pop r13 ; return address
-	call [fficall_r11_table + rax * ptrsize]
+	call [ffi_sysv_64_r11_table + rax * ptrsize]
 	push r13
 	jmp .exec
 .exec:
@@ -145,9 +145,15 @@ defop fficall_r11_n_%+ counter
 %endif
 	ret
 
-defop fficall_op_n_%+ counter
+defop ffi_sysv_64_n_%+ counter
+  pop rbx
+  pop r11
+  push rbx
+	jmp [d_ffi_sysv_64_r11_n_%+ counter +dict_code]
+
+defop ffi_sysv_64_op_n_%+ counter
 	mov r11, [rax+dict_data]
-	jmp [d_fficall_r11_n_%+ counter +dict_code]
+	jmp [d_ffi_sysv_64_r11_n_%+ counter +dict_code]
 
 %assign counter counter + 1
 %endrep

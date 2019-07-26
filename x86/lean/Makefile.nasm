@@ -14,7 +14,7 @@ else
 NASMFLAGS+=-f elf$(BITS)
 endif
 
-NASMFLAGS+=$(DEFINES) -I$(INCDIR) -I$(OUTDIR)/include -I$(srcdir)/src/$(BITS)
+NASMFLAGS+=$(DEFINES) -I$(INCDIR) -I$(OUTDIR)/include -I$(srcdir)/src/$(BITS) -I$(srcdir)/src
 
 $(OBJDIR)/%.o : %.asm
 	$(NASM) $(NASM_FLAGS) -o $@ $<

@@ -1,6 +1,6 @@
 bits 64
 
-defop fficall_rax_0_0
+defop ffi_win_64_rax_0_0
   ;;  windows needs 32 byte to shadow space store register values
   push r9
   push r8
@@ -10,44 +10,44 @@ defop fficall_rax_0_0
 	add rsp, ptrsize*4
 	ret
 
-defop fficall_rax_1_0
+defop ffi_win_64_rax_1_0
 	mov rcx, [rsp+ptrsize*1]
-	jmp [d_fficall_rax_0_0+dict_code]
+	jmp [d_ffi_win_64_rax_0_0+dict_code]
 
-defop fficall_rax_2_0
-	mov rcx, [rsp+ptrsize*1]
-	mov rdx, [rsp+ptrsize*2]
-	jmp [d_fficall_rax_0_0+dict_code]
-
-defop fficall_rax_3_0
+defop ffi_win_64_rax_2_0
 	mov rcx, [rsp+ptrsize*1]
 	mov rdx, [rsp+ptrsize*2]
-	mov r8, [rsp+ptrsize*3]
-	jmp [d_fficall_rax_0_0+dict_code]
+	jmp [d_ffi_win_64_rax_0_0+dict_code]
 
-defop fficall_rax_4_0
+defop ffi_win_64_rax_3_0
 	mov rcx, [rsp+ptrsize*1]
 	mov rdx, [rsp+ptrsize*2]
 	mov r8, [rsp+ptrsize*3]
-	mov r9, [rsp+ptrsize*4]
-	jmp [d_fficall_rax_0_0+dict_code]
+	jmp [d_ffi_win_64_rax_0_0+dict_code]
 
-defop fficall_rax_any_0
+defop ffi_win_64_rax_4_0
 	mov rcx, [rsp+ptrsize*1]
 	mov rdx, [rsp+ptrsize*2]
 	mov r8, [rsp+ptrsize*3]
 	mov r9, [rsp+ptrsize*4]
-	jmp [d_fficall_rax_0_0+dict_code]
+	jmp [d_ffi_win_64_rax_0_0+dict_code]
 
-defop fficall_rax_n_0
+defop ffi_win_64_rax_any_0
+	mov rcx, [rsp+ptrsize*1]
+	mov rdx, [rsp+ptrsize*2]
+	mov r8, [rsp+ptrsize*3]
+	mov r9, [rsp+ptrsize*4]
+	jmp [d_ffi_win_64_rax_0_0+dict_code]
+
+defop ffi_win_64_rax_n_0
   pop r13
   pop r14
-  call [d_fficall_rax_any_0+dict_code]
+  call [d_ffi_win_64_rax_any_0+dict_code]
   push r14
   push r13
   ret
 
-defop fficall_rax_0_1
+defop ffi_win_64_rax_0_1
   ;;  windows needs 32 byte to shadow space store register values
   push r9
   push r8
@@ -60,40 +60,40 @@ defop fficall_rax_0_1
 	push rbx
 	ret
 
-defop fficall_rax_1_1
+defop ffi_win_64_rax_1_1
 	mov rcx, [rsp+ptrsize*1]
-	jmp [d_fficall_rax_0_1+dict_code]
+	jmp [d_ffi_win_64_rax_0_1+dict_code]
 
-defop fficall_rax_2_1
+defop ffi_win_64_rax_2_1
 	mov rcx, [rsp+ptrsize*1]
 	mov rdx, [rsp+ptrsize*2]
-	jmp [d_fficall_rax_0_1+dict_code]
+	jmp [d_ffi_win_64_rax_0_1+dict_code]
 
-defop fficall_rax_3_1
+defop ffi_win_64_rax_3_1
 	mov rcx, [rsp+ptrsize*1]
 	mov rdx, [rsp+ptrsize*2]
 	mov r8, [rsp+ptrsize*3]
-	jmp [d_fficall_rax_0_1+dict_code]
+	jmp [d_ffi_win_64_rax_0_1+dict_code]
 
-defop fficall_rax_4_1
+defop ffi_win_64_rax_4_1
 	mov rcx, [rsp+ptrsize*1]
 	mov rdx, [rsp+ptrsize*2]
 	mov r8, [rsp+ptrsize*3]
 	mov r9, [rsp+ptrsize*4]
-	jmp [d_fficall_rax_0_1+dict_code]
+	jmp [d_ffi_win_64_rax_0_1+dict_code]
 
 
-defop fficall_rax_n_1
+defop ffi_win_64_rax_n_1
 	pop r13                       ; return address
   pop r14                       ; num args
-	call [d_fficall_rax_any_0+dict_code]
+	call [d_ffi_win_64_rax_any_0+dict_code]
 	push r14
 	push rax
   push r13
 	ret
 
 ;;; 
-;;; User facing wrappers: fficall_N_R and fficall_op_N_R
+;;; User facing wrappers: ffi_win_64_N_R and ffi_win_64_op_N_R
 ;;;
   
 %define num_args 0
@@ -102,22 +102,22 @@ defop fficall_rax_n_1
 %define num_returns 0
 %rep 2
   
-defop fficall_%+ num_args %+ _%+ num_returns
+defop ffi_win_64_%+ num_args %+ _%+ num_returns
   pop rbx
   pop rax
   push rbx
 %if num_args >= 4
-  jmp [d_fficall_rax_4_0+dict_code]
+  jmp [d_ffi_win_64_rax_4_0+dict_code]
 %else
-  jmp [d_fficall_rax_%+ num_args %+_%+ num_returns +dict_code]
+  jmp [d_ffi_win_64_rax_%+ num_args %+_%+ num_returns +dict_code]
 %endif
   
-defop fficall_op_%+ num_args %+ _%+ num_returns
+defop ffi_win_64_op_%+ num_args %+ _%+ num_returns
   mov rax, [rax+dict_data]
 %if num_args >= 4
-  jmp [d_fficall_rax_4_0+dict_code]
+  jmp [d_ffi_win_64_rax_4_0+dict_code]
 %else
-  jmp [d_fficall_rax_%+ num_args %+_%+ num_returns +dict_code]
+  jmp [d_ffi_win_64_rax_%+ num_args %+_%+ num_returns +dict_code]
 %endif
 
 %assign num_returns num_returns + 1
@@ -126,22 +126,22 @@ defop fficall_op_%+ num_args %+ _%+ num_returns
 %assign num_args num_args + 1
 %endrep
 
-defop fficall_op_n_0
+defop ffi_win_64_op_n_0
   mov rax, [rax+dict_data]
-  jmp [d_fficall_rax_n_0+dict_code]
+  jmp [d_ffi_win_64_rax_n_0+dict_code]
   
-defop fficall_n_0
+defop ffi_win_64_n_0
   pop rbx
   pop rax
   push rbx
-  jmp [d_fficall_rax_n_0+dict_code]
+  jmp [d_ffi_win_64_rax_n_0+dict_code]
   
-defop fficall_op_n_1
+defop ffi_win_64_op_n_1
   mov rax, [rax+dict_data]
-  jmp [d_fficall_rax_n_1+dict_code]
+  jmp [d_ffi_win_64_rax_n_1+dict_code]
 
-defop fficall_n_1
+defop ffi_win_64_n_1
   pop rbx
   pop rax
   push rbx
-  jmp [d_fficall_rax_n_1+dict_code]
+  jmp [d_ffi_win_64_rax_n_1+dict_code]

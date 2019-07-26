@@ -35,8 +35,41 @@ defc %1,%2,%3,%1
 %defstr PLATFORM_STR sysv
 %endif
 
-%defstr BITS_STR BITS
-%strcat FFI_PATH "ffi-",PLATFORM_STR,"-",BITS_STR,".asm"
-%include FFI_PATH
+%if BITS==64
+%include "ffi/ffi-sysv-64.asm"
+%include "ffi/ffi-win-64.asm"
+%else
+%include "ffi/ffi-sysv-32.asm"
+%include "ffi/ffi-stdcall-32.asm"
+%endif
 
+;;; map fficall functions to platform ffi
+%define platform_ffi ffi_sysv_%+ BITS
+
+%ifidni PLATFORM,windows
+%if BITS==64
+%define platform_ffi ffi_win_64
+%endif
+%endif
+  
+%define num_rets 0
+%rep 2
+
+create fficall_n_%+ num_rets , platform_ffi%+ _n_%+ num_rets%+ _asm , 0
+create fficall_op_n_%+ num_rets , platform_ffi%+ _op_n_%+ num_rets%+ _asm , 0
+fficall_op_n_%+ num_rets %+ _asm equ platform_ffi%+ _op_n_%+ num_rets%+ _asm
+
+%define num_args 0
+%rep 7
+
+create fficall_%+ num_args %+ _%+ num_rets , platform_ffi%+ _%+ num_args %+ _%+ num_rets%+ _asm , 0
+create fficall_op_%+ num_args %+ _%+ num_rets , platform_ffi%+ _op_%+ num_args %+ _%+ num_rets%+ _asm , 0
+fficall_op_%+ num_args %+ _%+ num_rets%+ _asm equ platform_ffi%+ _op_%+ num_args %+ _%+ num_rets%+ _asm
+  
+%assign num_args num_args + 1
+%endrep
+
+%assign num_rets num_rets + 1
+%endrep
+  
 %endif
