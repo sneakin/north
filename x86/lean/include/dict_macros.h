@@ -38,13 +38,27 @@ section .rdata
 	db %1_name_str_str,0
 
 section .text
+
+%ifidni PLATFORM,windows
+%if BITS==32
+global _%1
+_%1:
+%else
+global %1
+%endif
+%else
+global %1
+%endif
+
 %1:
 %if BITS==32
   mov eax, d_%1
 %else
   mov rax, d_%1
-%endif
+  %endif
+%ifnidni %2,%1_asm
   jmp %2
+%endif
 %endmacro
 
 %macro defop 1
