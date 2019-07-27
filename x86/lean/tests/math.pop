@@ -1,0 +1,12 @@
+%include "north.h"
+
+string int_fmt "%i",0xA
+
+def write_int
+	literal 2 overn literal int_fmt literal 2 cprintf literal 3 dropn
+	fexit
+
+def init
+  literal 24 literal 2 int_mul write_int drop
+  literal 24 literal 2 int_div write_int drop
+  literal 0 roll fexit

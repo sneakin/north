@@ -11,5 +11,5 @@ defop hello
 
 extern _exit
 
-defop sysexit
+defop osexit
   jmp _exit

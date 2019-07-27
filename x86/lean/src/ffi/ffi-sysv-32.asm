@@ -2,9 +2,9 @@ bits 32
 
 defop ffi_sysv_32_op_n_0
 	pop ebx ; return address
-	pop ebp ; number args, not needed in 32 bit
+	pop esi ; number args, not needed in 32 bit
 	call [eax+dict_data]
-	push ebp
+	push esi
 	push ebx
 	ret
 
@@ -16,9 +16,9 @@ defop ffi_sysv_32_n_0
   
 defop ffi_sysv_32_op_n_1
 	pop ebx ; return address
-	pop ebp ; number args, not needed in 32 bit
+	pop esi ; number args, not needed in 32 bit
 	call [eax+dict_data]
-	push ebp
+	push esi
 	push eax ; returning this
 	push ebx
 	ret

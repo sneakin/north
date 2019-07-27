@@ -24,6 +24,7 @@ defop doop_index ; the entry in eax
 
 defop next_index
 	mov eax, [eval_ip]
+  and eax, [d_index_mask+dict_data]
 	add eval_ip, [d_index_size+dict_data]
   call [d_dict_offset_a+dict_code]
 	call [eax+dict_code]
@@ -36,3 +37,4 @@ section .rdata_forth
 %endmacro
 
 constant index_size,4
+constant index_mask,0xFFFFFFFF

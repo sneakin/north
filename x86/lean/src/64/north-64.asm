@@ -15,6 +15,8 @@ ptrsize equ 8
 %define fp r10
 
 main:
+  push rbp
+  mov rbp, rsp
 %ifidni PLATFORM,windows
 	push rdx
 	push rcx
@@ -26,12 +28,15 @@ main:
 	call outer_eval
 	pop rax ; return value
 	add rsp, ptrsize*2
+  pop rbp
 	ret
 
 outer_eval:
 	jmp [rax+dict_code]
 
 %include "ops.asm"
+%include "math.asm"
+%include "frames.asm"
 %include "direct.asm"
 %include "indirect.asm"
 

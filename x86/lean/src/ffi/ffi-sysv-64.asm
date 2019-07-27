@@ -104,8 +104,27 @@ ffi_sysv_64_r11_table:
 %define counter 0
 %rep 2
 
+defop ffi_sysv_64_r11_7_%+ counter ; needs testing
+  call copy_args_6
+  mov rbx, [rsp+ptrsize*7]
+	call r11
+%if counter != 0
+	push rax
+%endif
+	ret
+
+defop ffi_sysv_64_7_%+ counter
+	pop rbx
+	pop r11
+	push rbx
+	jmp [d_ffi_sysv_64_r11_7_%+ counter +dict_code]
+
+defop ffi_sysv_64_op_7_%+ counter
+	mov r11, [rax+dict_data]
+	jmp [d_ffi_sysv_64_r11_7_%+ counter +dict_code]
+
 defop ffi_sysv_64_r11_n_%+ counter
-	mov rbp, rsp
+	mov r15, rsp
 	mov rax, [rsp+ptrsize*1] ; num args
 	cmp rax, 6
 	jle .predispatch
@@ -139,7 +158,7 @@ defop ffi_sysv_64_r11_n_%+ counter
 .exec:
 	mov rax, 0 ; number of vector args
 	call r11
-	mov rsp, rbp
+	mov rsp, r15
 %if counter != 0
 	push rax
 %endif

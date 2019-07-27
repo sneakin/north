@@ -35,7 +35,7 @@ def print_dict_entry
 	literal 9 dropn
 	fexit
 
-string short_dict_entry_fmt "%s_i equ %i",0xA
+string short_dict_entry_fmt "%s equ %i",0xA
 
 def short_print_dict_entry
 	; entry addr

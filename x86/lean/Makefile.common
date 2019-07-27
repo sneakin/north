@@ -100,7 +100,15 @@ $(OUTDIR)/preproc/%.asm : $(OUTDIR)/popped/%.popped
 	mkdir -p $(dir $@)
 	$(NASM) $(NASMFLAGS) -E $< > $@
 
-$(OUTDIR)/bin/%.bin : $(OUTDIR)/popped/%.popped
+$(OUTDIR)/popped-index/%.popped : %.pop
+	mkdir -p $(dir $@)
+	SUFFIX="" $(POPPER) < $< > $@
+
+$(OUTDIR)/preproc-index/%.asm : $(OUTDIR)/popped-index/%.popped
+	mkdir -p $(dir $@)
+	$(NASM) $(NASMFLAGS) -E $< > $@
+
+$(OUTDIR)/bin/%.bin : $(OUTDIR)/popped-index/%.popped
 	mkdir -p $(dir $@)
 	$(NASM) $(NASMFLAGS) -f bin -o $@ $<
 

@@ -23,7 +23,8 @@ defop doop_index ; the entry in rax
 	jmp [d_next_index+dict_code]
 
 defop next_index
-	mov eax, [eval_ip]
+	mov rax, [eval_ip]
+  and rax, [d_index_mask+dict_data]
 	add eval_ip, [d_index_size+dict_data]
   call [d_dict_offset_a+dict_code]
 	call [rax+dict_code]
@@ -36,3 +37,4 @@ section .rdata_forth
 %endmacro
 
 constant index_size,4
+constant index_mask,0xFFFFFFFF

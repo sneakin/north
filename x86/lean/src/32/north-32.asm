@@ -22,20 +22,24 @@ _main:
 %endif
   
 main:
-	mov eax, [esp+ptrsize*2]
+  push ebp
+	mov eax, [esp+ptrsize*3]
 	push eax ; argv
-	mov eax, [esp+ptrsize*2]
+	mov eax, [esp+ptrsize*3]
 	push eax ; argc
 	mov eax, d_init
 	call outer_eval
 	pop eax ; return value
 	add esp, ptrsize*2
+  pop ebp
 	ret
 
 outer_eval:
 	jmp [eax+dict_code]
 
 %include "ops.asm"
+%include "math.asm"
+%include "frames.asm"
 %include "direct.asm"
 %include "indirect.asm"
 

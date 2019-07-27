@@ -177,29 +177,20 @@ defop eq
 	push rcx
 	ret
 
-defop int_add
-	pop rbx
-	pop rax
-	add rax, [rsp]
-	mov [rsp], rax
-	push rbx
-	ret
-
-defop int_sub
-	pop rbx
-	pop rcx
-	pop rax
-	sub rax, rcx
-	push rax
-	push rbx
-	ret
-
 defop here
 	pop rbx
 	push rsp
 	push rbx
 	ret
 
+defop stack_allot
+  pop rbx
+  pop rax
+  sub rsp, rax
+  push rsp
+  push rbx
+  ret
+  
 defop dict_offset_a
   imul rax, dict_entry_size
   add rax, ptrsize

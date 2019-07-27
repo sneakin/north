@@ -1,4 +1,4 @@
-PROGRAMS=test-lone-hello test-hello test-printf test-dictionary test-north test-index test-loader
+PROGRAMS=test-lone-hello test-hello test-printf test-dictionary test-frames math test-north test-index test-loader
 
 srcdir=..
 include $(srcdir)/Makefile.common

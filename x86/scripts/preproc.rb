@@ -19,7 +19,7 @@ ARGF.each do |line|
     # Detect lines that start a function definition:
     definition = line
     suffix = case $1
-      when 'i' then '_i'
+      when 'i' then ENV.fetch('SUFFIX', '_i')
       else ''
     end
     word_prefix = case $1

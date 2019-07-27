@@ -22,6 +22,6 @@ defop hello
 .msg db "Hello",0xA,0
 .len equ $ - .msg
 
-defop sysexit
+defop osexit
 	syscall_macro 1, 0, 0, 0
 	ret

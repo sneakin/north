@@ -1,0 +1,65 @@
+%include "north.h"
+
+string ok_str "OK"
+
+def write_ok
+  literal ok_str cputs drop fexit
+  
+string int_fmt "%i",0xA
+
+def write_int
+	literal 2 overn literal int_fmt literal 2 cprintf literal 3 dropn
+	fexit
+
+string hex_fmt "%x",0xA
+
+def write_hex
+	literal 2 overn literal hex_fmt literal 2 cprintf literal 3 dropn
+	fexit
+
+def test_frame_begin_drop
+  begin_frame
+  literal 1 literal 2
+  drop_frame
+  fexit
+  
+def test_frame_begin_end
+  begin_frame
+  literal 1 literal 2
+  end_frame
+  literal 3 dropn fexit
+
+def test_frame_begin_continue
+  begin_frame
+  literal 24 write_int
+  continue
+  
+def test_frame_args
+  begin_frame
+  arg0 write_int
+  arg1 write_int
+  arg0 write_int
+  ; drop_frame fexit
+  return0
+  
+def test_frame_begin_return1
+  begin_frame
+  literal 1 literal 2
+  literal 123 return1
+
+def write_frame
+  current_frame write_hex drop
+  here write_hex drop
+  fexit
+  
+def init
+  write_frame
+  begin_frame write_frame write_ok
+  test_frame_begin_end write_frame write_ok
+  test_frame_begin_drop write_frame write_ok
+  test_frame_begin_continue write_int write_frame drop_locals write_ok
+  literal 34 literal 12 test_frame_args write_frame literal 2 dropn write_ok
+  test_frame_begin_return1 write_int write_frame write_ok
+  write_ok
+  drop_frame literal 0 roll fexit
+  

@@ -60,7 +60,7 @@ create fficall_op_n_%+ num_rets , platform_ffi%+ _op_n_%+ num_rets%+ _asm , 0
 fficall_op_n_%+ num_rets %+ _asm equ platform_ffi%+ _op_n_%+ num_rets%+ _asm
 
 %define num_args 0
-%rep 7
+%rep 8
 
 create fficall_%+ num_args %+ _%+ num_rets , platform_ffi%+ _%+ num_args %+ _%+ num_rets%+ _asm , 0
 create fficall_op_%+ num_args %+ _%+ num_rets , platform_ffi%+ _op_%+ num_args %+ _%+ num_rets%+ _asm , 0

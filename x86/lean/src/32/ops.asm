@@ -154,23 +154,6 @@ defop ifnegative
 .done:
 	ret
 
-defop int_add
-	pop ebx
-	pop eax
-	add eax, [esp]
-	mov [esp], eax
-	push ebx
-	ret
-
-defop int_sub
-	pop ebx
-	pop ecx
-	pop eax
-	sub eax, ecx
-	push eax
-	push ebx
-	ret
-
 defop eq
 	pop ecx
 	pop ebx
@@ -191,6 +174,14 @@ defop here
 	push ebx
 	ret
 
+defop stack_allot
+  pop ebx
+  pop eax
+  sub esp, eax
+  push esp
+  push ebx
+  ret
+  
 defop dict_offset_a
   imul eax, dict_entry_size
   add eax, ptrsize
