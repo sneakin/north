@@ -28,6 +28,8 @@ DEFINES+=-DPLATFORM=$(PLATFORM)
 DEFINES+=-DDYNAMIC=$(DYNAMIC)
 DEFINES+=-DBITS=$(BITS)
 
+LD=$(CC)
+
 ifeq ($(LIBC),1)
 ifeq ($(PLATFORM),windows)
 LDFLAGS=-m$(BITS) -mconsole -no-pie
@@ -70,13 +72,16 @@ outdirs: $(DIRECTORIES)
 #
 
 EXEC_SUFFIX=
+OBJ_SUFFIX=.o
 LIB_SUFFIX=.a
+SO_SUFFIX=.so
+
 ifeq ($(PLATFORM),windows)
 EXEC_SUFFIX=.exe
+OBJ_SUFFIX=.o
 LIB_SUFFIX=.lib
+SO_SUFFIX=.dll
 endif
-
-LD=$(CC)
 
 include $(srcdir)/Makefile.nasm
 
@@ -111,6 +116,10 @@ $(OUTDIR)/preproc-index/%.asm : $(OUTDIR)/popped-index/%.popped
 $(OUTDIR)/bin/%.bin : $(OUTDIR)/popped-index/%.popped
 	mkdir -p $(dir $@)
 	$(NASM) $(NASMFLAGS) -f bin -o $@ $<
+
+$(OUTDIR)/lib/%$(SO_SUFFIX) :
+	mkdir -p $(dir $@)
+	$(LD) $(LDFLAGS) -shared -o $@ $^
 
 #
 # Rules

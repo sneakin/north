@@ -1,0 +1,18 @@
+%include "north.h"
+
+import libc exit/1/0
+import testlib fun4/4/1
+
+string failed_msg "FAILED"
+
+def failed
+  literal failed_msg cputs drop
+  literal -1 cexit
+  
+def init
+  literal 1 literal 2 literal 3 literal 4 cfun4
+  literal 4 literal 2 int_sub dup int_mul
+  literal 3 literal 1 int_sub dup int_mul
+  int_add eq ifzero failed
+  literal 4 dropn
+  literal 0 roll fexit

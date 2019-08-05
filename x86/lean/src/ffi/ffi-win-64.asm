@@ -107,7 +107,7 @@ defop ffi_win_64_%+ num_args %+ _%+ num_returns
   pop rax
   push rbx
 %if num_args >= 4
-  jmp [d_ffi_win_64_rax_4_0+dict_code]
+  jmp [d_ffi_win_64_rax_4_%+ num_returns %+ +dict_code]
 %else
   jmp [d_ffi_win_64_rax_%+ num_args %+_%+ num_returns +dict_code]
 %endif
@@ -115,7 +115,7 @@ defop ffi_win_64_%+ num_args %+ _%+ num_returns
 defop ffi_win_64_op_%+ num_args %+ _%+ num_returns
   mov rax, [rax+dict_data]
 %if num_args >= 4
-  jmp [d_ffi_win_64_rax_4_0+dict_code]
+  jmp [d_ffi_win_64_rax_4_%+ num_returns %+ +dict_code]
 %else
   jmp [d_ffi_win_64_rax_%+ num_args %+_%+ num_returns +dict_code]
 %endif
