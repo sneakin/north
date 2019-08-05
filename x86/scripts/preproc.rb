@@ -15,6 +15,9 @@ definition = nil
 suffix = ''
 
 ARGF.each do |line|
+  # turn any forth style comments into asm comments
+  line = line.gsub(/[(] (.*)[)]$/, "; \1")
+  
   if line =~ /^def(\w?)/
     # Detect lines that start a function definition:
     definition = line
