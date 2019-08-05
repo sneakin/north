@@ -6,7 +6,7 @@ all: build
 
 # srcdir=$(shell pwd)
 
-POPPER=ruby $(srcdir)/../scripts/preproc.rb
+POPPER=ruby $(srcdir)/scripts/preproc.rb
 
 ifndef PLATFORM
 PLATFORM=posix
