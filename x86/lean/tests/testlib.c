@@ -1,4 +1,4 @@
-#if(PLATFORM == windows)
+#ifdef PLATFORM_windows
 #define EXPORT __declspec(dllexport)
 #else
 #define EXPORT

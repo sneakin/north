@@ -9,11 +9,11 @@ $(OUTDIR)/include/north/$(PLATFORM)-$(BITS)/opcodes.h: $(OUTDIR)/bin/test-dictio
 
 bammer.pop :  $(OUTDIR)/include/north/$(PLATFORM)-$(BITS)/opcodes.h
 
-$(OUTDIR)/bin/test-ffi-returns.exe : $(OUTDIR)/lib/libtestlib$(SO_SUFFIX)
+$(OUTDIR)/bin/test-ffi-returns$(EXEC_SUFFIX) : $(OUTDIR)/lib/libtestlib$(SO_SUFFIX)
 
 $(OUTDIR)/lib/libtestlib$(SO_SUFFIX) : $(OUTDIR)/objects/testlib$(OBJ_SUFFIX)
 
-$(OUTDIR)/objects/testlib.o : testlib.c
+$(OUTDIR)/objects/testlib$(OBJ_SUFFIX) : testlib.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
