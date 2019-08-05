@@ -4,10 +4,32 @@
 ; import libc printf/n puts/1
 import libc atoi/1/1 exit/1
 import libc malloc/1/1 free/1
-import libc open/3/1 close/1/1 read/3/1 fstat/2/1 mmap/6/1 munmap/2/1 perror/0
+import libc open/3/1 close/1/1 read/3/1 perror/0
+
+import libc fopen/2/1 fread/4/1 fclose/1/1
+
+%ifidni PLATFORM,windows
 
 %if BITS==64
-import libc fstat64/2/1
+import libc _fstati64/2/1 _stati64/2/1
+create cfstat64,fficall_op_2_1_asm,_fstati64
+create cstat64,fficall_op_2_1_asm,_stati64
+%else
+import libc fstat/2/1 stat/2/1
+%endif
+
+%else
+
+%ifidni PLATFORM,posix
+import libc mmap/6/1 munmap/2/1
+%endif
+
+%if BITS==64
+import libc fstat64/2/1 stat64/2/1
+%else
+import libc fstat/2/1 stat/2/1
+%endif
+
 %endif
 
 ; import libdl dlopen/2/1 dlsym/2/1
@@ -62,78 +84,156 @@ def page_align
   literal 1 int_add
   literal page_size int_mul
   roll fexit
-  
-def map_fd
-	literal 0 literal 3 overn literal MAP_PRIVATE literal PROT_READ
-	literal 7 overn page_align swap drop ; size
-	literal 0 cmmap
-	rot drop drop rot drop drop rot drop drop
-	roll
-	fexit
-
-; def read_file_size
-;   literal 8192 roll fexit
 
 def stat_alloc
   begin_frame
   literal sizeof_stat stack_allot
   continue
 
+%ifidni PLATFORM,posix
+
+def map_fd
+	literal 0 literal 3 overn literal MAP_PRIVATE literal PROT_READ
+	literal 7 overn page_align swap drop ( the size )
+	literal 0 cmmap
+	rot drop drop rot drop drop rot drop drop
+	roll
+	fexit
+
+%endif
+  
 %if BITS==64
 
+%ifidni PLATFORM,posix
 sizeof_stat equ (18 * ptrsize)
 
 def stat_size
   literal 2 overn
   literal 6 literal ptrsize int_mul
   int_add peek roll fexit
+
+%endif
   
-def read_file_size
+%ifidni PLATFORM,windows
+sizeof_stat equ (8 * ptrsize)
+
+def stat_size
+  literal 2 overn
+  literal 3 literal ptrsize int_mul
+  int_add peek roll fexit
+  
+%endif
+  
+def read_fd_size ( fd ++ file-size )
   begin_frame
   stat_alloc arg0 cfstat64 literal 2 dropn
   stat_size return1
 
+def read_file_size ( path ++ file-size )
+  begin_frame
+  stat_alloc arg0 cstat64 literal 2 dropn
+  stat_size return1
+
 %else
 
+%ifidni PLATFORM,posix
 sizeof_stat equ (22 * ptrsize)
 
 def stat_size
   literal 2 overn
   literal 11 literal ptrsize int_mul
   int_add peek roll fexit
+
+%endif
+
+%ifidni PLATFORM,windows
+sizeof_stat equ (14 * ptrsize)
+
+def stat_size
+  literal 2 overn
+  literal 5 literal ptrsize int_mul
+  int_add peek roll fexit
   
-def read_file_size
+%endif
+  
+def read_fd_size ( fd ++ file-size )
   begin_frame
   stat_alloc arg0 cfstat literal 2 dropn
   stat_size return1
 
-%endif
+def read_file_size ( path ++ file-size )
+  begin_frame
+  stat_alloc arg0 cstat literal 2 dropn
+  stat_size return1
 
-def init
-	; check number command line arguments
-	literal 2 overn write_int literal 2 eq ifzero failed
-	literal 3 overn literal ptrsize int_add peek cputs
-	; open and read / memory map first command line argument
+%endif
+  
+%ifidni PLATFORM,windows
+
+string FILE_MODE_READ "rb"
+
+def map_file ( path ++ size ptr )
+  begin_frame
+  ( read file size )
+  literal 3 overn read_file_size dup write_int ifzero failed
+  ( allocate mem )
+  page_align cmalloc dup ifzero failed ( path size alloc-size ptr )
+  swap drop ( path size ptr )
+  ( open file )
+  literal FILE_MODE_READ literal 3 overn cfopen dup ifzero failed
+  rot literal 2 dropn
+  ( read file; stack: path size ptr handle )
+  rot swap ( path handle size ptr )
+  literal 1 swap cfread ifzero failed
+  ( handle number 1 ptr )
+  swap drop
+  rot cfclose literal 2 dropn
+  return2
+
+def unmap_file ( size ptr )
+  literal 2 overn cfree literal 1 dropn
+  fexit
+
+%endif
+  
+%ifidni PLATFORM,posix
+
+def map_file ( path ++ size ptr )
+  begin_frame
+  literal 3 overn
+	( open and read / memory map first command line argument )
 	literal 0 swap literal O_RDONLY swap copen roll drop drop swap drop
 	write_int
 	dup ifnegative failed
-	; map file
-  read_file_size write_int swap
-  ; literal 8192 swap
+	( map file )
+  read_fd_size write_int swap
   map_fd dup literal -1 eq ifnotzero failed
-  write_ok
-  ; cputs dup peek write_hex drop
-	; copy argc, argv, and exec
-  literal 6 overn literal 6 overn literal 2 overn
-  eval_ptr_index
+  ( close the file since it's mapped )
+  swap cclose ifnegative failed
+  return2
+
+def unmap_file ( size ptr )
+  literal 3 overn literal 3 overn
+  cmunmap ifnegative failed
   literal 2 dropn
-	; unmap and close the file
-  literal 2 overn swap
-  cmunmap ifnegative failed literal 2 dropn
-	cclose ifnegative failed drop drop
-  ; clean exit
-	write_bye
-	literal 0 roll
-	fexit
+  fexit
+
+%endif
+
+def init
+	( check number command line arguments )
+	literal 2 overn write_int literal 2 eq ifzero failed
+	literal 3 overn literal ptrsize int_add peek cputs
+  map_file write_ok
+	( copy argc, argv, and exec )
+  literal 6 overn write_int literal 6 overn literal 2 overn
+  eval_ptr_index
+  rot literal 2 dropn ( path size ptr result )
+  ( unmap and close the file )
+  rot swap unmap_file literal 2 dropn ( path result )
+  swap drop ( result )
+  ( clean exit )
+	break write_bye
+	roll fexit
 
 finalize_dictionary

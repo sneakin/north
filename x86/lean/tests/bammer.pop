@@ -9,6 +9,6 @@ defi start
   hello
   offset32 (fmt-$) int32 2 cprintf
   int32 3 dropn
-  fexit
+  int32 12 roll fexit
 
 string fmt "1 + 2 = %i",0xA

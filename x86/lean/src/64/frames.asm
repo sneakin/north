@@ -48,6 +48,18 @@ defop return1
   push rbx
 	ret
   
+defop return2
+  mov rax, [rsp+ptrsize]
+  mov rbx, [rsp+ptrsize*2]
+  mov rsp, rbp
+  pop rbp
+	pop eval_ip
+  pop rcx
+  push rax
+  push rbx
+  push rcx
+	ret
+  
 defop arg0
   mov rax, [rbp+ptrsize*3]
   pop rbx

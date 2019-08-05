@@ -107,7 +107,7 @@ $(OUTDIR)/preproc/%.asm : $(OUTDIR)/popped/%.popped
 
 $(OUTDIR)/popped-index/%.popped : %.pop
 	mkdir -p $(dir $@)
-	SUFFIX="" $(POPPER) < $< > $@
+	SUFFIX=" " $(POPPER) < $< > $@
 
 $(OUTDIR)/preproc-index/%.asm : $(OUTDIR)/popped-index/%.popped
 	mkdir -p $(dir $@)

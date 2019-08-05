@@ -48,6 +48,18 @@ defop return1
   push ebx
 	ret
   
+defop return2
+  mov eax, [esp+ptrsize]
+  mov ebx, [esp+ptrsize*2]
+  mov esp, ebp
+  pop ebp
+	pop eval_ip
+  pop ecx
+  push eax
+  push ebx
+  push ecx
+	ret
+  
 defop arg0
   mov eax, [ebp+ptrsize*3]
   pop ebx
