@@ -18,7 +18,7 @@ ARGF.each do |line|
   # turn any forth style comments into asm comments
   line = line.gsub(/[(] (.*)[)]$/, "; \1")
   
-  if line =~ /^def(\w?)/
+  if line =~ /^def(\w{0,2}) (\w+)/
     # Detect lines that start a function definition:
     definition = line
     suffix = case $1
