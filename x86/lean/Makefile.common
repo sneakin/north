@@ -137,7 +137,7 @@ endif
 
 $(OPCODE_H): $(OUTDIR)/bin/north-words$(EXEC_SUFFIX)
 	mkdir -p $(dir $@)
-	$(EXEC) $(OUTDIR)/bin/north-words$(EXEC_SUFFIX) 1 > $@
+	$(EXEC_$(PLATFORM)_$(BITS)) $(OUTDIR)/bin/north-words$(EXEC_SUFFIX) 1 > $@
 
 clean:
 	rm -rf $(OUTDIR)

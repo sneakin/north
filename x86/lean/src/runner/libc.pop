@@ -19,6 +19,8 @@ import libc fstat/2/1 stat/2/1
 
 %if BITS==64
 import libc fstat64/2/1 stat64/2/1
+create cfstat,fficall_op_2_1_asm,fstat64
+create cstat,fficall_op_2_1_asm,stat64
 %else
 import libc fstat/2/1 stat/2/1
 %endif

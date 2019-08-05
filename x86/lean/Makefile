@@ -1,12 +1,16 @@
-CC_windows_32=gcc
+CC_windows_32=x86_64-w64-mingw32-gcc
 CC_windows_64=x86_64-w64-mingw32-gcc
 CC_posix_32=$(CC)
 CC_posix_64=$(CC)
 
 srcdir=.
 
+ifndef PLATFORMS
 PLATFORMS=posix windows
+endif
+ifndef BITS
 BITS=32 64
+endif
 
 PHONY=dir-tests clean
 
