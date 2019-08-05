@@ -1,4 +1,4 @@
-MINGW32_CC=i686-w32-mingw32-gcc
+MINGW32_CC=gcc
 MINGW64_CC=x86_64-w64-mingw32-gcc
 POSIX32_CC=$(CC)
 POSIX64_CC=$(CC)

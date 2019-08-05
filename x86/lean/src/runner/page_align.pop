@@ -1,0 +1,10 @@
+page_size equ 4096
+
+def page_align
+  literal 2 overn
+  literal page_size
+  int_div
+  literal 1 int_add
+  literal page_size int_mul
+  roll fexit
+

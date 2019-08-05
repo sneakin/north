@@ -1,0 +1,83 @@
+; import libc printf/n puts/1
+import libc atoi/1/1 exit/1
+import libc malloc/1/1 free/1
+import libc open/3/1 close/1/1 read/3/1 perror/0
+
+import libc fopen/2/1 fread/4/1 fclose/1/1
+
+%ifidni PLATFORM,windows
+
+%if BITS==64
+import libc _fstati64/2/1 _stati64/2/1
+create cfstat,fficall_op_2_1_asm,_fstati64
+create cstat,fficall_op_2_1_asm,_stati64
+%else
+import libc fstat/2/1 stat/2/1
+%endif
+
+%else
+
+%if BITS==64
+import libc fstat64/2/1 stat64/2/1
+%else
+import libc fstat/2/1 stat/2/1
+%endif
+
+%endif
+
+; import libdl dlopen/2/1 dlsym/2/1
+
+const O_RDONLY 0
+const O_WRONLY 1
+const O_RDWR 2
+
+def stat_alloc
+  begin_frame
+  literal sizeof_stat stack_allot
+  continue
+
+%if BITS==64
+
+%ifidni PLATFORM,posix
+sizeof_stat equ (18 * ptrsize)
+
+def stat_size
+  literal 2 overn
+  literal 6 literal ptrsize int_mul
+  int_add peek roll fexit
+
+%endif
+  
+%ifidni PLATFORM,windows
+sizeof_stat equ (8 * ptrsize)
+
+def stat_size
+  literal 2 overn
+  literal 3 literal ptrsize int_mul
+  int_add peek roll fexit
+  
+%endif
+
+%else
+
+%ifidni PLATFORM,posix
+sizeof_stat equ (22 * ptrsize)
+
+def stat_size
+  literal 2 overn
+  literal 11 literal ptrsize int_mul
+  int_add peek roll fexit
+
+%endif
+
+%ifidni PLATFORM,windows
+sizeof_stat equ (14 * ptrsize)
+
+def stat_size
+  literal 2 overn
+  literal 5 literal ptrsize int_mul
+  int_add peek roll fexit
+  
+%endif
+  
+%endif

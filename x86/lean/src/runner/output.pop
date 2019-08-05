@@ -1,0 +1,33 @@
+string ok "OK"
+string error "ERROR"
+string bye "BYE"
+
+def write_ok
+	literal ok cputs drop
+	fexit
+
+def write_bye
+	literal bye cputs drop
+	fexit
+
+def failed
+	literal error cputs
+  cperror
+	literal -1 cexit
+
+string int_fmt "%i",0xA
+
+def write_int
+	literal 2 overn literal int_fmt literal 2 cprintf literal 3 dropn
+	fexit
+
+string hex_fmt "%x",0xA
+
+def write_hex
+	literal 2 overn literal hex_fmt literal 2 cprintf literal 3 dropn
+	fexit
+
+def write_stack
+	here literal .fmt literal 2 cprintf literal 3 dropn
+	fexit
+.fmt:	db	'%x: %x %x | %x %x || %x %x %x %x | %x %x | %x %x %x %x %x %x %x %x %x %x %x',0xA,0

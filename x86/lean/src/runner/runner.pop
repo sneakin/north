@@ -1,0 +1,31 @@
+%include "north.h"
+%include "indexed.h"
+
+include "libc.pop"
+include "output.pop"
+
+%ifidni PLATFORM,windows
+include "map_libc.pop"
+%endif
+  
+%ifidni PLATFORM,posix
+include "map_mmap.pop"
+%endif
+
+def init
+	( check number command line arguments )
+	literal 2 overn write_int literal 2 eq ifzero failed
+	literal 3 overn literal ptrsize int_add peek cputs
+  map_file write_ok
+	( copy argc, argv, and exec )
+  literal 6 overn write_int literal 6 overn literal 2 overn
+  eval_ptr_index
+  rot literal 2 dropn ( path size ptr result )
+  ( unmap and close the file )
+  rot swap unmap_file literal 2 dropn ( path result )
+  swap drop ( result )
+  ( clean exit )
+	break write_bye
+	roll fexit
+
+finalize_dictionary

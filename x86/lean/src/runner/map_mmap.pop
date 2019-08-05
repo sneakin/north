@@ -1,0 +1,26 @@
+include "mmap.pop"
+
+def read_fd_size ( fd ++ file-size )
+  begin_frame
+  stat_alloc arg0 cfstat literal 2 dropn
+  stat_size return1
+
+def map_file ( path ++ size ptr )
+  begin_frame
+  literal 3 overn
+	( open and read / memory map first command line argument )
+	literal 0 swap literal O_RDONLY swap copen roll drop drop swap drop
+	write_int
+	dup ifnegative failed
+	( map file )
+  read_fd_size write_int swap
+  map_fd dup literal -1 eq ifnotzero failed
+  ( close the file since it's mapped )
+  swap cclose ifnegative failed
+  return2
+
+def unmap_file ( size ptr )
+  literal 3 overn literal 3 overn
+  cmunmap ifnegative failed
+  literal 2 dropn
+  fexit

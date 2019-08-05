@@ -1,13 +1,9 @@
-PROGRAMS=test-lone-hello test-hello test-printf test-dictionary test-frames math test-north test-index test-loader test-ffi-returns
+PROGRAMS=test-lone-hello test-hello test-printf test-frames math test-north test-index test-ffi-returns
 
 srcdir=..
 include $(srcdir)/Makefile.common
 
-$(OUTDIR)/include/north/$(PLATFORM)-$(BITS)/opcodes.h: $(OUTDIR)/bin/test-dictionary$(EXEC_SUFFIX)
-	mkdir -p $(dir $@)
-	$(EXEC) $(OUTDIR)/bin/test-dictionary$(EXEC_SUFFIX) 1 > $@
-
-bammer.pop :  $(OUTDIR)/include/north/$(PLATFORM)-$(BITS)/opcodes.h
+bammer.pop : $(OPCODE_H)
 
 $(OUTDIR)/bin/test-ffi-returns$(EXEC_SUFFIX) : $(OUTDIR)/lib/libtestlib$(SO_SUFFIX)
 

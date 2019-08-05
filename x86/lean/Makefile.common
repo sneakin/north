@@ -128,6 +128,17 @@ $(OUTDIR)/lib/%$(SO_SUFFIX) :
 # Rules
 #
 
+OPCODE_H=$(OUTDIR)/include/north/$(PLATFORM)-$(BITS)/opcodes.h
+
+ifndef NORTH_WORDS_MAKEFILE
+$(OUTDIR)/bin/north-words$(EXEC_SUFFIX) :
+	$(MAKE) -C $(srcdir)/src/words
+endif
+
+$(OPCODE_H): $(OUTDIR)/bin/north-words$(EXEC_SUFFIX)
+	mkdir -p $(dir $@)
+	$(EXEC) $(OUTDIR)/bin/north-words$(EXEC_SUFFIX) 1 > $@
+
 clean:
 	rm -rf $(OUTDIR)
 

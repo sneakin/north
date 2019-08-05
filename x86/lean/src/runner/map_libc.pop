@@ -1,0 +1,30 @@
+include "page_align.pop"
+
+def read_file_size ( path ++ file-size )
+  begin_frame
+  stat_alloc arg0 cstat literal 2 dropn
+  stat_size return1
+  
+string FILE_MODE_READ "rb"
+
+def map_file ( path ++ size ptr )
+  begin_frame
+  ( read file size )
+  literal 3 overn read_file_size dup write_int ifzero failed
+  ( allocate mem )
+  page_align cmalloc dup ifzero failed ( path size alloc-size ptr )
+  swap drop ( path size ptr )
+  ( open file )
+  literal FILE_MODE_READ literal 3 overn cfopen dup ifzero failed
+  rot literal 2 dropn
+  ( read file; stack: path size ptr handle )
+  rot swap ( path handle size ptr )
+  literal 1 swap cfread ifzero failed
+  ( handle number 1 ptr )
+  swap drop
+  rot cfclose literal 2 dropn
+  return2
+
+def unmap_file ( size ptr )
+  literal 2 overn cfree literal 1 dropn
+  fexit
