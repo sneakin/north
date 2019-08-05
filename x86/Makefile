@@ -5,6 +5,9 @@ CC_posix_64=$(CC)
 
 srcdir=.
 
+ifdef PLATFORM
+PLATFORMS=$(PLATFORM)
+endif
 ifndef PLATFORMS
 PLATFORMS=posix windows
 endif
@@ -13,6 +16,8 @@ BITS=32 64
 endif
 
 PHONY=dir-tests clean
+
+all:
 
 distclean:
 	rm -rf $(srcdir)/build
