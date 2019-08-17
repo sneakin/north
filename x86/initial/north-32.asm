@@ -201,7 +201,7 @@ defop fficall
 section .rodata
 testlib db 'libc.so.6',0
 testfn db 'puts',0
-section .data5~
+section .data
 testlib_h dd 0
 %endif
 
