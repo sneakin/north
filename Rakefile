@@ -35,12 +35,35 @@ outputs = [ 'north-stage0.bin',
 
 directory buildroot
 
+def stage(name, target, min_target = nil)
+  desc "Build #{name}"
+  task name => "#{name}:build"
+  
+  namespace name do
+    desc "Build stage0: meta compiled text evaluatior"
+    task :build => [ target, min_target ]
+    
+    desc "Run #{name}"
+    task :run => target do
+      sh("node #{BCBIN} #{target}")
+    end
+
+    if min_target
+      desc "Run the minimal #{name}"
+      task :run => min_target do
+        sh("node #{BCBIN} #{min_target}")
+      end
+    end
+  end
+end
+
 STAGE0_SRC = [ 'forth.js',
-                '00/core.4th',
-                '00/compiler.4th',
-                '00/output.4th',
-                '00/init.4th',
-                '00/ui.4th'
+               'platform/bacaw/forth_00.js',
+               '00/core.4th',
+               '00/compiler.4th',
+               '00/output.4th',
+               '00/init.4th',
+               '00/ui.4th'
              ].collect { |s| root.join('src', s) }
 STAGE0_TARGET = buildroot.join('north-stage0.bin')
 
@@ -55,11 +78,10 @@ file STAGE0_MIN_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
   sh("node #{bin} stage0-min > #{t.name}")
 end
 
-desc "Build stage0: meta compiled text evaluatior"
-task :stage0 => [ STAGE0_TARGET, STAGE0_MIN_TARGET ]
+stage :stage0, STAGE0_TARGET, STAGE0_MIN_TARGET
 
-STAGE1_SRC = [ 'forth.js',
-               *STAGE0_SRC,
+STAGE1_SRC = [ *STAGE0_SRC,
+               'platform/bacaw/forth_01.js',
                '01/atoi.4th',
                '01/tty.4th',
                '01/dict.4th',
@@ -72,7 +94,7 @@ STAGE1_SRC = [ 'forth.js',
                '03/assembler.4th',
                '03/byte_string.4th',
                '03/sequence.4th',
-               'forth_interrupts.js',
+               'platform/bacaw/forth_interrupts.js',
                '03/interrupts.4th',
                '03/storage.4th',
                '03/storage_devices.4th',
@@ -97,8 +119,7 @@ file STAGE1_MIN_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
   sh("node #{bin} stage1-min > #{t.name}")
 end
 
-desc "Build stage1: most everything metacompiled"
-task :stage1 => [ STAGE1_TARGET, STAGE1_MIN_TARGET ]
+stage :stage1, STAGE1_TARGET, STAGE1_MIN_TARGET
 
 STAGE2_SRC = [ 'build-stage2.4th',
                '02/assembler.4th',
@@ -110,8 +131,7 @@ file STAGE2_TARGET => [ buildroot, STAGE0_TARGET, *STAGE2_SRC ] do |t|
   sh("#{BCCON} #{STAGE0_TARGET} < src/build-stage1.4th > #{t.name}")
 end
 
-desc "Build stage2: stage1 built with stage0"
-task :stage2 => STAGE2_TARGET
+stage :stage2, STAGE2_TARGET
 
 [ 'forth.css',
   'index.css',

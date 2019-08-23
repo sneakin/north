@@ -1,6 +1,6 @@
 // -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 2 -*-
 
-const VM = require('vm');
+const Assembler = require('assembler');
 const Forth = require('forth');
 
 var data_segment = 1024*1024;
@@ -17,6 +17,7 @@ var info = {
 };
 
 var stage = process.argv[2] || 'stage0';
-var bin = Forth.assemble(data_segment, 0, info, stage);
+var asm = new Assembler();
+var bin = Forth.assemble(data_segment, 0, info, stage, asm);
 var buf = new Buffer(bin.buffer);
 process.stdout.write(buf);
