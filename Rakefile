@@ -58,6 +58,7 @@ def stage(name, target, min_target = nil)
 end
 
 STAGE0_SRC = [ 'forth.js',
+               'platform/bacaw/boot.js',
                'platform/bacaw/forth_00.js',
                '00/core.4th',
                '00/compiler.4th',

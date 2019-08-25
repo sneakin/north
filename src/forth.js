@@ -3,10 +3,6 @@
 require('vm');
 const util = require('more_util');
 const Assembler = require('assembler.js');
-const asm_memcpy = require('vm/asm/memcpy');
-const asm_input = require('vm/asm/input-device');
-const asm_output = require('vm/asm/output-device');
-const asm_isr = require('vm/asm/isr');
 const DataStruct = require('data_struct');
 const fs = require('fs');
 const TextEncoder = require('util/text_encoder');
@@ -62,6 +58,7 @@ function longify(str)
   return bytes.slice(0, 4).reverse().reduce((a, c) => (a << 8) | c);
 }
 
+const CELL_SIZE = 4;
 var TERMINATOR = longify("STOP");
 var CRNL = longify("\r\n");
 var HELO = longify("HELO");
@@ -74,7 +71,7 @@ var ERR2 = longify("\r\n> ");
 
 function cell_align(n)
 {
-  return Math.ceil(n / 4) * 4;
+  return Math.ceil(n / CELL_SIZE) * CELL_SIZE;
 }
 
 function cellpad(str)
@@ -177,10 +174,12 @@ function unslash(str)
      ;
 }
 
+var genlabel_counter = util.counter();
+
 function genlabel(prefix)
 {
   if(prefix == null) prefix = 'gen';
-  var n = Math.floor(1.0e9 * Math.random());
+  var n = genlabel_counter();
   return `${prefix}-${n}`;
 }
 
@@ -194,11 +193,10 @@ function colon_def(asm, token, code)
     code: 'call-data-seq-code',
     prior: dictionary[name]
   };
-  
-  asm.label(name + "-code").
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code').
+
+  asm.
       label(name + '-entry-data').
-      uint32(name + '-end', true, (v) => v / 4 - 1).
+      uint32(name + '-end', true, (v) => v / CELL_SIZE - 1).
       label(name + '-ops');
   
   return tok[1];
@@ -222,7 +220,7 @@ var macros = {
     
     asm.uint32('return0').
         label(name + '-end').
-        label(name + '-size', (asm.resolve(name + '-end') - asm.resolve(name + '-ops')) / 4).
+        label(name + '-size', (asm.resolve(name + '-end') - asm.resolve(name + '-ops')) / CELL_SIZE).
         uint32(TERMINATOR);
   },
   constant: function(asm, token, code) {
@@ -394,7 +392,7 @@ function interp(asm, str)
   return asm;
 }
 
-Forth.assembler = function(ds, cs, info, stage, asm) {
+Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   info = util.merge_options({
     input: {
       irq: 0xA,
@@ -414,21 +412,6 @@ Forth.assembler = function(ds, cs, info, stage, asm) {
 
   var ops = [];
   
-  var STACK_SIZE = 4*1024;
-  var DS_SIZE = 1024*2;
-  var HEAP_REG = VM.CPU.REGISTERS.DS - 1;
-  var EVAL_IP_REG = HEAP_REG - 1;
-  var STATE_REG = HEAP_REG - 2;
-  var PARAM_REG = HEAP_REG - 3;
-  var TOS_REG = HEAP_REG - 4;
-  var DICT_REG = HEAP_REG - 4;
-  var FP_REG = HEAP_REG - 5;
-
-  asm_isr(asm, VM.CPU.INTERRUPTS.user * 3);
-  asm_memcpy(asm);
-  asm_input(asm, input_dev_irq, input_dev_addr);
-  asm_output(asm, output_dev_irq, output_dev_addr);
-
   function defop(name, fn) {
     ops.push(name);
     return fn(asm.label(name + "-code"));
@@ -440,72 +423,11 @@ Forth.assembler = function(ds, cs, info, stage, asm) {
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32(calls + '-code');
   }
 
-  asm.label('isr_reset').
-      call(0, VM.CPU.REGISTERS.CS).uint32('data_init').
-      call(0, VM.CPU.REGISTERS.CS).uint32('output_init').
-      call(0, VM.CPU.REGISTERS.CS).uint32('input_init').
-      sie().
-      call(0, VM.CPU.REGISTERS.CS).uint32('eval-init').
-      mov(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.CS).
-      inc(VM.CPU.REGISTERS.R0).uint32('boot').
-      push(VM.CPU.REGISTERS.R0).
-      call(0, VM.CPU.REGISTERS.CS).uint32('outer-start-thread').
-      call(0, VM.CPU.REGISTERS.CS).uint32('goodbye').
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('isr_reset');
-  
-  asm.label('goodbye').
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(BYE).
-      call(0, VM.CPU.REGISTERS.CS).uint32('output_write_word').
-      ret();
-
-  var offset = data_segment_offset;
-  asm.label('input_data_position', offset).
-      label('output_data_position', offset + 4).
-      label('waiting_for_input', offset + 8).
-      label('waiting_for_output', offset + 12).
-      label('heap_top', offset + 16).
-      label('stack_top', offset + 20).
-      label('data_segment_end', offset + 24);
-  data_segment_offset = 4 + asm.resolve('data_segment_end');
-  
-  asm.label('data_init').
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.R2, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(TOS_REG, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(PARAM_REG, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.DS, 0, VM.CPU.REGISTERS.INS).uint32(ds).
-      load(VM.CPU.REGISTERS.CS, 0, VM.CPU.REGISTERS.INS).uint32(cs).
-      mov(HEAP_REG, VM.CPU.REGISTERS.DS).
-      inc(HEAP_REG).uint32(DS_SIZE).
-      store(HEAP_REG, 0, VM.CPU.REGISTERS.DS).uint32('heap_top').
-      pop(VM.CPU.REGISTERS.R0). // get return
-      store(VM.CPU.REGISTERS.SP, 0, VM.CPU.REGISTERS.DS).uint32('stack_top').
-      mov(VM.CPU.REGISTERS.IP, VM.CPU.REGISTERS.R0); // return
-
-  asm.label('eval-init').
-      load(TOS_REG, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(PARAM_REG, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(DICT_REG, 0, VM.CPU.REGISTERS.INS).uint32(TERMINATOR).
-      // zero frame's link
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      pop(VM.CPU.REGISTERS.R1).
-      push(VM.CPU.REGISTERS.R0).
-      mov(FP_REG, VM.CPU.REGISTERS.SP).
-      push(VM.CPU.REGISTERS.R1).
-      ret();
-
-  asm.label('outer-start-thread').
-      // swap return addr and EIP
-      // and make a frame before pushing them back
-      pop(VM.CPU.REGISTERS.R0). // return addr
-      pop(VM.CPU.REGISTERS.R1). // eip to exec
-      push(VM.CPU.REGISTERS.R0).
-      push(VM.CPU.REGISTERS.R1).
-      load(FP_REG, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-code');
-
-  eval(fs.readFileSync(__dirname + '/platform/bacaw/forth_00.js', 'utf-8'));
+  var plat_path = __dirname + '/platform/' + platform.name;
+  if(platform.name == 'bacaw') {
+    eval(fs.readFileSync(plat_path + '/boot.js', 'utf-8'));
+    eval(fs.readFileSync(plat_path + '/forth_00.js', 'utf-8'));
+  }
   interp(asm, forth_sources['00-core']);
   interp(asm, forth_sources['00-list']);
   interp(asm, forth_sources['00-core-compiler']);
@@ -515,8 +437,8 @@ Forth.assembler = function(ds, cs, info, stage, asm) {
   if(stage.indexOf('stage0') >= 0) {
     interp(asm, forth_sources['00-ui']);
   } else if(stage.indexOf('stage1') >= 0) {
-    eval(fs.readFileSync(__dirname + '/platform/bacaw/forth_01.js', 'utf-8'));
-    eval(fs.readFileSync(__dirname + '/platform/bacaw/forth_interrupts.js', 'utf-8'));
+    eval(fs.readFileSync(plat_path + '/forth_01.js', 'utf-8'));
+    eval(fs.readFileSync(plat_path + '/forth_interrupts.js', 'utf-8'));
     
     //interp(asm, forth_sources['01-atoi']);
     interp(asm, forth_sources['01-tty']);
@@ -544,6 +466,19 @@ Forth.assembler = function(ds, cs, info, stage, asm) {
   if(stage.indexOf('min') == -1) {
     for(var n in forth_sources) {
       interp(asm, `: ${n}-src literal sources-${n}-src return1 ;`);
+    }
+  }
+
+  // trampolines
+  if(platform.name == 'bacaw') {
+    for(var n in dictionary) {
+      var entry = dictionary[n];
+      if(entry === undefined) continue;
+      if(entry.code == 'call-data-seq-code') {
+        asm.label(n + "-code").
+            load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.CS).uint32(n + '-entry-data').
+            load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code');
+      }
     }
   }
   
@@ -668,9 +603,9 @@ Forth.assembler = function(ds, cs, info, stage, asm) {
   return asm;
 }
 
-Forth.assemble = function(ds, cs, info, stage, asm) {
+Forth.assemble = function(ds, cs, info, stage, platform, asm) {
   if(asm == null) asm = new Assembler();
-  return Forth.assembler(ds, cs, info, stage, asm).assemble();
+  return Forth.assembler(ds, cs, info, stage, platform, asm).assemble();
 }
 
 Forth.longify = longify;

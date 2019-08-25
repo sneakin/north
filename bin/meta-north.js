@@ -17,7 +17,10 @@ var info = {
 };
 
 var stage = process.argv[2] || 'stage0';
+var platform = {
+  name: 'bacaw'
+};
 var asm = new Assembler();
-var bin = Forth.assemble(data_segment, 0, info, stage, asm);
+var bin = Forth.assemble(data_segment, 0, info, stage, platform, asm);
 var buf = new Buffer(bin.buffer);
 process.stdout.write(buf);
