@@ -74,14 +74,13 @@ section .rdata_forth
 %endmacro
 
 %macro constant 2
-create %1,doconstant_asm,%2  
+create %1,doconstant_asm,%2
 %endmacro
 
 %macro variable 2
 create %1,dovar_asm,%1_value
 section .data
 %1_value POINTER %2
-
 section .text
 %endmacro
 

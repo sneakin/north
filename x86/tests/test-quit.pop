@@ -1,0 +1,31 @@
+%include "north.h"
+
+string initstr "init"
+string astr "A"
+string bstr "B"
+string cstr "C"
+
+def c
+  begin_frame
+  pointer cstr cputs
+  literal 0
+  quit
+  
+def b
+  begin_frame
+  pointer bstr cputs
+  c
+  return0
+  
+def a
+  begin_frame
+  pointer astr cputs
+  b
+  return0
+  
+def init
+  begin_frame
+  pointer initstr cputs
+  a
+  end_frame
+	literal 1 roll fexit

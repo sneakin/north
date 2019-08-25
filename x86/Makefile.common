@@ -6,7 +6,9 @@ all: build
 
 # srcdir=$(shell pwd)
 
-POPPER=ruby $(srcdir)/scripts/preproc.rb
+POP_INCLUDE_PATH=.:$(srcdir)/src:$(srcdir)/include
+
+POPPER=INCLUDE_PATH="$(POP_INCLUDE_PATH)" ruby $(srcdir)/scripts/preproc.rb
 
 ifndef PLATFORM
 PLATFORM=posix
@@ -26,6 +28,7 @@ endif
 
 DEFINES+=-DPLATFORM=$(PLATFORM) -DPLATFORM_$(PLATFORM)=1
 DEFINES+=-DDYNAMIC=$(DYNAMIC)
+DEFINES+=-DLIBC=$(LIBC)
 DEFINES+=-DBITS=$(BITS)
 
 CFLAGS+=$(DEFINES)
@@ -41,9 +44,9 @@ LDFLAGS=-m$(BITS) -no-pie -ldl
 endif
 else
 ifeq ($(BITS),32)
-LDFLAGS=-m elf_i386 -e main
+LDFLAGS=-m$(BITS) -mconsole -e main
 else
-LDFLAGS=-m elf_x86_64 -e main
+LDFLAGS=-m$(BITS) -no-pie -e main
 endif
 endif
 

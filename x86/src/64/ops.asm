@@ -62,6 +62,14 @@ defop peek
 	mov [rsp+ptrsize], rax
 	ret
 
+defop poke
+  pop rax
+  pop rbx                       ; addr
+  pop rcx                       ; value
+	mov [rbx], rcx
+  push rax
+	ret
+
 defop dup
 	pop rbx
 	mov rax, [rsp]
@@ -219,7 +227,6 @@ defop doconstant
 defop dovar
 	pop rbx
 	mov rax, [rax+dict_data]
-	mov rax, [rax]
 	push rax
 	push rbx
 	ret

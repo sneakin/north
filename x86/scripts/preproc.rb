@@ -11,6 +11,18 @@ $word_prefix='dd'
 #  $word_prefix = 'dq'
 #end
 
+INCLUDE_PATH = ENV.fetch('INCLUDE_PATH', '').split(':')
+INCLUDE_PATH.push('.')
+
+def find_source_file(name)
+  INCLUDE_PATH.each do |path|
+    fn = File.join(path, name)
+    return fn if File.exists?(fn)
+  end
+
+  raise ArgumentError.new("#{name} not found in #{INCLUDE_PATH.join(', ')}")
+end
+
 $definition = nil
 $suffix = ''
 
@@ -61,7 +73,7 @@ def process_lines(iter)
         puts "global #{fn}"
       end
     elsif line =~ /^include\s+"(.*)"/
-      process_lines(File.readlines($1).each)
+      process_lines(File.readlines(find_source_file($1)).each)
       process_lines([ "\n" ])
     else
       # inside a definition

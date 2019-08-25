@@ -62,6 +62,14 @@ defop peek
 	mov [esp+ptrsize], eax
 	ret
 
+defop poke
+  pop eax
+  pop ebx                       ; addr
+  pop ecx                       ; value
+	mov [ebx], ecx
+  push eax
+	ret
+
 defop dup
 	pop ebx
 	mov eax, [esp]
@@ -144,12 +152,22 @@ defop ifnotzero
 .done:
 	ret
 
+defop ifpositive
+	pop ebx
+	pop eax
+	push ebx
+	cmp eax, 0
+	jge .done
+	add eval_ip, ptrsize
+.done:
+	ret
+
 defop ifnegative
 	pop ebx
 	pop eax
 	push ebx
-	test eax, eax
-	js .done
+	cmp eax, 0
+	jl .done
 	add eval_ip, ptrsize
 .done:
 	ret
@@ -210,7 +228,6 @@ defop doconstant
 defop dovar
 	pop ebx
 	mov eax, [eax+dict_data]
-	mov eax, [eax]
 	push eax
 	push ebx
 	ret

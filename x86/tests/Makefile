@@ -1,4 +1,4 @@
-PROGRAMS=test-lone-hello test-hello test-printf test-frames math test-north test-index test-ffi-returns
+PROGRAMS=test-lone-hello test-hello test-printf test-frames math test-north test-index test-ffi-returns test-quit test-data
 
 srcdir=..
 include $(srcdir)/Makefile.common

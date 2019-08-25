@@ -23,5 +23,11 @@ defop hello
 .len equ $ - .msg
 
 defop osexit
-	syscall_macro 1, 0, 0, 0
-	ret
+  pop eax
+  pop eax
+  push 0
+  push 0
+  push eax
+  push 1
+	call syscallop_asm
+

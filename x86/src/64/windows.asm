@@ -12,4 +12,5 @@ defop hello
 extern _exit
 
 defop osexit
+  mov rcx, [rsp+ptrsize]
   jmp _exit

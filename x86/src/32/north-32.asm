@@ -22,16 +22,21 @@ _main:
 %endif
   
 main:
-  push ebp
+  push fp
+  mov fp, 0
 	mov eax, [esp+ptrsize*3]
 	push eax ; argv
 	mov eax, [esp+ptrsize*3]
 	push eax ; argc
 	mov eax, d_init
 	call outer_eval
+%ifidni LIBC,0
+  call osexit_asm
+%else
 	pop eax ; return value
 	add esp, ptrsize*2
-  pop ebp
+  pop fp
+%endif
 	ret
 
 outer_eval:
@@ -50,9 +55,11 @@ outer_eval:
 %endif
 
 %include "../ffi.asm"
+%ifidni LIBC,1
 %include "dynlibs.asm"
 %include "../libc.asm"
-
+%endif
+  
 constant cpu_bits,BITS
 constant cell_size,ptrsize
 constant builtin_size,m_dictionary_size
