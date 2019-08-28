@@ -48,12 +48,6 @@ function Forth()
 
 function longify(str)
 {
-  /*
-  return str.split('').
-      map((c) => c.charCodeAt(0)).
-      reverse().
-      reduce((a, c) => (a << 8) | c);
-*/
   var bytes = (new TextEncoder()).encode(str);
   return bytes.slice(0, 4).reverse().reduce((a, c) => (a << 8) | c);
 }
@@ -174,6 +168,27 @@ function unslash(str)
      ;
 }
 
+function dictionary_add(name, code, data)
+{
+  var entry = {
+    code: code,
+    data: data,
+    prior: last_dictionary
+  };
+  
+  last_dictionary = name;
+  dictionary[name] = entry;
+
+  return entry;
+}
+
+function dictionary_variable(name)
+{
+  data_segment_offset += VM.TYPES.ULONG.byte_size;
+  var e = dictionary_add(name, 'variable-peeker-code', data_segment_offset);
+  e.segment = 'data';
+  return e;
+}
 var genlabel_counter = util.counter();
 
 function genlabel(prefix)
@@ -187,12 +202,8 @@ function colon_def(asm, token, code)
 {
   var tok = next_token(code);
   var name = tok[0];
-  
-  last_dictionary = name;
-  dictionary[name] = {
-    code: 'call-data-seq-code',
-    prior: dictionary[name]
-  };
+
+  dictionary_add(name, 'call-data-seq-code', name + '-entry-data');
 
   asm.
       label(name + '-entry-data').
@@ -231,12 +242,7 @@ var macros = {
     tok = next_token(tok[1]);
     var value = parse_number(tok[0]);
 
-    last_dictionary = name;
-    dictionary[name] = {
-      code: 'value-peeker-code',
-      data: value,
-      prior: dictionary[name]
-    };
+    dictionary_add(name, 'value-peeker-code', value);
 
     return tok[1];
   },    
@@ -245,17 +251,8 @@ var macros = {
     // Adds a dictionary entry with the name and space in the data segment
     var tok = next_token(code);
     var name = tok[0];
-    //tok = next_token(tok[1]);
-    //var value = parse_number(tok[0]);
 
-    data_segment_offset += VM.TYPES.ULONG.byte_size;
-    last_dictionary = name;
-    dictionary[name] = {
-      code: 'variable-peeker-code',
-      data: data_segment_offset,
-      segment: 'data',
-      prior: dictionary[name]
-    };
+    dictionary_variable(name);
 
     return tok[1];
   },    
@@ -299,7 +296,7 @@ var macros = {
     var name = last_dictionary;
     immediates[name] = dictionary[name];
     immediates[name].only = true;
-    dictionary[name] = dictionary[name].prior;
+    dictionary[name] = null;
   },
   IF: function(asm, token, code) {
     var jump_label = genlabel(last_dictionary);
@@ -410,23 +407,32 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   var output_dev_irq = info.output.irq;
   var output_dev_addr = info.output.addr;
 
-  var ops = [];
-  
   function defop(name, fn) {
-    ops.push(name);
+    dictionary_add(name, name + "-code", null);
     return fn(asm.label(name + "-code"));
   }
 
   function defalias(name, calls) {
-    ops.push(name);
-    return asm.label(name + "-code").
-        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32(calls + '-code');
+    var entry = dictionary[calls];
+    dictionary_add(name, entry.code, entry.data);
   }
+
+  // Variables
+  dictionary_variable('*tokenizer*');
+  dictionary_variable('*status*');
+  dictionary_variable('*debug*');
+  dictionary_variable('*state*');
+  dictionary_variable('base');
+  dictionary_variable('immediate-dict');
+  dictionary_variable('isr-handlers');
+  dictionary_variable('interrupt-waiting-for');
 
   var plat_path = __dirname + '/platform/' + platform.name;
   if(platform.name == 'bacaw') {
     eval(fs.readFileSync(plat_path + '/boot.js', 'utf-8'));
     eval(fs.readFileSync(plat_path + '/forth_00.js', 'utf-8'));
+  } else if(platform.name == 'x86') {
+    interp(asm, fs.readFileSync(plat_path + '/boot.4th', 'utf-8'));
   }
   interp(asm, forth_sources['00-core']);
   interp(asm, forth_sources['00-list']);
@@ -441,9 +447,9 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     eval(fs.readFileSync(plat_path + '/forth_interrupts.js', 'utf-8'));
     
     //interp(asm, forth_sources['01-atoi']);
-    interp(asm, forth_sources['01-tty']);
     interp(asm, forth_sources['01-dict']);
     interp(asm, forth_sources['01-seq']);
+    interp(asm, forth_sources['01-tty']);
     interp(asm, forth_sources['01-stack']);
     interp(asm, forth_sources['01-ui']);
 
@@ -473,8 +479,8 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   if(platform.name == 'bacaw') {
     for(var n in dictionary) {
       var entry = dictionary[n];
-      if(entry === undefined) continue;
-      if(entry.code == 'call-data-seq-code') {
+      if(entry == null) continue;
+      if(entry.code == 'call-data-seq-code' && entry.data != null) {
         asm.label(n + "-code").
             load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.CS).uint32(n + '-entry-data').
             load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code');
@@ -485,26 +491,9 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   asm.label('*program-size*');
 
   asm.label('symbols-begin');
-
-  // Variable names
-
-  asm.label('the-tokenizer-sym').label('*tokenizer*-sym').bytes(cellpad('*tokenizer*'));
-  asm.label('*debug*-sym').bytes(cellpad('*debug*'));
-  asm.label('*status*-sym').bytes(cellpad('*status*'));
-  asm.label('base-sym').bytes(cellpad('base'));
-  asm.label('TERMINATOR-sym').bytes(cellpad('TERMINATOR'));
-  asm.label('*state*-sym').bytes(cellpad('*state*'));
-  asm.label('immediate-dict-sym').bytes(cellpad('immediate-dict'));
-  asm.label('isr-handlers-sym').bytes(cellpad('isr-handlers'));
-  asm.label('interrupt-waiting-for-sym').bytes(cellpad('interrupt-waiting-for'));
-
+  
   for(var n in strings) {
     asm.label(n).bytes(cellpad(unslash(strings[n])));
-  }
-  
-  for(var n in ops) {
-    var label = ops[n];
-    asm.label(label + '-sym').bytes(cellpad(label));
   }
 
   for(var n in dictionary) {
@@ -525,7 +514,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   
   asm.label('dictionary-begin');
 
-  function dict_entry(label, name, code, data, last_label) {
+  function raw_dict_entry(label, name, code, data, last_label) {
     asm.label(label).
         uint32(name).
         uint32(code).
@@ -535,59 +524,29 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     return label;
   }
 
-  function dict_entry_op(label, last_label) {
-    return dict_entry(label, label + '-sym', label + "-code", 0, last_label);
+  function write_dict_entry(entry, last_label, prefix)
+  {
+    if(entry == null) return last_label;
+    if(prefix == null || entry.only == true) prefix = '';
+    var data = entry.data;
+    if(entry.data == null) data = 0;
+    if(entry.segment == 'data') data += ds;
+    return raw_dict_entry(prefix + n, n + '-sym', entry.code, data, last_label);
   }
-
-  function dict_entry_fn(label, last_label) {
-    return dict_entry(label, label + '-sym', 'call-data-seq-code', label + "-entry-data", last_label);
-  }
-
+  
   var last_label = TERMINATOR;
 
-  for(var n in ops) {
-    var label = ops[n];
-    last_label = dict_entry_op(label, last_label);
-  }
-
   for(var n in dictionary) {
-    var entry = dictionary[n];
-    if(entry == null) continue;
-    var data = entry.data;
-    if(entry.segment == 'data') data += ds;
-    last_label = dict_entry(n, n + '-sym', entry.code, data, last_label);
+    last_label = write_dict_entry(dictionary[n], last_label);
   }
-
-  // Variables
-  function dict_entry_var(label, value, last_label) {
-    return dict_entry(label, label + '-sym', 'variable-peeker-code', value, last_label);
-  }
-
-  var off = ds + data_segment_offset + 4;
-  last_label = dict_entry_var('*tokenizer*', off, last_label);
-  last_label = dict_entry_var('*status*', off+4, last_label);
-  last_label = dict_entry_var('*debug*', off+8, last_label);
-  last_label = dict_entry_var('*state*', off+12, last_label);
-  last_label = dict_entry_var('base', off+16, last_label);
-  last_label = dict_entry_var('immediate-dict', off+20, last_label);
-  last_label = dict_entry_var('isr-handlers', off+24, last_label);
-  last_label = dict_entry_var('interrupt-waiting-for', off+28, last_label);
 
   asm.label('dictionary-end');
   asm.label('dictionary').uint32(last_label);
   asm.label('dictionary-size').uint32(asm.resolve('dictionary-end') - asm.resolve('dictionary-begin'));
 
-  asm.label('tok-write-sym').bytes(cellpad('.'));
-      
   last_label = TERMINATOR;
   for(var n in immediates) {
-    var entry = immediates[n];
-    if(entry == null) continue;
-    label = n;
-    if(entry.only != true) {
-      label = "e-" + n;
-    }
-    last_label = dict_entry(label, n + '-sym', entry.code, entry.data, last_label);
+    last_label = write_dict_entry(immediates[n], last_label, 'immed-');
   }
   
   asm.label('immediate-dictionary').uint32(last_label);
