@@ -21,7 +21,7 @@ const BinaryURLs = [
   'north-stage1.bin',
   'north-stage2.bin',
   'north-stage0-min.bin',
-  'north-stage1-min.bin'
+  'north-stage1-min.bin',
   'north-stage2-min.bin'
 ];
 
