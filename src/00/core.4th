@@ -231,6 +231,8 @@
   dhere 
   arg2 dpush ( code ) 
   arg1 dpush ( data )
+  literal 0 dpush ( doc )
+  literal 0 dpush ( args )
   arg0 dpush ( link )
   return1    ( dhere )
 ;
@@ -267,13 +269,31 @@
   arg1 arg0 cell+2 swapdrop poke 
 ;
 
+: dict-entry-doc
+  arg0 UNLESS int32 0 return1 THEN
+  arg0 literal 3 cell+n peek return1
+;
+
+: set-dict-entry-doc
+  arg1 arg0 literal 3 cell+n rotdrop2 poke return0
+;
+  
+: dict-entry-args
+  arg0 UNLESS int32 0 return1 THEN
+  arg0 literal 4 cell+n peek return1
+;
+
+: set-dict-entry-args
+  arg1 arg0 literal 4 cell+n rotdrop2 poke return0
+;
+
 : dict-entry-next
   arg0 UNLESS int32 0 return1 THEN
-  arg0 cell+3 peek return1
+  arg0 literal 5 cell+n peek return1
 ;
 
 : set-dict-entry-next
-  arg1 arg0 cell+3 swapdrop poke return0
+  arg1 arg0 literal 5 cell+n rotdrop2 poke return0
 ;
   
 : dict-lookup-parent

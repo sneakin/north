@@ -47,14 +47,22 @@
   int32 8 int32 1 color 
 ;
 
-: green
-  int32 8 int32 2 color 
-;
-
 : yellow
   int32 8 int32 3 color 
 ;
 
+: green
+  int32 8 int32 2 color 
+;
+
+: cyan
+  int32 8 int32 6 color 
+;
+
 : blue
   int32 8 int32 4 color 
+;
+
+: magenta
+  int32 8 int32 5 color 
 ;

@@ -118,11 +118,14 @@
 : eos " EOS" return1 ;
 
 : :
+  doc( Start a new definition with the following name. Definition ends with a ";". )
+  args( _ : name ++ entry open-seq )
   create docol> return2
 ;
 
-( Redefine or create the next word as a colon definition. )
 : ::
+  doc( Redefine or create the next word as a colon definition. )
+  args( _ : name ++ entry open-seq )
   next-token dup UNLESS eos eos error return0 THEN
   dup1 dict dict-lookup dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
   docol> return2

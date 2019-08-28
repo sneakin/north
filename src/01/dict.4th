@@ -67,11 +67,13 @@
   literal write-dict-entry arg0 dict-each 
 ;
 
-( Write the primary dictionary out. )
-: words dict dict-list ;
+: words doc( Write the primary dictionary out. )
+  dict dict-list
+;
 
-( Write the immediate dictionary out. )
-: iwords immediate-dict peek dict-list ;
+: iwords doc( Write the immediate dictionary out. )
+  immediate-dict peek dict-list
+;
 
 ( Dictionary predicates: )
 

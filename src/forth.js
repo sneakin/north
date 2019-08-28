@@ -20,6 +20,7 @@ const forth_sources = {
   "01-atoi": fs.readFileSync(__dirname + '/01/atoi.4th', 'utf-8'),
   "01-tty": fs.readFileSync(__dirname + '/01/tty.4th', 'utf-8'),
   "01-dict": fs.readFileSync(__dirname + '/01/dict.4th', 'utf-8'),  
+  "01-help": fs.readFileSync(__dirname + '/01/help.4th', 'utf-8'),  
   "01-seq": fs.readFileSync(__dirname + '/01/seq.4th', 'utf-8'),  
   "01-stack": fs.readFileSync(__dirname + '/01/stack.4th', 'utf-8'),  
   "01-ui": fs.readFileSync(__dirname + '/01/ui.4th', 'utf-8'),  
@@ -361,6 +362,28 @@ var macros = {
     } else {
       throw "parse error";
     }
+  },
+  'doc(': function(asm, token, code) {
+    var m = code.indexOf(')');
+    if(m >= 0) {
+      var label = genlabel('doc');
+      strings[label] = code.slice(1, m);
+      dictionary[last_dictionary].doc = label;
+      return code.slice(m + 1);
+    } else {
+      return "parse error: unterminated doc comment";
+    }
+  },
+  'args(': function(asm, token, code) {
+    var m = code.indexOf(')');
+    if(m >= 0) {
+      var label = genlabel('args');
+      strings[label] = code.slice(1, m);
+      dictionary[last_dictionary].args = label;
+      return code.slice(m + 1);
+    } else {
+      return "parse error: unterminated doc comment";
+    }
   }
 };
 
@@ -408,8 +431,16 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   var output_dev_irq = info.output.irq;
   var output_dev_addr = info.output.addr;
 
-  function defop(name, fn) {
-    dictionary_add(name, name + "-code", null);
+  function defop(name, fn, doc, args) {
+    var entry = dictionary_add(name, name + "-code", null);
+    if(doc) {
+      strings[name + '-doc'] = doc;
+      entry.doc = name + '-doc';
+    }
+    if(args) {
+      strings[name + '-args'] = args;
+      entry.args = name + '-args';
+    }
     return fn(asm.label(name + "-code"));
   }
 
@@ -442,6 +473,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     
     //interp(asm, forth_sources['01-atoi']);
     interp(asm, forth_sources['01-dict']);
+    interp(asm, forth_sources['01-help']);
     interp(asm, forth_sources['01-seq']);
     interp(asm, forth_sources['01-tty']);
     interp(asm, forth_sources['01-stack']);
@@ -513,11 +545,13 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   
   asm.label('dictionary-begin');
 
-  function raw_dict_entry(label, name, code, data, last_label) {
+  function raw_dict_entry(label, name, code, data, last_label, doc, args) {
     asm.label(label).
         uint32(name).
         uint32(code).
         uint32(data).
+        uint32(doc || 0).
+        uint32(args || 0).
         uint32(last_label);
     
     return label;
@@ -530,7 +564,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     var data = entry.data;
     if(entry.data == null) data = 0;
     if(entry.segment == 'data') data += ds;
-    return raw_dict_entry(prefix + n, n + '-sym', entry.code, data, last_label);
+    return raw_dict_entry(prefix + n, n + '-sym', entry.code, data, last_label, entry.doc, entry.args);
   }
   
   var last_label = TERMINATOR;

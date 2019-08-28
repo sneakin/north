@@ -41,7 +41,7 @@ def stage(name, target, min_target = nil)
   task name => "#{name}:build"
   
   namespace name do
-    desc "Build stage0: meta compiled text evaluatior"
+    desc "Build #{name}"
     task :build => [ target, min_target ]
     
     desc "Run #{name}"
@@ -87,6 +87,7 @@ STAGE1_SRC = [ *STAGE0_SRC,
                '01/atoi.4th',
                '01/tty.4th',
                '01/dict.4th',
+               '01/help.4th',
                '01/seq.4th',
                '01/ui.4th',
                '02/memdump.4th',

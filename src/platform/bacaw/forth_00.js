@@ -2,7 +2,7 @@
 
 defop('reboot', function(asm) {
   asm.reset();
-});
+}, "Reboot the CPU.");
 
 defop('reset', function(asm) {
   asm.load(DICT_REG, 0, VM.CPU.REGISTERS.CS).uint32('dictionary').
