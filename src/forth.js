@@ -16,6 +16,7 @@ const forth_sources = {
   "00-output": fs.readFileSync(__dirname + '/00/output.4th', 'utf-8'),  
   "00-ui": fs.readFileSync(__dirname + '/00/ui.4th', 'utf-8'),  
   "00-init": fs.readFileSync(__dirname + '/00/init.4th', 'utf-8'),  
+  "01-init": fs.readFileSync(__dirname + '/01/init.4th', 'utf-8'),  
   "01-atoi": fs.readFileSync(__dirname + '/01/atoi.4th', 'utf-8'),
   "01-tty": fs.readFileSync(__dirname + '/01/tty.4th', 'utf-8'),
   "01-dict": fs.readFileSync(__dirname + '/01/dict.4th', 'utf-8'),  
@@ -432,7 +433,10 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
 
   if(stage.indexOf('stage0') >= 0) {
     interp(asm, forth_sources['00-ui']);
-  } else if(stage.indexOf('stage1') >= 0) {
+  }
+  
+  if(stage.indexOf('stage1') >= 0 ||
+     stage.indexOf('stage2') >= 0) {
     eval(fs.readFileSync(plat_path + '/forth_01.js', 'utf-8'));
     eval(fs.readFileSync(plat_path + '/forth_interrupts.js', 'utf-8'));
     
@@ -443,22 +447,27 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     interp(asm, forth_sources['01-stack']);
     interp(asm, forth_sources['01-ui']);
 
-    interp(asm, forth_sources['02-init']);
     interp(asm, forth_sources['03-byte-string']);
     interp(asm, forth_sources['03-assembler']);
     interp(asm, forth_sources['03-interrupts']);
-    interp(asm, forth_sources['02-sound']);
     interp(asm, forth_sources['02-memdump']);
     interp(asm, forth_sources['02-decompiler']);
     interp(asm, forth_sources['03-sequence']);
-    interp(asm, forth_sources['03-storage-devices']);
-    interp(asm, forth_sources['03-storage']);
-    interp(asm, forth_sources['03-storage-test']);
 
     //interp(asm, forth_sources['02-misc']);
     //interp(asm, forth_sources['extra']);
   }
-
+  
+  if(stage.indexOf('stage1') >= 0) {
+    interp(asm, forth_sources['01-init']);
+  } else if(stage.indexOf('stage2') >= 0) {
+    interp(asm, forth_sources['02-init']);
+    interp(asm, forth_sources['02-sound']);
+    interp(asm, forth_sources['03-storage-devices']);
+    interp(asm, forth_sources['03-storage']);
+    interp(asm, forth_sources['03-storage-test']);
+  }
+  
   if(stage.indexOf('min') == -1) {
     for(var n in forth_sources) {
       interp(asm, `: ${n}-src literal sources-${n}-src return1 ;`);

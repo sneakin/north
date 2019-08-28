@@ -21,7 +21,8 @@ outputs = [ 'north-stage0.bin',
             'north-stage0-min.bin',
             'north-stage1.bin',
             'north-stage1-min.bin',
-            #'north-stage2.bin',
+            'north-stage2.bin',
+            'north-stage2-min.bin',
             #'north-stage3.bin',
             'service_worker.js',
             'ipfs.js',
@@ -97,10 +98,6 @@ STAGE1_SRC = [ *STAGE0_SRC,
                '03/sequence.4th',
                'platform/bacaw/forth_interrupts.js',
                '03/interrupts.4th',
-               '03/storage.4th',
-               '03/storage_devices.4th',
-               '03/storage_test.4th',
-               '02/sound.4th',
                'forth_extra.4th',
                '04/core.4th',
                '04/constants.4th',
@@ -122,17 +119,58 @@ end
 
 stage :stage1, STAGE1_TARGET, STAGE1_MIN_TARGET
 
-STAGE2_SRC = [ 'build-stage2.4th',
+STAGE2_SRC = [ *STAGE0_SRC,
+               'platform/bacaw/forth_01.js',
+               '01/atoi.4th',
+               '01/tty.4th',
+               '01/dict.4th',
+               '01/seq.4th',
+               '01/ui.4th',
+               '02/memdump.4th',
+               '02/decompiler.4th',
+               '02/misc.4th',
                '02/assembler.4th',
+               '03/assembler.4th',
+               '03/byte_string.4th',
+               '03/sequence.4th',
+               'platform/bacaw/forth_interrupts.js',
+               '03/interrupts.4th',
+               '03/storage.4th',
+               '03/storage_devices.4th',
+               '03/storage_test.4th',
+               '02/sound.4th',
+               'forth_extra.4th',
+               '04/core.4th',
+               '04/constants.4th',
                '02/ops.4th'
              ].collect { |s| root.join('src', s) }
 STAGE2_TARGET = buildroot.join('north-stage2.bin')
 
-file STAGE2_TARGET => [ buildroot, STAGE0_TARGET, *STAGE2_SRC ] do |t|
-  sh("#{BCCON} #{STAGE0_TARGET} < src/build-stage1.4th > #{t.name}")
+file STAGE2_TARGET => [ buildroot, *STAGE2_SRC ] do |t|
+  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  sh("node #{bin} stage2 > #{t.name}")
 end
 
-stage :stage2, STAGE2_TARGET
+STAGE2_MIN_TARGET = buildroot.join('north-stage2-min.bin')
+
+file STAGE2_MIN_TARGET => [ buildroot, *STAGE2_SRC ] do |t|
+  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  sh("node #{bin} stage2-min > #{t.name}")
+end
+
+stage :stage2, STAGE2_TARGET, STAGE2_MIN_TARGET
+
+STAGE3_SRC = [ 'build-stage3.4th',
+               '02/assembler.4th',
+               '02/ops.4th'
+             ].collect { |s| root.join('src', s) }
+STAGE3_TARGET = buildroot.join('north-stage3.bin')
+
+file STAGE3_TARGET => [ buildroot, STAGE0_TARGET, *STAGE3_SRC ] do |t|
+  sh("#{BCCON} #{STAGE0_TARGET} < src/build-stage2.4th > #{t.name}")
+end
+
+stage :stage3, STAGE3_TARGET
 
 [ 'forth.css',
   'index.css',
@@ -150,14 +188,14 @@ stage :stage2, STAGE2_TARGET
   end
 end
 
-desc "Build stage3: stage0 built with stage2"
-task :stage3 do
+desc "Build stage3: stage0 built with stage3"
+task :stage4 do
   raise NotImplementedError
 end
 
 BrowserifyRunner.bundle buildroot.join('service_worker.js') => [ root.join('www/service_worker.js') ]
 BrowserifyRunner.bundle buildroot.join('ipfs.js') => [ root.join('www/ipfs.js') ]
-BrowserifyRunner.bundle buildroot.join('index.js') => [ root.join('www/index.js'), STAGE0_TARGET, STAGE1_TARGET ]
+BrowserifyRunner.bundle buildroot.join('index.js') => [ root.join('www/index.js'), STAGE0_TARGET, STAGE1_TARGET, STAGE2_TARGET ]
 html_file buildroot.join('index.html') => [ root.join('www/index.src.html'), buildroot.join('index.js'), buildroot.join('xterm.css') ]
 
 file buildroot.join('xterm.css') => root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
@@ -184,7 +222,7 @@ namespace :doc do
   
   desc "Turn the source into HTML."
   task :src => DOC_SRC_DIR do |t|
-    STAGE1_SRC.each do |src|
+    STAGE2_SRC.each do |src|
       lang = 'forth'
       lang = 'javascript' if src.extname == '.js'
       sh("pygmentize -f html -O full -l #{lang} -o #{Shellwords.escape(DOC_SRC_DIR.join(src.basename))}.html #{Shellwords.escape(src)}")
