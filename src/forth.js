@@ -417,16 +417,6 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     dictionary_add(name, entry.code, entry.data);
   }
 
-  // Variables
-  dictionary_variable('*tokenizer*');
-  dictionary_variable('*status*');
-  dictionary_variable('*debug*');
-  dictionary_variable('*state*');
-  dictionary_variable('base');
-  dictionary_variable('immediate-dict');
-  dictionary_variable('isr-handlers');
-  dictionary_variable('interrupt-waiting-for');
-
   var plat_path = __dirname + '/platform/' + platform.name;
   if(platform.name == 'bacaw') {
     eval(fs.readFileSync(plat_path + '/boot.js', 'utf-8'));
