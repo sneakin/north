@@ -58,12 +58,23 @@ def stage(name, target, min_target = nil)
   end
 end
 
+file root.join('src', 'version.txt') => [ root.join('version.txt'), root.join('.git/HEAD') ] do |t|
+  head = `git rev-parse HEAD`
+  now = Time.now
+  File.open(t.name, 'w') do |f|
+    f.write(File.read(t.sources[0]).strip)
+    f.write(" #{now.year}.#{now.month}.#{now.day} #{head[0, 8]}")
+  end
+end
+
 STAGE0_SRC = [ 'forth.js',
                'platform/bacaw/boot.js',
                'platform/bacaw/forth_00.js',
+               'version.txt',
                '00/core.4th',
                '00/compiler.4th',
                '00/output.4th',
+               '00/about.4th',
                '00/init.4th',
                '00/ui.4th'
              ].collect { |s| root.join('src', s) }
@@ -87,6 +98,7 @@ STAGE1_SRC = [ *STAGE0_SRC,
                '01/atoi.4th',
                '01/tty.4th',
                '01/dict.4th',
+               '01/about.4th',
                '01/help.4th',
                '01/seq.4th',
                '01/ui.4th',

@@ -14,7 +14,7 @@ defop('reset', function(asm) {
       inc(VM.CPU.REGISTERS.R0).uint32('boot').
       push(VM.CPU.REGISTERS.R0).
       call(0, VM.CPU.REGISTERS.CS).uint32('outer-start-thread');
-});
+}, "Set all the interpreter's state back to the initial state.");
 
 defop('jump', function(asm) {
   asm.pop(EVAL_IP_REG).
@@ -93,10 +93,8 @@ defop('bye', function(asm) {
       pop(VM.CPU.REGISTERS.R0).
       store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
       ret();
-});
+}, "Exit and return from the interpreter.");
 
-// Return to the function started with outer-start-thread, but not the
-// outer-start-thread's caller.
 defop('quit', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
@@ -113,7 +111,7 @@ defop('quit', function(asm) {
       dec(VM.CPU.REGISTERS.SP).uint32(4). // not the top most frame's return
       pop(EVAL_IP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Return to the function started with outer-start-thread, but not the outer-start-thread's caller.");
 
 // Return to the calling function.
 defop('exit', function(asm) {

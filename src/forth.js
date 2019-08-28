@@ -15,11 +15,13 @@ const forth_sources = {
   "00-core-compiler": fs.readFileSync(__dirname + '/00/compiler.4th', 'utf-8'),
   "00-output": fs.readFileSync(__dirname + '/00/output.4th', 'utf-8'),  
   "00-ui": fs.readFileSync(__dirname + '/00/ui.4th', 'utf-8'),  
+  "00-about": fs.readFileSync(__dirname + '/00/about.4th', 'utf-8'),  
   "00-init": fs.readFileSync(__dirname + '/00/init.4th', 'utf-8'),  
   "01-init": fs.readFileSync(__dirname + '/01/init.4th', 'utf-8'),  
   "01-atoi": fs.readFileSync(__dirname + '/01/atoi.4th', 'utf-8'),
   "01-tty": fs.readFileSync(__dirname + '/01/tty.4th', 'utf-8'),
   "01-dict": fs.readFileSync(__dirname + '/01/dict.4th', 'utf-8'),  
+  "01-about": fs.readFileSync(__dirname + '/01/about.4th', 'utf-8'),  
   "01-help": fs.readFileSync(__dirname + '/01/help.4th', 'utf-8'),  
   "01-seq": fs.readFileSync(__dirname + '/01/seq.4th', 'utf-8'),  
   "01-stack": fs.readFileSync(__dirname + '/01/stack.4th', 'utf-8'),  
@@ -175,7 +177,8 @@ function dictionary_add(name, code, data)
   var entry = {
     code: code,
     data: data,
-    prior: last_dictionary
+    next: last_dictionary,
+    prior: dictionary[name] // keep old definitions
   };
   
   last_dictionary = name;
@@ -355,6 +358,11 @@ var macros = {
     asm.uint32('literal').uint32(tok[0]);
     return tok[1];
   },
+  "i'": function(asm, token, code) {
+    var tok = next_token(code);
+    asm.uint32('literal').uint32('immed-' + tok[0]);
+    return tok[1];
+  },
   "(": function(asm, token, code) {
     var m = code.indexOf(')');
     if(m >= 0) {
@@ -449,6 +457,9 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     dictionary_add(name, entry.code, entry.data);
   }
 
+  strings["version-string-str"] = fs.readFileSync(__dirname + '/version.txt', 'utf-8').trim();
+  dictionary_add("version-string", 'value-peeker-code', "version-string-str");
+
   var plat_path = __dirname + '/platform/' + platform.name;
   if(platform.name == 'bacaw') {
     eval(fs.readFileSync(plat_path + '/boot.js', 'utf-8'));
@@ -460,6 +471,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   interp(asm, forth_sources['00-list']);
   interp(asm, forth_sources['00-core-compiler']);
   interp(asm, forth_sources['00-output']);
+  interp(asm, forth_sources['00-about']);
   interp(asm, forth_sources['00-init']);
 
   if(stage.indexOf('stage0') >= 0) {
@@ -473,6 +485,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     
     //interp(asm, forth_sources['01-atoi']);
     interp(asm, forth_sources['01-dict']);
+    interp(asm, forth_sources['01-about']);
     interp(asm, forth_sources['01-help']);
     interp(asm, forth_sources['01-seq']);
     interp(asm, forth_sources['01-tty']);

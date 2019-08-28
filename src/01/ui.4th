@@ -46,12 +46,15 @@
 
 ( Make ; print the new entry's name and OK. )
 : ;
-dict dict-entry-name write-string drop2 write-ok
-literal endcol jump-entry-data
+  doc( Closes a colon definition updating the last word's data field. )
+  dict dict-entry-name write-string drop2 write-ok
+  ' endcol jump-entry-data
 ; immediate-only
 
-( Print the top of stack. )
-: . arg0 write-int ;
+: .
+  doc( Print the top of stack. )
+  arg0 write-int
+;
 
 ( Base helpers: )
 

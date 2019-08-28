@@ -386,7 +386,8 @@
 ;
 
 : variable
-  ( value : name )
+  doc( Add an entry to the dictionary for a new variable that stores its value at `dhere`. The entry stores a pointer. `peek` gets the value and `poke` will set it. )
+  args( value : name ++ )
   create arg0 does-var
 ;
 
