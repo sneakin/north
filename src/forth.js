@@ -23,7 +23,10 @@ const forth_sources = {
   "01-dict": fs.readFileSync(__dirname + '/01/dict.4th', 'utf-8'),  
   "01-about": fs.readFileSync(__dirname + '/01/about.4th', 'utf-8'),  
   "01-help": fs.readFileSync(__dirname + '/01/help.4th', 'utf-8'),  
+  "01-data_stack": fs.readFileSync(__dirname + '/01/data_stack.4th', 'utf-8'),  
   "01-seq": fs.readFileSync(__dirname + '/01/seq.4th', 'utf-8'),  
+  "01-compiler": fs.readFileSync(__dirname + '/01/compiler.4th', 'utf-8'),  
+  "01-structs": fs.readFileSync(__dirname + '/01/structs.4th', 'utf-8'),  
   "01-stack": fs.readFileSync(__dirname + '/01/stack.4th', 'utf-8'),  
   "01-ui": fs.readFileSync(__dirname + '/01/ui.4th', 'utf-8'),  
   "02-init": fs.readFileSync(__dirname + '/02/init.4th', 'utf-8'),  
@@ -172,11 +175,13 @@ function unslash(str)
      ;
 }
 
-function dictionary_add(name, code, data)
+function dictionary_add(name, code, data, doc, args)
 {
   var entry = {
     code: code,
     data: data,
+    doc: doc,
+    args: args,
     next: last_dictionary,
     prior: dictionary[name] // keep old definitions
   };
@@ -239,6 +244,18 @@ var macros = {
         label(name + '-size', (asm.resolve(name + '-end') - asm.resolve(name + '-ops')) / CELL_SIZE).
         uint32(TERMINATOR);
   },
+  alias: function(asm, token, code) {
+    // alias NAME AS
+    // Adds a dictionary entry named NAME that is a copy of AS.
+    var tok = next_token(code);
+    var name = tok[0];
+    tok = next_token(tok[1]);
+    var entry = dictionary[tok[0]];
+    
+    dictionary_add(name, entry.code, entry.data, entry.doc, entry.args);
+
+    return tok[1];
+  },    
   constant: function(asm, token, code) {
     // constant NAME NUMBER-VALUE
     // Adds a dictionary entry with the name and value.
@@ -504,10 +521,13 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     interp(asm, forth_sources['01-dict']);
     interp(asm, forth_sources['01-about']);
     interp(asm, forth_sources['01-help']);
+    interp(asm, forth_sources['01-data_stack']);
     interp(asm, forth_sources['01-seq']);
     interp(asm, forth_sources['01-tty']);
     interp(asm, forth_sources['01-stack']);
     interp(asm, forth_sources['01-ui']);
+    interp(asm, forth_sources['01-compiler']);
+    interp(asm, forth_sources['01-structs']);
 
     interp(asm, forth_sources['03-byte-string']);
     interp(asm, forth_sources['03-assembler']);

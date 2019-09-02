@@ -1,3 +1,10 @@
+( Frames: )
+
+: return1-1
+    doc( Returns from a frame by replacing an argment with the return value. )
+    drop-call-frame set-arg0
+;
+
 ( Stack information )
 
 : stack-depth

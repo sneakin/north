@@ -803,3 +803,17 @@ defop('input-reset', function(asm) {
   asm.call(0, VM.CPU.REGISTERS.CS).uint32('reset_input').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
+
+defop('wait-for-input', function(asm) {
+  asm.call(0, VM.CPU.REGISTERS.CS).uint32('wait_for_input').
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('do-accessor', function(asm) {
+  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
+      pop(VM.CPU.REGISTERS.R1).
+      cls(VM.CPU.REGISTERS.STATUS).
+      addi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});

@@ -31,6 +31,11 @@
   ddrop
 ;
 
+: seq-data
+    arg0 cell+
+    return1
+;
+
 : seq-length
   arg0 peek return1
 ;

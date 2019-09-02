@@ -10,6 +10,14 @@
   rot set-dict-entry-next
 ;
 
+: add-dict-after
+    arg3 arg2 arg1
+    arg0 dict-entry-next swapdrop
+    make-dict
+    arg0 set-dict-entry-next
+    drop return1
+;
+
 ( Dictionary iteration: )
 
 : dict-each  ( fn dict -- fn last-dict)
