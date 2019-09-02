@@ -135,6 +135,12 @@ defop('next', function(asm) {
       ret();
 });
 
+defop('drop-call-frame', function(asm) {
+  asm.load(FP_REG, 0, FP_REG).uint32(0).
+      inc(VM.CPU.REGISTERS.SP).uint32(FRAME_SIZE).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 defop('return1', function(asm) {
   asm.// save a return value
   pop(VM.CPU.REGISTERS.R0).
@@ -268,6 +274,11 @@ defop('write-word', function(asm) {
       ret();
 });
 
+defop('eval-ip', function(asm) {
+  asm.push(EVAL_IP_REG).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 defop('here', function(asm) {
   asm.
       push(VM.CPU.REGISTERS.SP).
@@ -298,12 +309,12 @@ defop('drop3', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('dropn', function(asm) {
-  asm.pop(VM.CPU.REGISTERS.R0).
-      cls(VM.CPU.STATUS.NUMERICS).
-      addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
-      mov(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+defop('over', function(asm) {
+  asm.
+      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(4).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
+      ret();
 });
 
 defop('dup', function(asm) {
@@ -321,14 +332,6 @@ defop('2dup', function(asm) {
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(4).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
-defop('dup1', function(asm) {
-  asm.
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(4).
-      push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
-      ret();
 });
 
 defop('peek', function(asm) {
@@ -651,6 +654,16 @@ defop('dmove', function(asm) {
 });
 
 defop('dallot', function(asm) {
+  asm.inc(HEAP_REG).uint32(4).
+      pop(VM.CPU.REGISTERS.R0).
+      cls(VM.CPU.STATUS.NUMERICS).
+      addi(HEAP_REG, VM.CPU.REGISTERS.STATUS).
+      push(HEAP_REG).
+      mov(HEAP_REG, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('dallot-seq', function(asm) {
   asm.// store buffer's length
   inc(HEAP_REG).uint32(4).
       pop(VM.CPU.REGISTERS.R0).

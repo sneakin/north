@@ -1,4 +1,4 @@
-( Dictionary forgeting: )
+( Dictionary manipulation: )
 
 : dict-forget
   ( name dict )
@@ -92,7 +92,7 @@
 : dict-entry-indirect?
   arg0 dict-entry-code swapdrop
   literal call-data-seq dict-entry-code swapdrop
-  dup1 equals UNLESS
+  over equals UNLESS
     literal call-data dict-entry-code swapdrop
     equals UNLESS
       false return1

@@ -203,7 +203,7 @@
 : intern-seq
   ( seq-ptr num-cells )
   ( calc byte size & alloc )
-  arg0 dallot
+  arg0 dallot-seq
   ( copy )
   cell+ arg1
   cell+ swapdrop swap
@@ -217,7 +217,7 @@
 ;
 
 : intern
-  arg0 dallot
+  arg0 dallot-seq
   ( copy )
   cell+ arg1 swap arg0 cell* swapdrop copy drop3
   ( terminate )
@@ -293,7 +293,8 @@
 ;
 
 : set-dict-entry-next
-  arg1 arg0 literal 5 cell+n rotdrop2 poke return0
+    arg1 arg0 literal 5 cell+n
+    rotdrop2 poke return0
 ;
   
 : dict-lookup-parent
@@ -549,13 +550,6 @@
   poke
 ;
 
-: tokenizer-peek-word
-  arg0
-  tokenizer-exhausted? IF int32 0 return1 THEN
-  arg0 tokenizer-str-ptr peek
-  return1
-;
-
 : tokenizer-exhausted?
   arg0 peek
   seq-length cell*
@@ -563,12 +557,17 @@
   < return1
 ;
   
-: tokenizer-next-word
+: tokenizer-peek-word
   arg0
   tokenizer-exhausted? IF int32 0 return1 THEN
   tokenizer-str-ptr peek
+  return1
+;
+
+: tokenizer-next-word
+  arg0 tokenizer-peek-word dup UNLESS return1 THEN
   swap tokenizer-inc-str-offset
-  swap return1 ( tokenizer cell )
+  drop return1 ( tokenizer cell )
 ;
 
 ( todo use a function and refactor eat-spaces )
@@ -624,7 +623,7 @@
 
 : make-the-tokenizer
   *tokenizer* peek dup IF tokenizer-buffer THEN
-  dup UNLESS token-max-cell-size dallot THEN
+  dup UNLESS token-max-cell-size dallot-seq THEN
   arg0 make-tokenizer ( tokenizer )
   *tokenizer* poke
 ;
@@ -747,8 +746,14 @@
   return-1
 ;
 
+: call-frame-size
+    cell-size int32 2 int-mul return1
+;
+
 : argn
-  arg0 cell* cell+2 current-frame parent-frame swapdrop int-add peek set-arg0
+    arg0 cell* call-frame-size int-add
+    current-frame parent-frame swapdrop int-add
+    peek set-arg0
 ;
 
 ( Some signed math: )
@@ -871,7 +876,7 @@
 ;
 
 : eval-string
-  end drop2 ( not coming back! ) ( todo needs to return to the caller )
+  drop-call-frame ( not coming back! ) ( todo needs to return to the caller )
   ( arg0 ) make-the-tokenizer drop
   literal eval-loop jump-entry-data
 ;

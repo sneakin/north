@@ -91,7 +91,7 @@
 : internrev
   doc( Copy num-bytes in reverse order into a sequence in the data stack. )
   args( src num-bytes ++ sequence )
-  arg0 dallot
+  arg0 dallot-seq
   ( copy )
   cell+ arg1 swap arg0 cell* swapdrop copyrev drop3
   ( terminate )
@@ -150,7 +150,7 @@
 : endcol
   doc( Closes a docol> updating the last word's data field. )
   args( ... -- )
-  end drop2
+  drop-call-frame
   literal return0
   ]
   swap set-dict-entry-data drop2
@@ -174,7 +174,7 @@
   doc( Redefine or create the next word as a colon definition. )
   args( _ : name ++ entry open-seq )
   next-token dup UNLESS eos eos error return0 THEN
-  dup1 dict dict-lookup dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
+  over dict dict-lookup dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
   docol> return2
 ;
 
@@ -204,7 +204,7 @@
 
 : return-locals
   doc( Causes the caller to return all of its local data shifted over the frame and return pointers. )
-  end drop2
+  drop-call-frame
   locals here int-sub cell/ swapdrop returnN
 ;
 

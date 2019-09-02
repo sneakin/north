@@ -62,7 +62,7 @@
   THEN
   drop swap ( ptr+1 str )
   seq-length swapdrop ( ptr+1 length )
-  dup1 peek
+  over peek
   ( todo recurse to the next character )
   negative-sign? swapdrop IF int32 1 int-sub
      swap cell+ swapdrop

@@ -1,8 +1,8 @@
 ( Test a storage device by trying each operation. )
 : test-storage-at ( dev-irq dev-addr )
-  int32 256 dallot ( data )
-  int32 256 dallot ( data key )
-  int32 256 dallot ( data key out )
+  int32 256 dallot-seq ( data )
+  int32 256 dallot-seq ( data key )
+  int32 256 dallot-seq ( data key out )
   " motd"
   local1 int32 4 copy-seq
   write-line-n drop2

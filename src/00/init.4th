@@ -13,8 +13,10 @@ global-var immediate-dict
   int32 0 *debug* poke
   int32 0 *state* poke
   int32 10 base poke
-  dict terminator? swapdrop IF dict-init THEN
-  about
+  dict terminator? swapdrop IF
+    dict-init
+    about
+  THEN
 ;
 
 : boot

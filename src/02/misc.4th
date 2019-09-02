@@ -191,7 +191,7 @@
 ;
 
 : seq0
-  arg1 arg0 2dup int-sub dallot
+  arg1 arg0 2dup int-sub dallot-seq
   do arg1 write-int arg0 arg1 seq-poke drop3
      write-ok write-crnl
      arg1 int32 10 equals literal again ifthencall

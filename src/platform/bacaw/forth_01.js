@@ -77,3 +77,26 @@ defop('move', function(asm) {
       mov(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
+
+defop('dropn', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
+      cls(VM.CPU.STATUS.NUMERICS).
+      muli(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
+      cls(VM.CPU.STATUS.NUMERICS).
+      addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
+      mov(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('overn', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
+      cls(VM.CPU.STATUS.NUMERICS).
+      muli(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
+      cls(VM.CPU.STATUS.NUMERICS).
+      addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
+      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});

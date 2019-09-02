@@ -148,12 +148,6 @@ defop('store-local2', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('drop-frame', function(asm) {
-  asm.
-      inc(VM.CPU.REGISTERS.SP).uint32(FRAME_SIZE + 4).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
 defop('pop-to', function(asm) {
   asm.pop(VM.CPU.REGISTERS.SP).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');

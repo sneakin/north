@@ -32,7 +32,7 @@
 ( Returns a new sequence whose bytes are the clamped values of SEQ's cells. )
 : to-byte-string ( seq ++ new-seq )
   arg0 seq-length swapdrop
-  cell+ cell/ swapdrop dallot swap
+  cell+ cell/ swapdrop dallot-seq swap
   arg0 swap int32 0 to-byte-string/4
   local0 swap return2
 ;
@@ -53,7 +53,7 @@
 : byte-string-to-string ( seq num-bytes ++ new-seq length )
   arg1 cell+ swapdrop ( seq )
   arg0 ( seq length )
-  dup dallot ( seq length out-seq )
+  dup dallot-seq ( seq length out-seq )
   swap ( seq out-seq length )
   int32 0 byte-string-to-string/4
   rotdrop2 return2
@@ -61,7 +61,7 @@
 
 ( Test the byte-string conversions. )
 : test-byte-string-conversion
-  int32 256 dallot
+  int32 256 dallot-seq
   " Bytes" write-line drop
   " hey there" to-byte-string
   2dup hex memdump drop2 dec
