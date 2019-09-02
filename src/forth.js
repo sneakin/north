@@ -328,6 +328,23 @@ var macros = {
   RECURSE: function(asm, token, code) {
     asm.uint32('literal').uint32(last_dictionary).uint32('jump-entry-data');
   },
+  "DOTIMES[": function(asm, token, code) {
+    var label = genlabel('dotimes');
+    stack.push(label);
+    asm.uint32('literal').uint32(0).
+        uint32('literal').uint32(6).uint32('next-op+').
+        uint32('swapdrop').uint32('dup').uint32('literal').uint32(label, true).uint32('int-add').
+        uint32('begin');
+  },
+  "]DOTIMES": function(asm, token, code) {
+    var label = stack.pop();
+    asm.uint32('arg1').uint32('literal').uint32(1).uint32('int-add').
+        uint32('set-arg1').
+        uint32('arg1').uint32('arg2').uint32('<').uint32('not').uint32('literal').uint32(CELL_SIZE * 2).uint32('ifthenreljump').
+        uint32('arg0').uint32('jump').
+        label(label).
+        uint32('end');
+  },  
   POSTPONE: function(asm, token, code) {
     var tok = next_token(code);
     asm.uint32(tok[0]);
