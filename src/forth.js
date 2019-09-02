@@ -165,7 +165,7 @@ function unslash(str)
       replace(/\\a/g, "\a").
       replace(/\\b/g, "\b").
       replace(/\\f/g, "\f").
-      replace(/\\e/g, "\e").
+      replace(/\\e/g, "\x1b").
       replace(/\\v/g, "\v").
       replace(/\\n/g, "\n").
       replace(/\\r/g, "\r").

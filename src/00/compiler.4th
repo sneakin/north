@@ -342,12 +342,133 @@
   literal literal return1
 ; immediate-as '
 
+: forward-slash?
+  arg0 longify \\ equals return1
+;
+
+( Strings and tokens with escape sequences: )
+
+: tokenizer-read-digits/4
+    doc( Read up to max-digits words until a non-digit in base is read. Returns the integer the words represent in base. )
+    args( tokenizer base max-digits number ++ number )
+    arg3 tokenizer-next-word
+    digit-char
+    dup int32 0 >= IF
+        dup arg2 < IF
+            arg0 arg2 int-mul
+            int-add set-arg0
+            arg1 int32 1 int-sub set-arg1
+            arg1 IF RECURSE THEN
+        THEN
+    THEN
+    arg0 return1
+;
+
+: tokenizer-read-hex2-digits
+    doc( Read up to 2 words until a non-hex-digit is read. Returns the integer the words represent. )
+    arg0 int32 16 int32 2 int32 0 tokenizer-read-digits/4 return1
+;
+
+: tokenizer-read-octal-digits
+    doc( Read up to 3 words until a non-octal-digit is read. Returns the integer the words represent. )
+    arg0 int32 8 int32 3 int32 0 tokenizer-read-digits/4 return1
+;
+
+: tokenizer-read-hex8-digits
+    doc( Read up to 8 words words until a non-hex-digit is read. Returns the integer the words represent. )
+    arg0 int32 16 int32 8 int32 0 tokenizer-read-digits/4 return1
+;
+
+: tokenizer-read-escape-word
+    arg0 tokenizer-next-word
+    int32 char-code a over equals IF int32 7 return1 THEN
+    int32 char-code b over equals IF int32 char-code \b ( 8 ) return1 THEN
+    int32 char-code f over equals IF int32 char-code \f ( $c ) return1 THEN
+    int32 char-code e over equals IF int32 char-code \e ( $1b )return1 THEN
+    int32 char-code v over equals IF int32 char-code \v ( $b ) return1 THEN
+    int32 char-code n over equals IF int32 char-code \n ( $A ) return1 THEN
+    int32 char-code r over equals IF int32 char-code \r ( $D ) return1 THEN
+    int32 char-code t over equals IF int32 char-code \t ( 9 ) return1 THEN
+    int32 char-code \\ over equals IF int32 char-code \\ ( $5c ) return1 THEN
+    int32 char-code x over equals IF drop tokenizer-read-hex2-digits return1 THEN
+    int32 char-code u over equals IF drop tokenizer-read-hex8-digits return1 THEN
+    int32 char-code 0 over equals IF drop tokenizer-read-octal-digits return1 THEN
+    return1
+;
+
+: tokenizer-next-escaped-word
+    arg0 tokenizer-next-word null? UNLESS
+        forward-slash? IF
+            drop
+            tokenizer-read-escape-word
+        THEN
+    THEN
+    
+    return1
+;
+    
+: tokenizer-read-escaped-until-loop
+  ( tokenizer needle ++ output-seq length )
+    arg1 tokenizer-next-word null? UNLESS
+        dup arg0 equals UNLESS
+            forward-slash? IF
+                drop
+                tokenizer-read-escape-word
+            THEN
+            
+            tokenizer-push drop2
+            RECURSE
+        THEN
+    THEN
+
+    drop tokenizer-finish-output return2
+;
+
+: tokenizer-read-escaped-until
+  ( tokenizer needle ++ output-seq length )
+  arg1 tokenizer-buffer-reset
+  arg0 tokenizer-read-escaped-until-loop return2
+;
+
+: tokenizer-next-escaped-token-loop
+    arg0 tokenizer-next-word ( tokenizer byte )
+    null? UNLESS
+        whitespace? UNLESS
+            forward-slash? IF
+                drop
+                tokenizer-read-escape-word
+            THEN
+
+            tokenizer-push drop2
+            RECURSE
+        THEN
+    THEN
+
+    drop ( tokenizer )
+    tokenizer-finish-output return2 ( next-token length )
+;
+
+: tokenizer-next-escaped-token
+  ( tokenizer -> string-past-token token )
+  arg0
+  tokenizer-eat-spaces
+  tokenizer-buffer-reset
+  tokenizer-next-escaped-token-loop return2
+;
+
+: next-escaped-token
+  *tokenizer* peek dup IF tokenizer-next-escaped-token return2 THEN
+  int32 0 int32 0 return2
+;
+
+( Quoted strings: )
+
 ( fixme: need to read strings larger than the tokenizer's buffer )
 
 : "
   doc( Capture input into a sequence until a " is read. )
   args( : characters... ++ sequence )
-  *tokenizer* peek int32 34 tokenizer-read-until intern-seq return1
+  *tokenizer* peek int32 34 tokenizer-read-escaped-until intern-seq return1
 ; immediate
 
 : c-"
@@ -369,11 +490,15 @@
   return1
 ;
 
-: char-code-at
+: char-code
   doc( Return the next-token's first character. )
-  next-token UNLESS eos eos error THEN
+  next-escaped-token UNLESS eos eos error THEN
   cell+ peek return1
-; immediate
+;
+
+: [char-code]
+      literal literal char-code return2
+; immediate-as char-code
 
 : longify-string
   doc( Turn the ToS string into a 4 byte "string" or long. )
@@ -394,15 +519,22 @@
 
 : longify
   doc( Turn the next token into a 4 byte "string" or long. )
-  next-token UNLESS eos eos error THEN
+  next-escaped-token UNLESS eos eos error THEN
   cell+ longify-string
-  literal literal swap return2
-; immediate
+  return1
+;
+
+: [longify]
+    literal literal longify return2
+; immediate-as longify
 
 : longify"
   doc( Read until the next " and convert that to a long. )
-  *tokenizer* peek int32 34 tokenizer-read-until UNLESS eos eos error THEN
+  *tokenizer* peek int32 34 tokenizer-read-escaped-until UNLESS eos eos error THEN
   cell+ longify-string
-  literal literal swap return2
-; immediate
+  return1
+;
 
+: [longify"]
+    literal literal POSTPONE longify" return2
+; immediate-as longify"

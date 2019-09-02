@@ -438,51 +438,62 @@ defop('logior', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('<', function(asm) {
-  asm.
-      pop(VM.CPU.REGISTERS.R1).
-      pop(VM.CPU.REGISTERS.R0).
-      cmpi(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
-      push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+var comparisons = {
+  int: 'cmpi',
+  uint: 'cmpu',
+  float: 'cmpf'
+};
+for(var kind in comparisons) {
+  var op = comparisons[kind];
 
-defop('<=', function(asm) {
-  asm.
-      pop(VM.CPU.REGISTERS.R1).
-      pop(VM.CPU.REGISTERS.R0).
-      cmpi(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
-      load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.ZERO, VM.CPU.REGISTERS.INS).uint32(1).
-      push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+  defop(kind + '<', function(asm) {
+    asm.pop(VM.CPU.REGISTERS.R1).
+        pop(VM.CPU.REGISTERS.R0);
+    asm[op](VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
+        load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
+        load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
+        push(VM.CPU.REGISTERS.R0).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  });
 
-defop('>', function(asm) {
-  asm.
-      pop(VM.CPU.REGISTERS.R1).
-      pop(VM.CPU.REGISTERS.R0).
-      cmpi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
-      push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+  defop(kind + '<=', function(asm) {
+    asm.pop(VM.CPU.REGISTERS.R1).
+        pop(VM.CPU.REGISTERS.R0);
+    asm[op](VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
+        load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
+        load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
+        load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.ZERO, VM.CPU.REGISTERS.INS).uint32(1).
+        push(VM.CPU.REGISTERS.R0).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  });
 
-defop('>=', function(asm) {
-  asm.
-      pop(VM.CPU.REGISTERS.R1).
-      pop(VM.CPU.REGISTERS.R0).
-      cmpi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
-      load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.ZERO, VM.CPU.REGISTERS.INS).uint32(1).
-      push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+  defop(kind + '>', function(asm) {
+    asm.
+        pop(VM.CPU.REGISTERS.R1).
+        pop(VM.CPU.REGISTERS.R0).
+        cmpi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
+        load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
+        load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
+        push(VM.CPU.REGISTERS.R0).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  });
+
+  defop(kind + '>=', function(asm) {
+    asm.pop(VM.CPU.REGISTERS.R1).
+        pop(VM.CPU.REGISTERS.R0);
+    asm[op](VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
+        load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
+        load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.NEGATIVE, VM.CPU.REGISTERS.INS).uint32(1).
+        load(VM.CPU.REGISTERS.R0, VM.CPU.STATUS.ZERO, VM.CPU.REGISTERS.INS).uint32(1).
+        push(VM.CPU.REGISTERS.R0).
+        load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+  });
+}
+
+defalias('<', 'int<');
+defalias('<=', 'int<=');
+defalias('>', 'int>');
+defalias('>=', 'int>=');
 
 defop('ifthenjump', function(asm) { // condition addr
   asm.

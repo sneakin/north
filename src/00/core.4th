@@ -791,7 +791,7 @@
   arg0 digit? IF
     int32 48 int-sub return1
   THEN
-  int32 0 return1
+  int32 -1 return1
 ;
 
 ( Convert a single digit to an ASCII digit or letter. )
