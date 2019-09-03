@@ -42,6 +42,8 @@ const forth_sources = {
   "03-storage-test": fs.readFileSync(__dirname + '/03/storage_test.4th', 'utf-8'),
   "02-sound": fs.readFileSync(__dirname + '/02/sound.4th', 'utf-8'),
   "02-shorthand": fs.readFileSync(__dirname + '/02/shorthand.4th', 'utf-8'),
+  "04-tty": fs.readFileSync(__dirname + '/04/tty.4th', 'utf-8'),
+  "help-tty-attrs": fs.readFileSync(__dirname + '/help/tty-attrs.4th', 'utf-8'),
   "core-4": fs.readFileSync(__dirname + '/04/core.4th', 'utf-8'),
   "core-constants": fs.readFileSync(__dirname + '/04/constants.4th', 'utf-8'),
   extra: fs.readFileSync(__dirname + '/forth_extra.4th', 'utf-8'),
@@ -162,7 +164,7 @@ var data_segment_offset = 0;
 function unslash(str)
 {
   return str.
-      replace(/\\a/g, "\a").
+      replace(/\\a/g, "\x07").
       replace(/\\b/g, "\b").
       replace(/\\f/g, "\f").
       replace(/\\e/g, "\x1b").
@@ -540,6 +542,8 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     //interp(asm, forth_sources['02-misc']);
     //interp(asm, forth_sources['extra']);
     interp(asm, forth_sources['02-shorthand']);
+    interp(asm, forth_sources['04-tty']);
+    interp(asm, forth_sources['help-tty-attrs']);
   }
   
   if(stage.indexOf('stage1') >= 0) {

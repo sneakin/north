@@ -2,7 +2,7 @@
   doc( Print the doc string of the argument. )
   args( word ++ )
   arg0
-  dict-entry-name bright cyan write-string drop
+  dict-entry-name bold cyan write-string drop
   dict-entry-args dup IF
     color-reset dim
     "  ( " write-string drop

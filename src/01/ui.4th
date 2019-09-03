@@ -1,19 +1,19 @@
 ( Colorize the prompt: )
 
 :: write-ok
-  bright green 
+  bold green 
   int32 $204b4f20 write-word 
   color-reset 
 ;
 
 :: write-err
-  bright red 
+  bold red 
   int32 $20524520 write-word 
   color-reset 
 ;
 
 :: prompt
-  bright yellow
+  bold yellow
   int32 $203e0a0d write-word 
   color-reset 
 ;
@@ -28,7 +28,7 @@
 ( Colorful error output: )
 :: error
   ( error-msg2 error-msg1 )
-  bright red arg0 write-line color-reset
+  bold red arg0 write-line color-reset
   arg1 write-line
   arg0 *status* poke
   int32 0 *state* poke
