@@ -5,3 +5,7 @@ tmp/*
 build/*
 node_modules/*
 src/version.txt
+ssl_ca.crt
+ssl_ca.key
+server.crt
+server.key

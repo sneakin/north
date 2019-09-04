@@ -220,14 +220,16 @@ end
 desc "Build all stages."
 task :default => outputs
 
-desc 'Start a webserver on port 9090 to serve the build directory.'
+desc 'Start a webserver on port 9090 to serve the build directory. Values are taken from the DOMAIN, IP, CA, and CANAME enviroment variables.'
 task :serve do
   require 'rake-node/http/server'
   RakeNode::HTTP.run(:Port => ENV.fetch('PORT', 9090).to_i,
-                      :DocumentRoot => buildroot,
+                     :DocumentRoot => buildroot,
                      :SSLCertPrefix => root.join('server'),
                      :Domain => ENV.fetch('DOMAIN', nil),
-                     :IP => ENV.fetch('IP', nil))
+                     :IP => ENV.fetch('IP', nil),
+                     :ca => ENV.fetch('CA', nil),
+                     :cname => ENV.fetch('CANAME', nil))
 end
 
 namespace :doc do
