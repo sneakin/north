@@ -98,17 +98,7 @@
   arg0 terminate-seq drop return1
 ;
 
-( Compiler )
-
-: compile
-  doc( Look up a word calling it if it is an immediate. )
-  args( tok -- lookup executable? )
-  arg0 immediate-lookup dup IF int32 1 return2 THEN
-  drop
-  interp return2
-;
-
-( Colon definitions )
+( Stack search: )
 
 : stack-find-loop
   args( start-location needle current! ++ ptr )
@@ -122,7 +112,19 @@
   args( start-location needle ++ ptr )
   arg1 arg0 arg1 stack-find-loop return1
 ;
-  
+
+( Compiler )
+
+: compile
+  doc( Look up a word calling it if it is an immediate. )
+  args( tok -- lookup executable? )
+  arg0 immediate-lookup dup IF int32 1 return2 THEN
+  drop
+  interp return2
+;
+
+( Colon definitions )
+
 : [
   doc( Enter the compiling state where words, unless immediates, are looked up and pushed to the stack. )
   literal compile *state* poke
@@ -178,6 +180,22 @@
   docol> return2
 ;
 
+( Terminatormon stack search and replace: )
+  
+: patch-terminator/2
+    doc( Search up the stack from arg1, replacing the first terwinator with "[ terwinator - arg1 ] + arg0". )
+    args( start-offset adjustment ++ )
+    arg1 terminator stack-find swapdrop
+    2dup swap int-sub arg0 int-add
+    swap poke
+;
+
+: patch-terminator
+    doc( Search up the stack replacing the first terminator with an offset to the TOS. )
+    args( start-offset ++ )
+    arg0 int32 0 patch-terminator/2
+;
+
 ( Compiling words: )
 
 : UNLESS
@@ -188,9 +206,7 @@
 
 : THEN
   doc( Stop evaluation for an UNLESS or IF. )
-  args cell+ swapdrop terminator stack-find swapdrop
-  2dup swap int-sub
-  swap poke
+  args cell-size negate swapdrop patch-terminator/2
 ; immediate-only
 
 : POSTPONE
@@ -207,6 +223,15 @@
   drop-call-frame
   locals here int-sub cell/ swapdrop returnN
 ;
+
+: ELSE
+    doc( Evaluate the calls until THEN when an IF or UNLESS's condition fails. )
+    ( Add a new terminator for THEN to patch that ends IF / UNLESS )
+    literal literal terminator literal jumprel
+    ( find and replace IF or UNLESS's terminator to offset past jumprel )
+    args cell-size cell-size int-add patch-terminator/2 drop2
+    int32 3 returnN
+; immediate-only
 
 : IF
   doc( Jump to the word after IF and evaluate until THEN if the top of stack is not zero. )
@@ -257,13 +282,6 @@
   literal exit
   return-locals
 ; immediate-only
-
-: patch-terminator ( start-offset -- )
-  doc( Search up the stack replacing the first terminator with an offset to the TOS. )
-  arg0 terminator stack-find swapdrop ( arg term )
-  2dup swap int-sub ( arg term dist )
-  swap poke ( arg )
-;
 
 ( int32 2 lit frame-size constant drop2 )
 ( int32 8 lit frame-byte-size constant drop2 )

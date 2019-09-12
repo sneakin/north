@@ -340,6 +340,15 @@ var macros = {
         uint32(jump_label).
         uint32('ifthenjump');
   },
+  ELSE: function(asm, token, code) {
+    var if_label = stack.pop();
+    var then_label = genlabel(last_dictionary);
+    stack.push(then_label);
+    
+    asm.uint32('literal').uint32(then_label).
+        uint32('jump').
+        label(if_label);
+  },
   THEN: function(asm, token, code) {
     // fix the IF to jump here
     var label = stack.pop();

@@ -1,11 +1,3 @@
-defop('jumprel', function(asm) {
-  asm.pop(VM.CPU.REGISTERS.R0).
-      cls(VM.CPU.STATUS.NUMERICS).
-      addi(EVAL_IP_REG, VM.CPU.REGISTERS.STATUS).
-      mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
-      ret();
-});
 
 defop('eip', function(asm) {
   asm.push(EVAL_IP_REG).

@@ -495,6 +495,14 @@ defalias('<=', 'int<=');
 defalias('>', 'int>');
 defalias('>=', 'int>=');
 
+defop('jumprel', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      cls(VM.CPU.STATUS.NUMERICS).
+      addi(EVAL_IP_REG, VM.CPU.REGISTERS.STATUS).
+      mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 defop('ifthenjump', function(asm) { // condition addr
   asm.
       // compare arg1 w/ 0
