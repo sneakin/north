@@ -333,9 +333,9 @@
   intern-seq return1
 ;
 
-: c-lit
+: 'lit
   doc( A postponed LIT. )
-  literal literal lit return2
+  literal literal POSTPONE lit return2
 ; immediate-as lit
 
 : '
@@ -355,7 +355,7 @@
   literal ' return1
 ; immediate-only
 
-: c-'
+: ''
   doc( No need to perform a double lookup since compilation does that. )
   literal literal return1
 ; immediate-as '
@@ -487,14 +487,24 @@
   doc( Capture input into a sequence until a " is read. )
   args( : characters... ++ sequence )
   *tokenizer* peek int32 34 tokenizer-read-escaped-until intern-seq return1
-; immediate
+;
 
-: c-"
+: '"
   doc( Emit a type specifier and capture input into a sequence until " is read. )
   literal string POSTPONE " return2
 ; immediate-as "
 
 ( Immediates needed to self compile the core words. )
+
+: char-code
+  doc( Return the next-token's first character. )
+  next-escaped-token UNLESS eos eos error THEN
+  cell+ peek return1
+;
+
+: 'char-code
+      literal literal POSTPONE char-code return2
+; immediate-as char-code
 
 : make-long-msb
   args( lsb lmsb mlsb msb ++ uint32 )
@@ -507,16 +517,6 @@
   arg3 logior
   return1
 ;
-
-: char-code
-  doc( Return the next-token's first character. )
-  next-escaped-token UNLESS eos eos error THEN
-  cell+ peek return1
-;
-
-: [char-code]
-      literal literal char-code return2
-; immediate-as char-code
 
 : longify-string
   doc( Turn the ToS string into a 4 byte "string" or long. )
@@ -542,8 +542,8 @@
   return1
 ;
 
-: [longify]
-    literal literal longify return2
+: 'longify
+    literal literal POSTPONE longify return2
 ; immediate-as longify
 
 : longify"
@@ -553,6 +553,6 @@
   return1
 ;
 
-: [longify"]
+: 'longify"
     literal literal POSTPONE longify" return2
 ; immediate-as longify"
