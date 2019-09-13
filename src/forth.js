@@ -327,10 +327,9 @@ var macros = {
     var jump_label = genlabel(last_dictionary);
     stack.push(jump_label);
     
-    asm.uint32('not').
-        uint32('literal').
+    asm.uint32('literal').
         uint32(jump_label).
-        uint32('ifthenjump');
+        uint32('unlessjump');
   },
   UNLESS: function(asm, token, code) {
     var jump_label = genlabel(last_dictionary);

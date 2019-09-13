@@ -533,6 +533,38 @@ defop('ifthenreljump', function(asm) { // condition addr
       ret();
 });
 
+defop('unlessjump', function(asm) { // condition addr
+  asm.
+      // compare arg1 w/ 0
+      pop(VM.CPU.REGISTERS.R2).
+      pop(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(0).
+      cmpi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, VM.CPU.STATUS.NEGATIVE|VM.CPU.STATUS.CARRY, VM.CPU.REGISTERS.INS).uint32('next-code').
+      label('unlessjump_skip').
+      // perform jump if == 0
+      mov(EVAL_IP_REG, VM.CPU.REGISTERS.R2).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
+      ret();
+});
+
+defop('unlessreljump', function(asm) { // condition addr
+  asm.
+      // compare arg1 w/ 0
+      pop(VM.CPU.REGISTERS.R0).
+      pop(VM.CPU.REGISTERS.R2).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(0).
+      cmpi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R2).
+      load(VM.CPU.REGISTERS.IP, VM.CPU.STATUS.NEGATIVE|VM.CPU.STATUS.CARRY, VM.CPU.REGISTERS.INS).uint32('next-code').
+      label('unlessreljump_skip').
+      // inc eval ip if == 0
+      cls(VM.CPU.STATUS.NUMERICS).
+      addi(EVAL_IP_REG, VM.CPU.REGISTERS.STATUS).
+      mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
+      ret();
+});
+
 defop('pause', function(asm) {
   asm.
       cie().

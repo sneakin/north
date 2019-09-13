@@ -235,9 +235,9 @@
 
 : IF
   doc( Jump to the word after IF and evaluate until THEN if the top of stack is not zero. )
-  literal not
-  POSTPONE UNLESS
-  return-locals
+    ( literal not POSTPONE UNLESS return-locals )
+  literal literal terminator literal unlessreljump
+  int32 3 returnN
 ; immediate-only
 
 : RECURSE
