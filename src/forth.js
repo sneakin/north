@@ -46,8 +46,8 @@ const forth_sources = {
   "03-storage": fs.readFileSync(__dirname + '/03/storage.4th', 'utf-8'),
   "03-storage-test": fs.readFileSync(__dirname + '/03/storage_test.4th', 'utf-8'),
   "02-sound": fs.readFileSync(__dirname + '/02/sound.4th', 'utf-8'),
-  "02-shorthand": fs.readFileSync(__dirname + '/02/shorthand.4th', 'utf-8'),
   "04-tty": fs.readFileSync(__dirname + '/04/tty.4th', 'utf-8'),
+  "04-rand": fs.readFileSync(__dirname + '/04/rand.4th', 'utf-8'),
   "help-tty-attrs": fs.readFileSync(__dirname + '/help/tty-attrs.4th', 'utf-8'),
   "core-4": fs.readFileSync(__dirname + '/04/core.4th', 'utf-8'),
   "core-constants": fs.readFileSync(__dirname + '/04/constants.4th', 'utf-8'),
@@ -562,6 +562,8 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     interp(asm, forth_sources['02-debug']);
     interp(asm, forth_sources['04-tty']);
     interp(asm, forth_sources['help-tty-attrs']);
+
+    interp(asm, forth_sources['04-rand']);
   }
   
   if(stage.indexOf('stage1') >= 0) {

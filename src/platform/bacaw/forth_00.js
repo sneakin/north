@@ -417,6 +417,32 @@ defop('bsl', function(asm) {
       pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
       bsl(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
+      push(VM.CPU.REGISTERS.ACCUM).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('bsr', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R1).
+      pop(VM.CPU.REGISTERS.R0).
+      cls(VM.CPU.STATUS.NUMERICS).
+      bsr(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
+      push(VM.CPU.REGISTERS.ACCUM).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('not', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(0).
+      cmpi(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
+      load(VM.CPU.REGISTERS.R1, VM.CPU.STATUS.ZERO, VM.CPU.REGISTERS.INS).uint32(1).
+      push(VM.CPU.REGISTERS.R1).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('lognot', function(asm) {
+  asm.
+      pop(VM.CPU.REGISTERS.R0).
+      not(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R0).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
@@ -435,6 +461,15 @@ defop('logior', function(asm) {
       pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
       or(VM.CPU.REGISTERS.R1).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('logxor', function(asm) {
+  asm.
+      pop(VM.CPU.REGISTERS.R1).
+      pop(VM.CPU.REGISTERS.R0).
+      xor(VM.CPU.REGISTERS.R1).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
@@ -777,22 +812,9 @@ defop('set-dict', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('not', function(asm) {
-  asm.pop(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      cmpi(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
-      load(VM.CPU.REGISTERS.R1, VM.CPU.STATUS.ZERO, VM.CPU.REGISTERS.INS).uint32(1).
-      push(VM.CPU.REGISTERS.R1).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
-defop('lognot', function(asm) {
-  asm.
-      pop(VM.CPU.REGISTERS.R0).
-      not(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R0).
-      push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+/*
+ * Stack ops
+ */
 
 defop('rot', function(asm) {
   // a b c -> c b a
@@ -824,6 +846,10 @@ defop('swapdrop', function(asm) {
       store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
+
+/*
+ * Dictionary code ops
+ */
 
 /*
   defop('indirect-param', function(asm) {
