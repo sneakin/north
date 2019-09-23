@@ -45,6 +45,7 @@ const forth_sources = {
   "03-interrupts": fs.readFileSync(__dirname + '/03/interrupts.4th', 'utf-8'),
   "03-sequence": fs.readFileSync(__dirname + '/03/sequence.4th', 'utf-8'),
   "03-byte-string": fs.readFileSync(__dirname + '/03/byte_string.4th', 'utf-8'),
+  "03-input-device": fs.readFileSync(__dirname + '/03/input-device.4th', 'utf-8'),
   "03-storage-devices": fs.readFileSync(__dirname + '/03/storage_devices.4th', 'utf-8'),
   "03-storage": fs.readFileSync(__dirname + '/03/storage.4th', 'utf-8'),
   "03-storage-test": fs.readFileSync(__dirname + '/03/storage_test.4th', 'utf-8'),
@@ -567,6 +568,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     interp(asm, forth_sources['02-btree']);
     interp(asm, forth_sources['02-fast-dict']);
     interp(asm, forth_sources['02-debug']);
+    interp(asm, forth_sources['03-input-device']);
     interp(asm, forth_sources['04-tty']);
     interp(asm, forth_sources['04-tty-readline']);
     interp(asm, forth_sources['help-tty-attrs']);
