@@ -24,8 +24,11 @@ defop('jump', function(asm) {
 
 defop('exec', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.R0).uint32(4).
-      ret();
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-word-code');
+});
+
+defop('exec-word', function(asm) {
+  asm.load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.R0).uint32(4);
 });
 
 defop('call-data', function(asm) {
@@ -720,6 +723,32 @@ defop('args', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+defop('current-frame', function(asm) {
+  asm.
+      push(FP_REG).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+defop('set-current-frame', function(asm) {
+  asm.pop(FP_REG).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+})
+
+defop('cont', function(asm) {
+  asm.// the called
+  pop(VM.CPU.REGISTERS.R0).
+      // return to the caller's caller
+      load(EVAL_IP_REG, 0, FP_REG).uint32(FRAME_RETURN_ADDRESS_OFFSET).
+      // pop the frame
+      load(FP_REG, 0, FP_REG).uint32(0).
+      // exec the called in R0
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-word-code');
+}, "Returns from but keeps the current frame on stack and then execs the ToS. Effectively continues the full frame into the ToS.");
+
+/*
+ *  Data stack ops
+ */
+
 defop('dpush', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
@@ -784,21 +813,14 @@ defop('dhere', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('current-frame', function(asm) {
-  asm.
-      push(FP_REG).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
-defop('set-current-frame', function(asm) {
-  asm.pop(FP_REG).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-})
-
 defop('data-segment', function(asm) {
   asm.push(VM.CPU.REGISTERS.DS).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
+
+/*
+ * Dictionary ops
+ */
 
 defop('dict', function(asm) {
   asm.
