@@ -57,7 +57,6 @@ const forth_sources = {
   "core-4": fs.readFileSync(__dirname + '/04/core.4th', 'utf-8'),
   "core-constants": fs.readFileSync(__dirname + '/04/constants.4th', 'utf-8'),
   extra: fs.readFileSync(__dirname + '/forth_extra.4th', 'utf-8'),
-  fast_dict: fs.readFileSync(__dirname + '/02/fast_dict.4th', 'utf-8'),
   assembler: fs.readFileSync(__dirname + '/02/assembler.4th', 'utf-8'),
   ops: fs.readFileSync(__dirname + '/02/ops.4th', 'utf-8')
 };
