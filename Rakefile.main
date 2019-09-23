@@ -281,7 +281,7 @@ directory release_root do
 end
 
 namespace :release do
-  task :deps => [ :default, release_root ]
+  task :deps => [ release_root ]
 
   task :sync => [ 'release:deps' ] do
     sh("cd #{release_root} && rake init && rake pages")
