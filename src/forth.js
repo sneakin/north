@@ -22,10 +22,12 @@ const forth_sources = {
   "01-init": fs.readFileSync(__dirname + '/01/init.4th', 'utf-8'),  
   "01-atoi": fs.readFileSync(__dirname + '/01/atoi.4th', 'utf-8'),
   "01-tty": fs.readFileSync(__dirname + '/01/tty.4th', 'utf-8'),
+  "01-output": fs.readFileSync(__dirname + '/01/output.4th', 'utf-8'),  
   "01-dict": fs.readFileSync(__dirname + '/01/dict.4th', 'utf-8'),  
   "01-about": fs.readFileSync(__dirname + '/01/about.4th', 'utf-8'),  
   "01-help": fs.readFileSync(__dirname + '/01/help.4th', 'utf-8'),  
   "01-data_stack": fs.readFileSync(__dirname + '/01/data_stack.4th', 'utf-8'),  
+  "01-char": fs.readFileSync(__dirname + '/01/char.4th', 'utf-8'),  
   "01-seq": fs.readFileSync(__dirname + '/01/seq.4th', 'utf-8'),  
   "01-compiler": fs.readFileSync(__dirname + '/01/compiler.4th', 'utf-8'),  
   "01-structs": fs.readFileSync(__dirname + '/01/structs.4th', 'utf-8'),  
@@ -535,10 +537,12 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     eval(fs.readFileSync(plat_path + '/forth_interrupts.js', 'utf-8'));
     
     //interp(asm, forth_sources['01-atoi']);
+    interp(asm, forth_sources['01-output']);
     interp(asm, forth_sources['01-dict']);
     interp(asm, forth_sources['01-about']);
     interp(asm, forth_sources['01-help']);
     interp(asm, forth_sources['01-data_stack']);
+    interp(asm, forth_sources['01-char']);
     interp(asm, forth_sources['01-seq']);
     interp(asm, forth_sources['01-tty']);
     interp(asm, forth_sources['01-stack']);

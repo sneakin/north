@@ -1,18 +1,18 @@
 ( String output: )
 
 : write-string
-  arg0 int32 4 int-add
+  arg0 seq-data swapdrop
 
   write-string-loop:
-    dup peek dup
-    terminator equals IF drop2 return0 THEN
+    dup peek
+    terminator? IF return0 THEN
     write-byte
-    int32 4 int-add
+    cell+ swapdrop
     literal write-string-loop jump
 ;
 
 : write-string-n
-  arg1 int32 4 int-add
+  arg1 seq-data swapdrop
   dup
   arg0 cell* swapdrop
   int-add
@@ -21,11 +21,10 @@
 
   write-string-n-loop:
   dup peek
-  dup
-  terminator equals IF drop2 return0 THEN
+  terminator? IF return0 THEN
   write-byte
-  int32 4 int-add
-  2dup equals IF drop2 return0 THEN
+  cell+ swapdrop
+  2dup equals IF return0 THEN
   literal write-string-n-loop jump
 ;
   
@@ -37,8 +36,8 @@
 
   write-string-rev-loop:
   dup peek write-byte
-  int32 -4 int-add
-  2dup equals IF drop2 return0 THEN
+  cell- swapdrop
+  2dup equals IF return0 THEN
   literal write-string-rev-loop jump
 ;
 
@@ -55,7 +54,7 @@
   here
   dup current-frame swap uint-sub
   cell/ swapdrop
-  intern return1
+  intern return1 ( todo pass in string output pointer )
 ;
 
 ( Convert an unsigned integer value to a string. )
