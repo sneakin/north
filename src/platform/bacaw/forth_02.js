@@ -1,4 +1,3 @@
-
 defop('eip', function(asm) {
   asm.push(EVAL_IP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
@@ -39,31 +38,6 @@ defop('return0-n', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-// fixme to tailcall, call-data* needs to not create the frame
-// or detect if an op is called or not and jump w/ IP or EIP
-
-defop('tailcall', function(asm) {
-  asm.
-      // save where to call
-      //pop(VM.CPU.REGISTERS.R0).
-      // pop frame
-      //mov(VM.CPU.REGISTERS.SP, FP_REG).
-      //load(EVAL_IP_REG, 0, FP_REG).uint32(4).
-      load(FP_REG, 0, FP_REG).uint32(0).
-      //pop(FP_REG).
-      //pop(EVAL_IP_REG).
-      // place to call
-      //push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-code');
-});
-
-defop('cont', function(asm) {
-  asm.pop(EVAL_IP_REG).
-      // pop frame
-      load(FP_REG, 0, FP_REG).uint32(0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
 defop('call-op', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.IP);
@@ -82,9 +56,8 @@ defop('call-op-param', function(asm) {
 });
 
 defop('tailcall-param', function(asm) {
-  asm.
-      push(EVAL_IP_REG).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('tailcall-code');
+  asm.push(EVAL_IP_REG).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('cont-code');
 });
 
 defop('tailcall-op', function(asm) {
@@ -145,3 +118,22 @@ defop('pop-to', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+
+defop('do-op-trace', function(asm) {
+  asm.push(VM.CPU.REGISTERS.R0).
+      //mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32('on-trace-op').
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-word-code');
+});
+
+defop('do-trace', function(asm) {
+  asm.push(VM.CPU.REGISTERS.R0).
+      //mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32('on-trace').
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-word-code');
+});
+
+defop('jump-return', function(asm) {
+  asm.pop(EVAL_IP_REG).
+      pop(VM.CPU.REGISTERS.IP);
+}, "Pops values into eval IP and the CPU's IP.");

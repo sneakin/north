@@ -16,7 +16,9 @@ const forth_sources = {
   "00-output": fs.readFileSync(__dirname + '/00/output.4th', 'utf-8'),  
   "00-ui": fs.readFileSync(__dirname + '/00/ui.4th', 'utf-8'),  
   "00-about": fs.readFileSync(__dirname + '/00/about.4th', 'utf-8'),  
+  "00-assert": fs.readFileSync(__dirname + '/00/assert.4th', 'utf-8'),  
   "00-init": fs.readFileSync(__dirname + '/00/init.4th', 'utf-8'),  
+  "00-shorthand": fs.readFileSync(__dirname + '/00/shorthand.4th', 'utf-8'),
   "01-init": fs.readFileSync(__dirname + '/01/init.4th', 'utf-8'),  
   "01-atoi": fs.readFileSync(__dirname + '/01/atoi.4th', 'utf-8'),
   "01-tty": fs.readFileSync(__dirname + '/01/tty.4th', 'utf-8'),
@@ -33,6 +35,7 @@ const forth_sources = {
   "02-memdump": fs.readFileSync(__dirname + '/02/memdump.4th', 'utf-8'),  
   "02-decompiler": fs.readFileSync(__dirname + '/02/decompiler.4th', 'utf-8'),  
   "02-misc": fs.readFileSync(__dirname + '/02/misc.4th', 'utf-8'),
+  '02-debug': fs.readFileSync(__dirname + '/02/debug.4th', 'utf-8'),
   "03-assembler": fs.readFileSync(__dirname + '/03/assembler.4th', 'utf-8'),
   "03-interrupts": fs.readFileSync(__dirname + '/03/interrupts.4th', 'utf-8'),
   "03-sequence": fs.readFileSync(__dirname + '/03/sequence.4th', 'utf-8'),
@@ -517,6 +520,8 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   interp(asm, forth_sources['00-core-compiler']);
   interp(asm, forth_sources['00-output']);
   interp(asm, forth_sources['00-about']);
+  interp(asm, forth_sources['00-assert']);
+  interp(asm, forth_sources['00-shorthand']);
   interp(asm, forth_sources['00-init']);
 
   if(stage.indexOf('stage0') >= 0) {
@@ -526,6 +531,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   if(stage.indexOf('stage1') >= 0 ||
      stage.indexOf('stage2') >= 0) {
     eval(fs.readFileSync(plat_path + '/forth_01.js', 'utf-8'));
+    eval(fs.readFileSync(plat_path + '/forth_02.js', 'utf-8'));
     eval(fs.readFileSync(plat_path + '/forth_interrupts.js', 'utf-8'));
     
     //interp(asm, forth_sources['01-atoi']);
@@ -549,7 +555,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
 
     //interp(asm, forth_sources['02-misc']);
     //interp(asm, forth_sources['extra']);
-    interp(asm, forth_sources['02-shorthand']);
+    interp(asm, forth_sources['02-debug']);
     interp(asm, forth_sources['04-tty']);
     interp(asm, forth_sources['help-tty-attrs']);
   }

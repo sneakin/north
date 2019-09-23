@@ -75,8 +75,10 @@ STAGE0_SRC = [ 'forth.js',
                '00/compiler.4th',
                '00/output.4th',
                '00/about.4th',
+               '00/assert.4th',
                '00/init.4th',
-               '00/ui.4th'
+               '00/ui.4th',
+               '00/shorthand.4th'
              ].collect { |s| root.join('src', s) }
 STAGE0_TARGET = buildroot.join('north-stage0.bin')
 
@@ -106,6 +108,7 @@ STAGE1_SRC = [ *STAGE0_SRC,
                '02/decompiler.4th',
                '02/misc.4th',
                '02/assembler.4th',
+               '02/debug.4th',
                '03/assembler.4th',
                '03/byte_string.4th',
                '03/sequence.4th',
@@ -134,30 +137,11 @@ end
 
 stage :stage1, STAGE1_TARGET, STAGE1_MIN_TARGET
 
-STAGE2_SRC = [ *STAGE0_SRC,
-               'platform/bacaw/forth_01.js',
-               '01/atoi.4th',
-               '01/tty.4th',
-               '01/dict.4th',
-               '01/seq.4th',
-               '01/ui.4th',
-               '02/memdump.4th',
-               '02/decompiler.4th',
-               '02/misc.4th',
-               '02/assembler.4th',
-               '03/assembler.4th',
-               '03/byte_string.4th',
-               '03/sequence.4th',
-               'platform/bacaw/forth_interrupts.js',
-               '03/interrupts.4th',
+STAGE2_SRC = [ *STAGE1_SRC,
                '03/storage.4th',
                '03/storage_devices.4th',
                '03/storage_test.4th',
-               '02/sound.4th',
-               'forth_extra.4th',
-               '04/core.4th',
-               '04/constants.4th',
-               '02/ops.4th'
+               '02/sound.4th'
              ].collect { |s| root.join('src', s) }
 STAGE2_TARGET = buildroot.join('north-stage2.bin')
 
