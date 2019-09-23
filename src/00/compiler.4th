@@ -10,7 +10,7 @@
 : immediate-dict-add
   doc( Create and add an immediate dictionary entry. )
   args( name code date ++ dict-entry )
-  arg2 arg1 arg0 immediate-dict peek make-dict
+  immediate-dict peek arg2 arg1 arg0 make-dict/4
   dup immediate-dict poke
   return1
 ;
@@ -89,8 +89,8 @@
 ;
 
 : internrev
-  doc( Copy num-bytes in reverse order into a sequence in the data stack. )
-  args( src num-bytes ++ sequence )
+  doc( Copy num-cells in reverse order into a sequence in the data stack. )
+  args( src num-cells ++ sequence )
   arg0 dallot-seq
   ( copy )
   cell+ arg1 swap arg0 cell* swapdrop copyrev drop3

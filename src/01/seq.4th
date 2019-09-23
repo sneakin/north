@@ -18,8 +18,7 @@ alias swap-return-address swap
   arg0 cell+ return1
 ;
 
-
-( Sequence iteration: )
+( Sequence iteration: )
 
 : revmap-seq ( ptr count fn )
   arg1 int32 0 <= IF return0 THEN
@@ -45,11 +44,7 @@ alias swap-return-address swap
 ;
 
 : map-seq-n ( ptr count fn )
-    end
-    int32 0
-    swap-return-address
-    ( rot-call-frame ) ( rot swap )
-    literal map-seq/4 jump-entry-data
+    arg2 arg1 arg0 int32 0 map-seq/4
 ;
 
 : map-seq ( seq fn )

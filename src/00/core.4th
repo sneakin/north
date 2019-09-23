@@ -206,7 +206,8 @@
 ;
 
 : intern-seq
-  ( seq-ptr num-cells )
+    doc( Copy a number of cells from the head of a sequence into a new sequence on the data stack. )
+    args( seq-ptr num-cells )
   ( calc byte size & alloc )
   arg0 dallot-seq
   ( copy )
@@ -222,6 +223,8 @@
 ;
 
 : intern
+    doc( Copies a number of cells into a sequence on the data stack. )
+    args( src number-cells ++ sequence )
   arg0 dallot-seq
   ( copy )
   cell+ arg1 swap arg0 cell* swapdrop copy drop3
@@ -231,20 +234,21 @@
 
 ( Dictionary )
 
-: make-dict ( name code data link => entry-ptr )
-  arg3 dpush ( name ) 
+: make-dict/4
+    args( link name code data => entry-ptr )
+  arg2 dpush ( name ) 
   dhere 
-  arg2 dpush ( code ) 
-  arg1 dpush ( data )
+  arg1 dpush ( code ) 
+  arg0 dpush ( data )
   literal 0 dpush ( doc )
   literal 0 dpush ( args )
-  arg0 dpush ( link )
+  arg3 dpush ( link )
   return1    ( dhere )
 ;
 
 : add-dict
   ( name code data )
-  arg2 arg1 arg0 dict make-dict 
+    dict arg2 arg1 arg0 make-dict/4 
   dup set-dict 
   return1
 ;
@@ -495,7 +499,8 @@
 ;
 
 : in-range?
-  ( Max min value )
+    doc( Inclusively test if VALUE is between MAX and MIN. )
+    args( Max min value ++ result )
   arg0 dup arg1 >= IF
     arg2 <= IF int32 1 return1 THEN
     int32 0 return1

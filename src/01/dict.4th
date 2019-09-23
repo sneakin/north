@@ -11,9 +11,8 @@
 ;
 
 : add-dict-after
-    arg3 arg2 arg1
     arg0 dict-entry-next swapdrop
-    make-dict
+    arg3 arg2 arg1 make-dict/4
     arg0 set-dict-entry-next
     drop return1
 ;
@@ -120,4 +119,17 @@
   int-add cell+ peek
   terminator?
   return1
+;
+
+( Dictionary building helpers: )
+
+: aliases>
+    doc( Creates a dictionary entry named NAME, linked to the PREV-ENTRY
+    and with the same code and data values as the following param. )
+    args( prev-entry name : entry-to-copy ++ dict-entry )
+    arg1
+    arg0
+    next-param dict-entry-code
+    swap dict-entry-data swapdrop
+    make-dict/4 return1
 ;
