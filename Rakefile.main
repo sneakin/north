@@ -2,23 +2,23 @@ require 'pathname'
 require 'shellwords'
 require 'rbconfig'
 
-root = Pathname.new(__FILE__).parent.expand_path
-buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', root.join('build')))
-release_root=Pathname.new(ENV.fetch('RELEASE_ROOT', root.join('tmp/release')))
-pages_root=Pathname.new(ENV.fetch('PAGES_ROOT', root.join('tmp/gh-pages')))
+$root = Pathname.new(__FILE__).parent.expand_path
+buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', $root.join('build')))
+release_root=Pathname.new(ENV.fetch('RELEASE_ROOT', $root.join('tmp/release')))
+pages_root=Pathname.new(ENV.fetch('PAGES_ROOT', $root.join('tmp/gh-pages')))
 
-$: << root.join('lib')
-$: << root.join('vendor/rake-node/lib')
-$:.unshift(root.join('vendor/webrick/lib'))
+$: << $root.join('lib')
+$: << $root.join('vendor/rake-node/lib')
+$:.unshift($root.join('vendor/webrick/lib'))
 
 require 'rake/browserify'
 
-BCROOT = Pathname.new(ENV.fetch('BACAW', root.join('vendor', 'bacaw')))
+BCROOT = Pathname.new(ENV.fetch('BACAW', $root.join('vendor', 'bacaw')))
 BCBIN = BCROOT.join('bin', 'bccon.js')
 BCLIB = BCROOT.join('js', 'lib')
 
 BCCON = "node #{Shellwords.escape(BCBIN)}"
-NODE_PATH << [ root.join('src'), BCLIB ]
+NODE_PATH << [ $root.join('src'), BCLIB ]
 
 outputs = [ 'north-stage0.bin',
             'north-stage0-min.bin',
@@ -61,7 +61,59 @@ def stage(name, target, min_target = nil)
   end
 end
 
-file root.join('src', 'version.txt') => [ root.join('version.txt'), root.join('.git/HEAD') ] do |t|
+namespace :version do
+  def read_version(path = $root.join('version.txt'))
+    v = File.read(path)
+    p = v.match(/(\d+)\.(\d+)\.(\d+)/)
+    if p
+      v = [ p[1], p[2], p[3] ].collect(&:to_i)
+    else
+      v = [ 0, 0, 0 ]
+    end
+  end
+
+  def version_string(v)
+    v.collect(&:to_s).join('.')
+  end
+
+  def write_version_io(v, io)
+    io.puts(version_string(v))
+  end
+
+  def write_version(v, path = $root.join('version.txt'))
+    File.open(path, 'w') do |f|
+      write_version_io(v, f)
+    end
+  end
+
+  task :echo do
+    write_version_io(read_version, $stdout)
+  end
+
+  task :commit do
+    commit_version
+  end
+
+  def commit_version
+    v = version_string(read_version)
+    sh("git commit -m 'Bumped version to #{v}.' version.txt")
+  end
+
+  namespace :bump do
+    { major: 0, minor: 1, release: 2 }.each do |name, index|
+      desc "Bump the #{name} version number in version.txt."
+      task name do
+        v = read_version
+        v[index] += 1
+        write_version(v)
+        write_version_io(v, $stdout)
+        commit_version
+      end
+    end
+  end
+end
+
+file $root.join('src', 'version.txt') => [ $root.join('version.txt'), $root.join('.git/HEAD') ] do |t|
   head = `git rev-parse HEAD`
   now = Time.now
   File.open(t.name, 'w') do |f|
@@ -82,18 +134,18 @@ STAGE0_SRC = [ 'forth.js',
                '00/init.4th',
                '00/ui.4th',
                '00/shorthand.4th'
-             ].collect { |s| root.join('src', s) }
+             ].collect { |s| $root.join('src', s) }
 STAGE0_TARGET = buildroot.join('north-stage0.bin')
 
 file STAGE0_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
-  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
   sh("node #{bin} stage0 > #{t.name}")
 end
 
 namespace :x86 do
   X86_STAGE0_TARGET = buildroot.join('north-x86-stage0.pop')
   file X86_STAGE0_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
-    bin = Shellwords.escape(root.join('bin', 'meta-x86.js'))
+    bin = Shellwords.escape($root.join('bin', 'meta-x86.js'))
     sh("node #{bin} stage0 > #{t.name}")
   end
 
@@ -102,7 +154,7 @@ end
 
 STAGE0_MIN_TARGET = buildroot.join('north-stage0-min.bin')
 file STAGE0_MIN_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
-  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
   sh("node #{bin} stage0-min > #{t.name}")
 end
 
@@ -142,18 +194,18 @@ STAGE1_SRC = [ *STAGE0_SRC,
                '04/tty-readline.4th',
                '04/rand.4th',
                'help/tty-attrs.4th'
-             ].collect { |s| root.join('src', s) }
+             ].collect { |s| $root.join('src', s) }
 STAGE1_TARGET = buildroot.join('north-stage1.bin')
 
 file STAGE1_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
-  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
   sh("node #{bin} stage1 > #{t.name}")
 end
 
 STAGE1_MIN_TARGET = buildroot.join('north-stage1-min.bin')
 
 file STAGE1_MIN_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
-  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
   sh("node #{bin} stage1-min > #{t.name}")
 end
 
@@ -164,18 +216,18 @@ STAGE2_SRC = [ *STAGE1_SRC,
                '03/storage_devices.4th',
                '03/storage_test.4th',
                '02/sound.4th'
-             ].collect { |s| root.join('src', s) }
+             ].collect { |s| $root.join('src', s) }
 STAGE2_TARGET = buildroot.join('north-stage2.bin')
 
 file STAGE2_TARGET => [ buildroot, *STAGE2_SRC ] do |t|
-  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
   sh("node #{bin} stage2 > #{t.name}")
 end
 
 STAGE2_MIN_TARGET = buildroot.join('north-stage2-min.bin')
 
 file STAGE2_MIN_TARGET => [ buildroot, *STAGE2_SRC ] do |t|
-  bin = Shellwords.escape(root.join('bin', 'meta-north.js'))
+  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
   sh("node #{bin} stage2-min > #{t.name}")
 end
 
@@ -184,7 +236,7 @@ stage :stage2, STAGE2_TARGET, STAGE2_MIN_TARGET
 STAGE3_SRC = [ 'build-stage3.4th',
                '02/assembler.4th',
                '02/ops.4th'
-             ].collect { |s| root.join('src', s) }
+             ].collect { |s| $root.join('src', s) }
 STAGE3_TARGET = buildroot.join('north-stage3.bin')
 
 file STAGE3_TARGET => [ buildroot, STAGE0_TARGET, *STAGE3_SRC ] do |t|
@@ -200,7 +252,7 @@ stage :stage3, STAGE3_TARGET
   'manifest.webmanifest'
 ].each do |name|
   output = buildroot.join(name)
-  src = root.join('www', name)
+  src = $root.join('www', name)
 
   directory File.dirname(output)
   
@@ -214,12 +266,12 @@ task :stage4 do
   raise NotImplementedError
 end
 
-BrowserifyRunner.bundle buildroot.join('service_worker.js') => [ root.join('www/service_worker.js') ]
-BrowserifyRunner.bundle buildroot.join('ipfs.js') => [ root.join('www/ipfs.js') ]
-BrowserifyRunner.bundle buildroot.join('index.js') => [ root.join('www/index.js'), STAGE0_TARGET, STAGE1_TARGET, STAGE2_TARGET ]
-html_file buildroot.join('index.html') => [ root.join('www/index.src.html'), buildroot.join('index.js'), buildroot.join('xterm.css') ]
+BrowserifyRunner.bundle buildroot.join('service_worker.js') => [ $root.join('www/service_worker.js') ]
+BrowserifyRunner.bundle buildroot.join('ipfs.js') => [ $root.join('www/ipfs.js') ]
+BrowserifyRunner.bundle buildroot.join('index.js') => [ $root.join('www/index.js'), STAGE0_TARGET, STAGE1_TARGET, STAGE2_TARGET ]
+html_file buildroot.join('index.html') => [ $root.join('www/index.src.html'), buildroot.join('index.js'), buildroot.join('xterm.css') ]
 
-file buildroot.join('xterm.css') => root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
+file buildroot.join('xterm.css') => $root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
   FileUtils.copy(t.sources[0], t.name)
 end
 
@@ -231,7 +283,7 @@ task :serve do
   require 'rake-node/http/server'
   RakeNode::HTTP.run(:Port => ENV.fetch('PORT', 9090).to_i,
                      :DocumentRoot => buildroot,
-                     :SSLCertPrefix => root.join('server'),
+                     :SSLCertPrefix => $root.join('server'),
                      :Domain => ENV.fetch('DOMAIN', nil),
                      :IP => ENV.fetch('IP', nil),
                      :ca => ENV.fetch('CA', nil),
@@ -254,7 +306,7 @@ namespace :doc do
 end
 
 directory pages_root do
-  sh("git branch -f gh-pages origin/gh-pages && git clone -b gh-pages #{root} #{pages_root}")
+  sh("git branch -f gh-pages origin/gh-pages && git clone -b gh-pages #{$root} #{pages_root}")
 end
 
 namespace :pages do
@@ -276,15 +328,17 @@ task :pages do
   sh("rake pages:sync")
 end
 
-directory release_root do
-  sh("git clone -b master #{root} #{release_root}")
+task :prerelease => [ 'version:bump:release' ]
+
+directory release_root => :prerelease do
+  sh("git clone -b master #{$root} #{release_root}")
 end
 
 namespace :release do
   task :deps => [ release_root ]
 
   task :sync => [ 'release:deps' ] do
-    sh("cd #{release_root} && rake init && rake pages")
+    sh("cd #{release_root} && git pull && rake init && rake pages")
     sh("cd #{release_root} && git push origin gh-pages")
   end
 
