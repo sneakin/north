@@ -22,5 +22,5 @@ var platform = {
 };
 var asm = new Assembler();
 var bin = Forth.assemble(data_segment, 0, info, stage, platform, asm);
-var buf = new Buffer(bin.buffer);
+var buf = Buffer.from(bin.buffer);
 process.stdout.write(buf);
