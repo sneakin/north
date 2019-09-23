@@ -5,11 +5,10 @@
     ("\\]\\w*"
      definition-ender
      (font-lock-keyword-face . 1))
-    (("def" "defop")
+    (("def" "defop" "::")
      definition-starter
      (font-lock-keyword-face . 1)
-     "[ 
-]" t name (font-lock-function-name-face . 3))
+     "[ \n]" t name (font-lock-function-name-face . 3))
     (("end")
      definition-ender
      (font-lock-keyword-face . 1))
@@ -26,7 +25,10 @@
      (font-lock-keyword-face . 1)
      "[ 	\n]" t name
      (font-lock-function-name-face . 3))
-    (("if" "unless" "else" "then" "begin" "end" "do" "while" "until" "leave" "recurse")
+    (("if" "unless" "else" "then" "begin" "end" "do" "while" "until" "leave" "recurse" "cont")
+     compile-only
+     (font-lock-keyword-face . 2))
+    ("return\\w*"
      compile-only
      (font-lock-keyword-face . 2))
     (("true" "false" "pi")
@@ -40,13 +42,14 @@
      (font-lock-keyword-face . 2)
      "[ 	\n]" t name
      (font-lock-function-name-face . 3))
-    (("'")
+    (("'" "''")
      non-immediate
      (font-lock-keyword-face . 2)
      "[ 	\n]" t name
      (font-lock-function-name-face . 3))
     (("create" "variable" "constant"
-      "literal" "int32" "pointer" "offset")
+      "literal" "int32" "pointer" "offset"
+      "char-code")
      non-immediate
      (font-lock-type-face . 2)
      "[ 	\n]" t name
@@ -87,7 +90,7 @@
     (("end")
      (-2 . 0)
      (0 . -2))
-    (("if" "unless" "else" "begin" "do")
+    (("if" "unless" "begin" "do")
      (0 . 2)
      (0 . 2))
     (("again" "then" "endif")
