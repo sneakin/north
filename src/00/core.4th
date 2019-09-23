@@ -426,9 +426,13 @@
 
 ( Input )
 
+: newline?
+    arg0 literal char-code \n equals return1
+;
+
 : read-line-inner
-  read-byte dup
-  literal char-code \n equals IF dpush return0 THEN
+  read-byte
+  newline? IF dpush return0 THEN
   dpush
   RECURSE
 ;

@@ -408,6 +408,7 @@
     int32 char-code r over equals IF int32 char-code \r ( $D ) return1 THEN
     int32 char-code t over equals IF int32 char-code \t ( 9 ) return1 THEN
     int32 char-code \\ over equals IF int32 char-code \\ ( $5c ) return1 THEN
+    int32 char-code \" over equals IF int32 char-code \" ( $22 ) return1 THEN
     int32 char-code x over equals IF drop tokenizer-read-hex2-digits return1 THEN
     int32 char-code u over equals IF drop tokenizer-read-hex8-digits return1 THEN
     int32 char-code 0 over equals IF drop tokenizer-read-octal-digits return1 THEN

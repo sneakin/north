@@ -30,7 +30,7 @@
 ( Dictionary output listing: )
 
 : write-dict-entry-name
-  arg0 dict-entry-name write-string
+  arg0 dict-entry-name write-escaped-string
 ;
 
 : write-dict-entry-data
@@ -39,6 +39,10 @@
 
 : write-dict-entry-code
   arg0 dict-entry-code write-unsigned-int 
+;
+
+: write-dict-entry-next
+  arg0 dict-entry-next write-unsigned-int
 ;
 
 : write-dict-entry-kind
@@ -66,8 +70,9 @@
   arg0
   write-dict-entry-kind write-tab 
   write-dict-entry-name write-tab 
-  write-dict-entry-code write-tab 
-  write-dict-entry-data write-crnl 
+  write-dict-entry-code write-tab
+  write-dict-entry-data write-tab 
+  write-dict-entry-next write-crnl 
 ;
 
 ( Write a dictionary out entry by entry. )
