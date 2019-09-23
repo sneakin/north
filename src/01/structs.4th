@@ -107,20 +107,25 @@ field: fields
     structure-gen-accessor
 ;
 
+: next-word
+    next-token UNLESS eos error THEN
+    return1
+;
+
 : field/3:
-    next-param next-int next-int rot field/3
+    next-word next-int next-int rot field/3
 ;
 
 : bytes:
-     int32 0 next-param next-int swap field/3
+     int32 0 next-word next-int swap field/3
 ;
 
 : cells:
-     int32 0 next-param next-int cell* swapdrop swap field/3
+     int32 0 next-word next-int cell* swapdrop swap field/3
 ;
 
 : field:
-     int32 0 cell-size next-param field/3
+     int32 0 cell-size next-word field/3
 ;
 
 : make-instance

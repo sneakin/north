@@ -62,7 +62,8 @@ defop('jump-entry-data', function(asm) {
 //    call arguments...
 //    caller's locals
 //    previous frame
-var FRAME_SIZE = 4 * 2;
+var FRAME_RETURN_ADDRESS_OFFSET = CELL_SIZE;
+var FRAME_SIZE = CELL_SIZE * 2;
 
 defop('begin', function(asm) {
   asm.push(FP_REG).
@@ -601,17 +602,24 @@ defop('arg3', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+defop('arg4', function(asm) {
+  asm.
+      load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_SIZE + 16).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 defop('next-param', function(asm) {
   asm.
       // get the return address
-      load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
+      load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_RETURN_ADDRESS_OFFSET).
       // load the value
       load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.R0).uint32(0).
       push(VM.CPU.REGISTERS.R1).
-      // move it up a cell
-      inc(VM.CPU.REGISTERS.R0).uint32(4).
+      // move the return address up a cell
+      inc(VM.CPU.REGISTERS.R0).uint32(CELL_SIZE).
       // update it
-      store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
+      store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_RETURN_ADDRESS_OFFSET).
       // done
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
       ret();
@@ -619,7 +627,7 @@ defop('next-param', function(asm) {
 
 defop('return-address', function(asm) {
   asm.
-      load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(4).
+      load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_RETURN_ADDRESS_OFFSET).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
@@ -712,7 +720,7 @@ defop('dallot', function(asm) {
       push(HEAP_REG).
       mov(HEAP_REG, VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Allocate a number of bytes on the data stack.");
 
 defop('dallot-seq', function(asm) {
   asm.// store buffer's length
@@ -733,7 +741,7 @@ defop('dallot-seq', function(asm) {
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(TERMINATOR).
       store(VM.CPU.REGISTERS.R0, 0, HEAP_REG).uint32(-4).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Allocate a terminated sequence of cells on the data stack.");
 
 defop('dhere', function(asm) {
   asm.
@@ -845,6 +853,19 @@ defop('pointer-peeker', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+defop('do-accessor', function(asm) {
+  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
+      pop(VM.CPU.REGISTERS.R1).
+      cls(VM.CPU.REGISTERS.STATUS).
+      addi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+/*
+ * Input ops
+ */
+
 defop('input-flush', function(asm) {
   asm.call(0, VM.CPU.REGISTERS.CS).uint32('input_flush').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
@@ -860,11 +881,3 @@ defop('wait-for-input', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('do-accessor', function(asm) {
-  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
-      pop(VM.CPU.REGISTERS.R1).
-      cls(VM.CPU.REGISTERS.STATUS).
-      addi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
-      push(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});

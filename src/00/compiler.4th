@@ -350,12 +350,12 @@
   immediate-dict peek dict-lookup return1
 ; immediate
 
-: [']
-  doc( Actually emit ' when ' is redefined to emit LITERAL. )
-  literal ' return1
+: ''
+  doc( Actually emit ' to be called later. )
+  literal POSTPONE ' return-locals ( a piece of magic )
 ; immediate-only
 
-: ''
+: [']
   doc( No need to perform a double lookup since compilation does that. )
   literal literal return1
 ; immediate-as '
