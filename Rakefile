@@ -122,7 +122,7 @@ STAGE1_SRC = [ *STAGE0_SRC,
                '04/constants.4th',
                '02/ops.4th',
                '04/tty.4th',
-               '04/rand.4th'
+               '04/rand.4th',
                'help/tty-attrs.4th'
              ].collect { |s| root.join('src', s) }
 STAGE1_TARGET = buildroot.join('north-stage1.bin')
