@@ -49,7 +49,7 @@
     " Dim" write-heading
     "  hey! " dim help-tty-color-table
     write-crnl
-    " Bright" write-heading
+    " Bold" write-heading
     "  hey! " bold help-tty-color-table
     write-crnl
     " Attributes" write-heading

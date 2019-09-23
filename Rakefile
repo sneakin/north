@@ -122,6 +122,7 @@ STAGE1_SRC = [ *STAGE0_SRC,
                '04/constants.4th',
                '02/ops.4th',
                '04/tty.4th',
+               '04/tty-readline.4th',
                '04/rand.4th',
                'help/tty-attrs.4th'
              ].collect { |s| root.join('src', s) }
