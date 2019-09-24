@@ -199,30 +199,37 @@ field right
     return1
 ;
 
-: btree-branch-split
-    args( branch span ++ new-branch )
-    ( .\n " btree-branch-split" .S arg1 .h arg0 .i )
-    ( new left w/ empty left )
+: make-empty-btree-branch
+    args( median span ++ branch )
     arg0 make-ordered-seq swapdrop
-    arg1 btree-branch-left @
-    btree-branch-shift UNLESS arg1 return1 THEN
+    arg0 make-ordered-seq swapdrop
+    arg1
     make-btree-branch
-    ( new right with empty right )
-    arg1 btree-branch-right @
-    btree-branch-pop UNLESS arg1 return1 THEN
-    arg0 make-ordered-seq swapdrop
-    swap make-btree-branch
-    ( new branch )
-    int32 4 overn
-    over
-    arg1 btree-branch-value @
+    return1
+;
+
+: btree-branch-promote
+    arg1 btree-branch-shift IF
+        swap
+        arg0 make-ordered-seq swapdrop
+        shift
+        make-btree-branch return1
+    THEN
+    arg1 return1
+;
+
+: btree-branch-recursive-split
+    args( branch span sort-fn key-fn ++ new-branch)
+    arg3 btree-branch-left @ arg2 arg1 arg0 btree-split rotdrop2 rotdrop2
+    arg3 btree-branch-right @ arg2 arg1 arg0 btree-split rotdrop2 rotdrop2
+    arg3 btree-branch-value @
     make-btree-branch return1
 ;
 
 : btree-split
     args( branch span sort-fn key-fn ++ new-branch)
     arg3
-    btree-branch? IF arg2 btree-branch-split return1 THEN
+    btree-branch? IF arg2 arg1 arg0 btree-branch-recursive-split return1 THEN
     terminator? IF arg3 return1 THEN
     arg1 arg0 btree-split-leaves return1
 ;
@@ -345,7 +352,7 @@ field right
         " terminator" .S
         return0
     THEN
-    " [" .s
+    " [" .S
     ' ,i map-ordered-seq
     " ]" .S
 ;
@@ -432,7 +439,7 @@ field span
     arg0 int32 0 > UNLESS return0 THEN
     arg0 int32 1 int-sub set-arg0
     arg0 arg1 exec arg2 btree-add
-    ( .\n " btree-map: " .S arg2 ' ,i btree-map .\n )
+    .\n " btree-map: " .S arg2 ' ,i btree-map drop2
     .\n " btree dump: " .S int32 2 overn .i
     .\n arg2 btree-dump
     RECURSE
@@ -527,7 +534,8 @@ field span
 ;
 
 : test-btree-add-rand/2
-    arg0 ' <=> ' identity make-btree rotdrop2
+    zero
+    arg0 ' <=> ' identity make-btree store-local0
     local0 ' random-1k arg1 test-btree-add-loop
     local0 return1
 ;
@@ -538,7 +546,8 @@ field span
 ;
 
 : test-btree-add-neg/2
-    arg0 ' <=> ' identity make-btree rotdrop2
+    zero
+    arg0 ' <=> ' identity make-btree store-local0
     local0 ' negate arg1 test-btree-add-loop
     local0 return1
 ;
