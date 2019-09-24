@@ -114,4 +114,50 @@
 (unless (assoc north-ext auto-mode-alist)
   (add-to-list 'auto-mode-alist (cons north-ext 'north-mode)))
 
+;; What Emacs' suggests:
+(defun north-renumber-args (n &optional increase start end)
+  (interactive
+   (list (read-number "First argument number?" 0)
+         (read-number "Increase by?" 1)
+         (if (use-region-p) (region-beginning) (point))
+         (if (use-region-p)
+             (region-end)
+           (save-excursion
+             (forward-paragraph 1)
+             (point)))))
+  (if (use-region-p) (goto-char start))
+  (message "Renumbering args from %i to +%i to point %i:%i." n increase start end)
+  (while (re-search-forward "arg\\([0-9]+\\)" end t)
+    (let ((num (string-to-number (match-string 1))))
+      (replace-match (format "arg%i" (if (>= num n)
+                                         (+ 1 num)
+                                       num))))))
 
+;; What I really want:
+(defun north-renumber-args (n &optional increase start end)
+  (interactive
+   (list (read-number "First argument number?" 0)
+         (read-number "Increase by?" 1)
+         (if (use-region-p) (region-beginning))
+         (if (use-region-p) (region-end))))
+  (perform-replace "arg\\([0-9]+\\)"
+                   (list (lambda (text counter)
+                           (let ((num (string-to-number (match-string 1))))
+                             (format "arg%i" (if (>= num n)
+                                                 (+ 1 num)
+                                               num)))))
+                   t t nil nil nil start end))
+
+(defun north-query-swap (from to &optional start end)
+  (interactive
+   (list (read-string "Swap: ")
+         (read-string "With: ")
+         (if (use-region-p) (region-beginning))
+         (if (use-region-p) (region-end))))
+  (perform-replace (format "\\(%s\\|%s\\)" (regexp-quote from) (regexp-quote to))
+                   (list (lambda (a b)
+                           (cond
+                            ((string= to (match-string 0)) from)
+                            ((string= from (match-string 0)) to)
+                            (t (error (format "Unknown match: %s" (match-string 0)))))))
+                   t t nil nil nil start end))
