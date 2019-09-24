@@ -37,6 +37,7 @@ const forth_sources = {
   "02-memdump": fs.readFileSync(__dirname + '/02/memdump.4th', 'utf-8'),  
   "02-decompiler": fs.readFileSync(__dirname + '/02/decompiler.4th', 'utf-8'),  
   "02-misc": fs.readFileSync(__dirname + '/02/misc.4th', 'utf-8'),
+  "02-cmp": fs.readFileSync(__dirname + '/02/cmp.4th', 'utf-8'),
   "02-ordered-seq": fs.readFileSync(__dirname + '/02/ordered-seq.4th', 'utf-8'),
   "02-btree": fs.readFileSync(__dirname + '/02/btree.4th', 'utf-8'),
   '02-fast-dict': fs.readFileSync(__dirname + '/02/fast_dict.4th', 'utf-8'),
@@ -563,6 +564,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
 
     //interp(asm, forth_sources['02-misc']);
     //interp(asm, forth_sources['extra']);
+    interp(asm, forth_sources['02-cmp']);
     interp(asm, forth_sources['02-ordered-seq']);
     interp(asm, forth_sources['02-btree']);
     interp(asm, forth_sources['02-fast-dict']);

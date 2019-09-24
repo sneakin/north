@@ -75,10 +75,11 @@ field right
 ;
 
 : btree-branch-shift-left
-    args( branch sort-fn ++ ok? )
+    args( branch sort-fn key-fn ++ ok? )
     ( " shift-left" .S )
-    arg1 btree-branch-value @
-    arg1 btree-branch-left @
+    arg2 btree-branch-value @
+    arg2 btree-branch-left @
+    arg1
     arg0
     btree-branch-add-inner UNLESS
         dup int32 4 overn equals UNLESS
@@ -88,9 +89,9 @@ field right
         THEN
         false return1
     THEN
-    arg1 btree-branch-right @ btree-branch-shift IF
+    arg2 btree-branch-right @ btree-branch-shift IF
         ( " shifted" .S ,i )
-        arg1 btree-branch-value !
+        arg2 btree-branch-value !
         true return1
     ELSE
         false return1
@@ -109,44 +110,44 @@ field right
 ;
 
 : btree-branch-add-inner
-    args( item branch sort-fn ++ reject no-reject? )
-    ( .\n " branch-add-inner: " .S arg2 .i arg1 .h )
-    arg1 btree-branch? IF
+    args( item branch sort-fn key-fn ++ reject no-reject? )
+    ( .\n " branch-add-inner: " .S arg3 .i arg2 .h )
+    arg2 btree-branch? IF
         ( left of center? )
-        arg2 arg1 btree-branch-value @ arg0 exec int32 0 < IF
+        arg3 arg2 btree-branch-value @ arg1 arg0 slot-cmp int32 0 < IF
             ( going left )
             ( " left" .S )
-            arg2 arg1 btree-branch-left @ arg0 btree-branch-add-inner IF
+            arg3 arg2 btree-branch-left @ arg1 arg0 btree-branch-add-inner IF
                 int32 -1 true return2
             ELSE
                 ( left had a reject )
                 ( " left-rejected" .S ,i )
                 ( set branch value to the left's reject )
-                arg1 btree-branch-value @
-                swap arg1 btree-branch-value !
+                arg2 btree-branch-value @
+                swap arg2 btree-branch-value !
                 ( try placing the branch value right )
-                arg1 btree-branch-right @ arg0 btree-branch-add-inner return2
+                arg2 btree-branch-right @ arg1 arg0 btree-branch-add-inner return2
             THEN
         ELSE
             ( going right )
-            arg2 arg1 btree-branch-right @ arg0 btree-branch-add-inner IF
+            arg3 arg2 btree-branch-right @ arg1 arg0 btree-branch-add-inner IF
                 ( " added" .S )
                 int32 -1 true return2
             ELSE
                 ( right had a reject )
                 ( " right rej" .S )
-                arg1 btree-branch-left @ btree-branch-full? UNLESS
+                arg2 btree-branch-left @ btree-branch-full? UNLESS
                     ( " lefting" .S )
                     ( pivot the branch left )
-                    arg1 arg0 btree-branch-shift-left UNLESS
+                    arg2 arg1 arg0 btree-branch-shift-left UNLESS
                         ( " shift failed" .S )
-                        int32 3 dropn
+                        int32 4 dropn
                         false return2
                     ELSE
                         ( " trying again" .S )
                         ( try adding the reject )
-                        int32 3 dropn
-                        set-arg2
+                        int32 4 dropn
+                        set-arg3
                         drop-locals RECURSE
                     THEN
                 ELSE
@@ -159,41 +160,42 @@ field right
     terminator? IF
         ( todo make a leaf branch )
         ( " terminator" .S )
-        arg2 false return2
+        arg3 false return2
     THEN
     ( " leaves" .S )
-    arg2 arg1 arg0 ordered-seq-add return2
+    arg3 arg2 arg1 arg0 ordered-seq-add return2
 ;
 
 : btree-move-leaves
-    args( src dest sort-fn n )
-    ( .\n " move-leaves" .S )
+    args( src dest sort-fn key-fn n )
+    ( .\n " move-leaves" .S arg0 .i )
     arg0 int32 1 > IF
         arg0 int32 1 int-sub set-arg0
-        arg2 ordered-seq-pop IF
-            arg1 arg0 ordered-seq-add IF
+        arg4 ordered-seq-pop IF
+            arg3 arg2 arg1 ordered-seq-add IF
                 drop-locals RECURSE
-            ELSE
-                " ordered-seq full" " btree-error" error
             THEN
         THEN
+        false return2
     ELSE
-        arg2 ordered-seq-pop return2
+        arg4 ordered-seq-pop return2
     THEN
 ;
 
 : btree-split-leaves
-    args( ordered-seq sort-fn ++ new-branch )
+    args( ordered-seq sort-fn key-fn ++ new-branch )
     ( .\n " split" .S )
     ( make a new ordered seq for the right )
-    arg1 ordered-seq-max-count swapdrop make-ordered-seq swapdrop
-    arg1 over
-    arg1 ordered-seq-count @ int32 2 int-div
+    arg2 ordered-seq-max-count swapdrop make-ordered-seq swapdrop
+    ( line up some args )
+    arg2 over arg1 arg0
+    ( dividing the seq in half )
+    arg2 ordered-seq-count @ int32 2 int-div
     btree-move-leaves UNLESS
         " failed to split branch" " btree-error" error
     THEN
-    ( make the branch )
-    arg1 local0 shift make-btree-branch
+    ( make the branch with a new left leaf )
+    arg2 local0 shift make-btree-branch
     return1
 ;
 
@@ -218,67 +220,67 @@ field right
 ;
 
 : btree-split
-    args( branch span sort-fn ++ new-branch)
-    arg2
-    btree-branch? IF arg1 btree-branch-split return1 THEN
-    terminator? IF arg2 return1 THEN
-    arg0 btree-split-leaves return1
+    args( branch span sort-fn key-fn ++ new-branch)
+    arg3
+    btree-branch? IF arg2 btree-branch-split return1 THEN
+    terminator? IF arg3 return1 THEN
+    arg1 arg0 btree-split-leaves return1
 ;
 
 : btree-branch-add
-    args( item branch span sort-fn ++ new-branch )
-    ( " branch-add: " .S arg3 .i )
-    arg3 arg2 arg0 btree-branch-add-inner UNLESS
+    args( item branch span sort-fn key-fn ++ new-branch )
+    ( " branch-add: " .S arg4 .i )
+    arg4 arg3 arg1 arg0 btree-branch-add-inner UNLESS
         ( " rejected" .S ,i )
-        arg2 arg1 arg0 btree-split rotdrop2 swapdrop
-        arg0 btree-branch-add-inner UNLESS
+        arg3 arg2 arg1 arg0 btree-split rotdrop2 rotdrop2
+        arg1 arg0 btree-branch-add-inner UNLESS
             " unable to add item" " btree-error" error
         THEN
-        drop2 return1
+        drop3 return1
     THEN
-    arg2 return1
+    arg3 return1
 ;
 
 : btree-branch-find-parent
-    args( key branch sort-fn ++ btree-branch found? )
-    .\n " find-parent" .S arg1 .h
-    arg1 btree-branch? IF
-        arg2 over btree-branch-value @ arg0 exec
+    args( key branch sort-fn key-fn ++ btree-branch found? )
+    .\n " find-parent" .S arg2 .h
+    arg2 btree-branch? IF
+        arg3 over btree-branch-value @ arg1 arg0 key-slot-cmp
         dup int32 0 equals IF
-            arg1 true return2
+            arg2 true return2
         THEN
         dup int32 0 < IF
-            arg1 btree-branch-left @
+            arg2 btree-branch-left @
         ELSE
-            arg1 btree-branch-right @
-        THEN set-arg1
+            arg2 btree-branch-right @
+        THEN set-arg2
         drop-locals RECURSE
     THEN
     terminator? UNLESS
-        arg2 arg1 arg0 ordered-seq-index IF
-            arg1 true return2
+        arg3 arg2 arg1 arg0 ordered-seq-index IF
+            arg2 true return2
         THEN
     THEN
     int32 0 false return2
 ;
 
 : btree-branch-find
-    args( key branch sort-fn ++ item found? )
-    .\n " find" .S arg1 .h
-    arg1 btree-branch? IF
-        arg2 over btree-branch-value @ arg0 exec
+    args( key branch sort-fn key-fn ++ item found? )
+    .\n " find" .S arg2 .h
+    arg2 btree-branch? IF
+        arg3 over btree-branch-value @ arg1 arg0 key-slot-cmp
         dup int32 0 equals IF
-            arg1 btree-branch-value @ true return2
+            arg2 btree-branch-value @ true return2
         THEN
         dup int32 0 < IF
-            arg1 btree-branch-left @
+            arg2 btree-branch-left @
         ELSE
-            arg1 btree-branch-right @
-        THEN set-arg1
+            arg2 btree-branch-right @
+        THEN set-arg2
         drop-locals RECURSE
     THEN
     terminator? UNLESS
-        arg2 arg1 arg0 ordered-seq-find IF
+        arg3 arg2 arg1 arg0 ordered-seq-find IF
             true return2
         THEN
     THEN
@@ -351,24 +353,27 @@ field right
 (
 structure btree
 field sort-fn
+field key-fn
 field tip
 field span
 )
 
 : btree-sort-fn arg0 return1-1 ;
-: btree-tip arg0 cell+ return1-1 ;
-: btree-span arg0 cell+2 return1-1 ;
+: btree-key-fn arg0 cell+ return1-1 ;
+: btree-tip arg0 cell+2 return1-1 ;
+: btree-span arg0 cell+3 return1-1 ;
 
 : dallot-btree
-    int32 3 cell* dallot return1
+    int32 4 cell* dallot return1
 ;
 
 : make-btree
-    args( span sort-fn ++ btree-ptr )
+    args( span sort-fn key-fn ++ btree-ptr )
     dallot-btree
-    arg0 local0 btree-sort-fn !
-    arg1 local0 btree-span !
-    arg1 make-ordered-seq local0 btree-tip !
+    arg0 local0 btree-key-fn !
+    arg1 local0 btree-sort-fn !
+    arg2 local0 btree-span !
+    arg2 make-ordered-seq local0 btree-tip !
     local0 return1
 ;
 
@@ -378,6 +383,7 @@ field span
     arg0 btree-tip @
     arg0 btree-span @
     arg0 btree-sort-fn @
+    arg0 btree-key-fn @
     btree-branch-add arg0 btree-tip !
 ;
 
@@ -385,6 +391,7 @@ field span
     arg1
     arg0 btree-tip @
     arg0 btree-sort-fn @
+    arg0 btree-key-fn @
     btree-branch-find
     return2
 ;
@@ -394,6 +401,7 @@ field span
     arg1
     arg0 btree-tip @
     arg0 btree-sort-fn @
+    arg0 btree-key-fn @
     btree-branch-find-parent
     return2
 ;
@@ -425,16 +433,17 @@ field span
     arg0 int32 1 int-sub set-arg0
     arg0 arg1 exec arg2 btree-add
     ( .\n " btree-map: " .S arg2 ' ,i btree-map .\n )
-    .\n " btree dump: " .S
+    .\n " btree dump: " .S int32 2 overn .i
     .\n arg2 btree-dump
     RECURSE
 ;
 
 : test-btree
+    zero
     dhere
-    int32 2 ' <=> make-btree rotdrop2
-    swap int32 12 cell+n rotdrop2
-    dhere " alloted 3+9 cells" assert-equal
+    int32 2 ' <=> ' identity make-btree store-local0
+    local1 int32 13 cell+n rotdrop2
+    dhere " alloted 4+9 cells" assert-equal
 
     int32 10 local0 btree-add
     int32 1 local0 btree-tip @ ordered-seq-count @ " increased tip's count" assert-equal
@@ -503,7 +512,8 @@ field span
 ;
 
 : test-btree-add/2
-    arg0 ' <=> make-btree rotdrop2
+    zero
+    arg0 ' <=> ' identity make-btree store-local0
     local0 ' identity arg1 test-btree-add-loop
     local0 return1
 ;
@@ -517,7 +527,7 @@ field span
 ;
 
 : test-btree-add-rand/2
-    arg0 ' <=> make-btree rotdrop2
+    arg0 ' <=> ' identity make-btree rotdrop2
     local0 ' random-1k arg1 test-btree-add-loop
     local0 return1
 ;
@@ -528,7 +538,7 @@ field span
 ;
 
 : test-btree-add-neg/2
-    arg0 ' <=> make-btree rotdrop2
+    arg0 ' <=> ' identity make-btree rotdrop2
     local0 ' negate arg1 test-btree-add-loop
     local0 return1
 ;

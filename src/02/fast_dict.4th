@@ -2,12 +2,6 @@ global-var dict-index
 global-var immediate-index
 constant *dict-index-span* 5
 
-: dict-entry-cmp-names
-    arg1 dict-entry? IF dict-entry-name swapdrop THEN
-    arg0 dict-entry? IF dict-entry-name swapdrop THEN
-    string-cmp return1
-;
-
 : dict-index-add
     args( entry btree )
     arg1 arg0 btree-add
@@ -20,7 +14,7 @@ constant *dict-index-span* 5
     dict-entry-name .S
     arg0 dict-index-add
     arg1 dict-entry-next set-arg1
-    RECURSE
+    drop-locals RECURSE
 ;
 
 : dict-reindex
@@ -29,9 +23,9 @@ constant *dict-index-span* 5
 ;
 
 : dict-index-reset
-    *dict-index-span* ' dict-entry-cmp-names make-btree
+    *dict-index-span* ' string-cmp ' dict-entry-name make-btree
     dict-index !
-    *dict-index-span* ' dict-entry-cmp-names make-btree
+    *dict-index-span* ' string-cmp ' dict-entry-name make-btree
     immediate-index !    
 ;
 
@@ -48,8 +42,10 @@ constant *dict-index-span* 5
 : dict-index-init
     dict-index @ UNLESS
         dict-index-reset
+        .\n bold " Indexing immediates" .s color-reset
+        immediate-dict @ immediate-index @ dict-reindex
+        .\n bold " Indexing dictionary" .s color-reset
         dict dict-index @ dict-reindex
-        immediate-dict immediate-index @ dict-reindex
         dict-index-patch
     THEN
 ;

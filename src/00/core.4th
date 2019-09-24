@@ -770,6 +770,12 @@
     peek set-arg0
 ;
 
+: set-argn
+    arg0 cell* call-frame-size int-add
+    current-frame parent-frame swapdrop int-add
+    arg1 swap poke
+;
+
 ( Some signed math: )
 
 : abs-int
