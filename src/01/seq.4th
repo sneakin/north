@@ -1,11 +1,3 @@
-: rot-call-frame
-    ( rot swap => A RA FP X -- A X RA FP ; roll? )
-    arg0
-    arg1 set-arg0
-    arg2 set-arg1
-    set-arg2
-;
-
 alias swap-return-address swap
     
 ( Sequence accessors: )

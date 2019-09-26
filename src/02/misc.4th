@@ -5,7 +5,7 @@
 ;
 
 : set-arg
-  current-frame parent-frame frame-size arg0 cell* swapdrop int-add int-add
+  current-frame parent-frame @ frame-size arg0 cell* swapdrop int-add int-add
   arg1 swap poke
   return-2
 ;
@@ -200,3 +200,4 @@
   write-ok int32 1146048327 write-word drop
   local2 return1
 ;
+

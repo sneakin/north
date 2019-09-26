@@ -19,25 +19,6 @@ defop('exec-data-seq', function(asm) {
   mov(VM.CPU.REGISTERS.IP, VM.CPU.REGISTERS.R1);
 });
 
-defop('return0-n', function(asm) {
-  asm.
-      // save number cells to pop
-      pop(VM.CPU.REGISTERS.R0).
-      // pop frame
-      mov(VM.CPU.REGISTERS.SP, FP_REG).
-      pop(FP_REG).
-      pop(EVAL_IP_REG).
-      // drop N arguments
-      load(VM.CPU.REGISTERS.R2, 0, VM.CPU.REGISTERS.INS).uint32(4).
-      cls(VM.CPU.STATUS.NUMERICS).
-      muli(VM.CPU.REGISTERS.R2, VM.CPU.REGISTERS.STATUS).
-      cls(VM.CPU.STATUS.NUMERICS).
-      addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
-      mov(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.R0).
-      // make call
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
 defop('call-op', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.IP);

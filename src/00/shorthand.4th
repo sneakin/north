@@ -21,3 +21,4 @@ alias . drop
 : ,d arg0 write-space write-int ;
 : .d arg0 ,d return-1 ;
 
+: q quit ; immediate

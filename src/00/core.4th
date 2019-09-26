@@ -163,11 +163,11 @@
 ;
 
 : parent-frame
-  arg0 peek return1
+    ( first element, so nop )
 ;
 
 : set-arg0
-  current-frame parent-frame
+  current-frame parent-frame @
   frame-size int-add
   arg0 swap poke
   return-1
@@ -191,6 +191,24 @@
 
 : copy ( src dest number )
   arg2 arg1 arg0 int32 0 copy-n
+;
+
+: copydown-loop ( src dest counter )
+  ( dec )
+  arg0 cell- swapdrop set-arg0
+  ( dest )
+  arg0 arg1 int-add
+  ( src )
+  arg0 arg2 int-add
+  peek
+  ( store )
+  swap poke
+  ( loop? )
+  arg0 int32 0 > IF RECURSE THEN
+;
+
+: copydown ( src dest number )
+  arg2 arg1 arg0 copydown-loop
 ;
 
 ( Sequence storage )
@@ -736,8 +754,13 @@
 
 ( Call frames continued: )
 
+: return1-1
+    doc( Returns from a frame by replacing an argment with the return value. )
+    drop-call-frame set-arg0
+;
+
 : set-arg1
-  current-frame parent-frame
+  current-frame parent-frame @
   frame-size cell+ swapdrop
   int-add
   arg0 swap poke
@@ -745,7 +768,7 @@
 ;
   
 : set-arg2
-  current-frame parent-frame
+  current-frame parent-frame @
   frame-size cell+2 swapdrop
   int-add
   arg0 swap poke
@@ -753,7 +776,7 @@
 ;
 
 : set-arg3
-  current-frame parent-frame
+  current-frame parent-frame @
   frame-size cell+3 swapdrop
   int-add
   arg0 swap poke
@@ -766,14 +789,28 @@
 
 : argn
     arg0 cell* call-frame-size int-add
-    current-frame parent-frame swapdrop int-add
+    current-frame parent-frame @ int-add
     peek set-arg0
 ;
 
 : set-argn
     arg0 cell* call-frame-size int-add
-    current-frame parent-frame swapdrop int-add
+    current-frame parent-frame @ int-add
     arg1 swap poke
+;
+
+: frame-args
+    arg0 call-frame-size int-add return1-1
+;
+
+: frame-arg-byte-size
+    arg0 parent-frame @
+    arg0 frame-args
+    int-sub return1-1
+;
+
+: frame-num-args
+    arg0 frame-arg-byte-size cell/ return1-1
 ;
 
 ( Some signed math: )

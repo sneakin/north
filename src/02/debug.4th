@@ -22,7 +22,7 @@
 
 : write-current-frame
     .\n " Current:" write-heading
-    current-frame parent-frame write-frame
+    current-frame parent-frame @ write-frame
     .\n " Locals:" write-heading
     current-frame write-frame
     .\n
@@ -118,7 +118,7 @@
         .\n dim arg0 .s ,sp
         arg1 dict-entry-name .s .h .\n
         ( a hexdump of the frame. )
-        current-frame parent-frame
+        current-frame parent-frame @
         int32 32 hexdump
         color-reset
 

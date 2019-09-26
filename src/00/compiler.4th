@@ -113,6 +113,12 @@
   arg1 arg0 arg1 stack-find-loop return1
 ;
 
+: internrev-to-terminator
+    arg0 terminator stack-find swapdrop 
+    swap 2dup int-sub cell/ swapdrop internrev
+    return1
+;
+
 ( Compiler )
 
 : compile
@@ -126,18 +132,34 @@
 ( Colon definitions )
 
 : [
-  doc( Enter the compiling state where words, unless immediates, are looked up and pushed to the stack. )
+    doc( Enter the compiling state where words, unless immediates, are looked up and pushed to the stack. )
+  *state* peek
   literal compile *state* poke
-  terminator return1
-; immediate
+  terminator return2
+;
+
+: '[
+    literal literal
+    [
+    int32 3 returnN
+; immediate-as [
+
+: exit-compiler
+    doc( Exits the compiling state and stores all the words in reverse order on the data stack in a proper sequence leaving a pointer on the stack. )
+  args( stack-ptr -- sequence cells-to-drop )
+    arg0 internrev-to-terminator
+    seq-length
+    int32 1 int-add
+    arg0 over cell+n rotdrop2 peek *state* poke
+    int32 1 int-add
+    return2
+;
 
 : ]
-  doc( Exits the compiling state and stores all the words in reverse order on the data stack in a proper sequence leaving a pointer on the stack. )
-  args( ... -- sequence )
-  int32 0 *state* poke
-  args terminator stack-find swapdrop cell- swapdrop
-  swap 2dup int-sub cell/ swapdrop int32 1 int-add internrev
-  seq-length int32 1 int-add return1-n
+    doc( Exits the compiling state and stores all the words in reverse order on the data stack in a proper sequence leaving a pointer on the stack. )
+    args( ... -- sequence )
+    args exit-compiler
+    return1-n
 ; immediate
 
 : docol>
@@ -151,25 +173,28 @@
 
 : endcol
   doc( Closes a docol> updating the last word's data field. )
-  args( ... -- )
-  drop-call-frame
-  literal return0
-  ]
-  swap set-dict-entry-data drop2
-  literal eval-loop jump-entry-data
-;
-
-: ;
-  doc( Closes a colon definition updating the last word's data field. )
-  endcol
-; immediate-only
+    args( ... -- )
+    ( end the frame to add a return to the definition)
+    end drop
+    literal return0
+    ( swap the return address and last word before making a new frame)
+    swap begin
+    ( now exit the compiler )
+    args exit-compiler
+    ( update last dict ent, left on stack )
+    over over
+    args swap cell+n rotdrop2 peek
+    set-dict-entry-data drop2
+    ( clean the stack )
+    int32 1 int-add return0-n
+; immediate-as ;
 
 : eos " EOS" return1 ;
 
 : :
   doc( Start a new definition with the following name. Definition ends with a ";". )
-  args( _ : name ++ entry open-seq )
-  create docol> return2
+  args( _ : name ++ entry old-state open-seq )
+  create docol> return-locals
 ;
 
 : ::
@@ -180,10 +205,10 @@
   docol> return2
 ;
 
-( Terminatormon stack search and replace: )
+( Terminator on stack search and replace: )
   
 : patch-terminator/2
-    doc( Search up the stack from arg1, replacing the first terwinator with "[ terwinator - arg1 ] + arg0". )
+    doc( Search up the stack from arg1, replacing the first terminator with "[ terminator - arg1 ] + arg0". )
     args( start-offset adjustment ++ )
     arg1 terminator stack-find swapdrop
     2dup swap int-sub arg0 int-add
