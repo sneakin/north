@@ -132,6 +132,7 @@ $(OUTDIR)/lib/%$(SO_SUFFIX) :
 #
 
 OPCODE_H=$(OUTDIR)/include/north/$(PLATFORM)-$(BITS)/opcodes.h
+OFFSETS_H=$(OUTDIR)/include/north/$(PLATFORM)-$(BITS)/offsets.h
 
 ifndef NORTH_WORDS_MAKEFILE
 $(OUTDIR)/bin/north-words$(EXEC_SUFFIX) :
@@ -141,6 +142,10 @@ endif
 $(OPCODE_H): $(OUTDIR)/bin/north-words$(EXEC_SUFFIX)
 	mkdir -p $(dir $@)
 	$(EXEC_$(PLATFORM)_$(BITS)) $(OUTDIR)/bin/north-words$(EXEC_SUFFIX) 1 > $@
+
+$(OFFSETS_H): $(OUTDIR)/bin/north-words$(EXEC_SUFFIX)
+	mkdir -p $(dir $@)
+	$(EXEC_$(PLATFORM)_$(BITS)) $(OUTDIR)/bin/north-words$(EXEC_SUFFIX) 1 2 > $@
 
 clean:
 	rm -rf $(OUTDIR)

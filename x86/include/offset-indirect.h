@@ -1,0 +1,1 @@
+%include "offset-indirect.asm"

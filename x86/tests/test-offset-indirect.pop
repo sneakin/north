@@ -1,0 +1,20 @@
+%include "north.h"
+%include "offset-indirect.h"
+
+; import libc printf/n
+
+string fmt_off "Hey %i",0xA
+
+defoi hey
+	int32 123 dup int_add pointer fmt int32 2 cprintf
+	int32 3 dropn
+	fexit
+
+def init
+	hello
+  ; pointer dictionary_start indirect_offset poke
+  hey
+	int32 0 roll
+	fexit
+
+finalize_dictionary

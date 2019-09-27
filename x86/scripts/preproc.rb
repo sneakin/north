@@ -36,10 +36,12 @@ def process_lines(iter)
       $definition = line
       $suffix = case $1
                when 'i' then ENV.fetch('SUFFIX', '_i')
+               when 'oi' then ENV.fetch('SUFFIX', '_off')
                else ''
                end
       $word_prefix = case $1
                     when 'i' then 'dd'
+                    when 'oi' then 'dd'
                     else if $bits == 64
                            'dq'
                          else

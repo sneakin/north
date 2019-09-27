@@ -29,6 +29,7 @@ d_%1:
 %1_name: POINTER %1_name_str
 %assign m_dictionary_size m_dictionary_size + 1
 %define %1_i (d_%1-dictionary_start+ptrsize)/dict_entry_size
+%define %1_off (d_%1-dictionary_start)
 
 section .rdata
 %defstr %1_name_str_str %1

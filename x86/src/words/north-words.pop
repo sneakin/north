@@ -1,5 +1,6 @@
 %include "north.h"
 %include "indexed.h"
+%include "offset-indirect.h"
 
 ; import libc printf/n
 
@@ -49,6 +50,18 @@ def short_print_dict_entry
 	literal 4 dropn
 	fexit
 
+def print_dict_entry_offset
+	; entry addr
+	literal 2 overn
+	; entry offset
+	dup dictionary int_sub swap
+	; entry name
+	cell_size int_add cell_size int_add peek seq_data
+	; print
+	literal short_dict_entry_fmt literal 3 cprintf
+	literal 4 dropn
+	fexit
+
 string heading "Index Hex Word Data Code Address",0xA
 
 def seq_data
@@ -74,14 +87,20 @@ def short_print_dict
 	literal 3 dropn
 	fexit
   
+def print_dict_offsets
+	literal print_dict_entry_offset dictionary seq_data dictionary_size map_dict
+	literal 3 dropn
+	fexit
+  
 def init
 	; try the first two entries
 	;dictionary seq_data print_dict_entry
 	;cell_size int_add cell_size int_add cell_size int_add short_print_dict_entry
 	;literal 1 dropn
-	; print the short list if a command line arg is supplied
-	literal 2 overn literal 1 eq dup ifzero short_print_dict
-	ifnotzero print_dict
+  ;; number of command line args determines mode
+	literal 2 overn literal 3 eq ifnotzero print_dict_offsets
+	literal 2 overn literal 2 eq ifnotzero short_print_dict
+	literal 2 overn literal 1 eq ifnotzero print_dict
 	; clean exit
 	literal 0 roll
 	fexit
