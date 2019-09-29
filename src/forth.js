@@ -463,17 +463,23 @@ function execute(asm, token, code)
 function interp(asm, str)
 {
   var s = str;
-  
-  for(var s = str; s.length > 0;) {
-    var t = next_token(s);
-    if(t == false) break;
     
-    s = t[1];
-    var r = execute(asm, t[0], s);
-    if(r != null) s = r;
+  try {
+    for(s = str; s.length > 0;) {
+      var t = next_token(s);
+      if(t == false) break;
+      
+      s = t[1];
+      var r = execute(asm, t[0], s);
+      if(r != null) s = r;
+    }
+    
+    return asm;
+  } catch(e) {
+    console.error("Caught " + e);
+    console.error("processing: " + s.substr(0, 32) + "...");
+    throw(e);
   }
-  
-  return asm;
 }
 
 Forth.assembler = function(ds, cs, info, stage, platform, asm) {
@@ -644,7 +650,7 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
     return label;
   }
 
-  function write_dict_entry(entry, last_label, prefix)
+  function write_dict_entry(n, entry, last_label, prefix)
   {
     if(entry == null) return last_label;
     if(prefix == null || entry.only == true) prefix = '';
@@ -656,8 +662,9 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   
   var last_label = TERMINATOR;
 
+  //for(var n of Object.keys(dictionary).sort()) {
   for(var n in dictionary) {
-    last_label = write_dict_entry(dictionary[n], last_label);
+    last_label = write_dict_entry(n, dictionary[n], last_label);
   }
 
   asm.label('dictionary-end');
@@ -665,8 +672,9 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   asm.label('dictionary-size').uint32(asm.resolve('dictionary-end') - asm.resolve('dictionary-begin'));
 
   last_label = TERMINATOR;
+  //for(var n of Object.keys(immediates).sort()) {
   for(var n in immediates) {
-    last_label = write_dict_entry(immediates[n], last_label, 'immed-');
+    last_label = write_dict_entry(n, immediates[n], last_label, 'immed-');
   }
   
   asm.label('immediate-dictionary').uint32(last_label);
