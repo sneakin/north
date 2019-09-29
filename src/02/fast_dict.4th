@@ -1,6 +1,6 @@
 global-var dict-index
 global-var immediate-index
-constant *dict-index-span* 5
+constant *dict-index-span* 4
 
 : dict-index-add
     args( entry btree )
@@ -29,14 +29,54 @@ constant *dict-index-span* 5
     immediate-index !    
 ;
 
-: dict-index-patch
-    ' dict-lookup-slow dict-entry-data swapdrop
-    ' dict-lookup dict-entry-data swapdrop
+: dict-entry-copy
+    arg1 dict-entry-data arg0 set-dict-entry-data
+    arg1 dict-entry-code arg0 set-dict-entry-code
+    arg1 dict-entry-args arg0 set-dict-entry-args
+    arg1 dict-entry-doc arg0 set-dict-entry-doc
+;
+
+: dict-entry-patch
+    args( target new storage )
+    arg2 dict-entry-data swapdrop
+    arg1 dict-entry-data swapdrop
     equals IF return0 THEN
-    ' dict-lookup dict-entry-data
-    ' dict-lookup-slow set-dict-entry-data
-    ' dict-lookup-fast dict-entry-data
-    ' dict-lookup set-dict-entry-data
+    arg2 arg0 dict-entry-copy
+    arg1 arg2 dict-entry-copy
+;
+
+: dict-index-lookup
+    arg0 dict-index @ btree-find return2
+;
+
+: immediate-index-lookup
+    arg0 immediate-index @ btree-find return2
+;
+
+: dict-lookup-slow
+    arg1 arg0 dict-lookup return1
+;
+
+: dict-lookup-fast
+    args( name dict ++ entry )
+    dict-index @ IF
+        arg0 dict equals IF
+            dict-index @
+        ELSE
+            arg0 immediate-dict @ equals IF
+                immediate-index @
+            ELSE
+                arg1 arg0 dict-lookup-slow return1
+            THEN
+        THEN
+        arg1 swap btree-find UNLESS int32 0 THEN return1
+    ELSE
+        arg1 arg0 dict-lookup-slow return1
+    THEN
+;
+
+: dict-index-patch
+    ' dict-lookup ' dict-lookup-fast ' dict-lookup-slow dict-entry-patch
 ;
 
 : dict-index-init
@@ -50,29 +90,17 @@ constant *dict-index-span* 5
     THEN
 ;
 
-: dict-index-lookup
-    arg0 dict-index @ btree-find return2
+: dict-index-dump/1
+    args( btree )
+    .\n " Tree" .s .\n
+    arg0 btree-dump
+    .\n " Nodes" .s .\n
+    arg0 ' write-dict-entry btree-map
 ;
 
-: immediate-index-lookup
-    arg0 immediate-index @ btree-find return2
-;
-
-: dict-lookup-slow
-    arg1 arg0 dict-lookup return2
-;
-
-: dict-lookup-fast
-    args( name dict ++ entry found? )
-    dict-index @ UNLESS arg1 arg0 dict-lookup-slow return2 THEN
-    arg0 ' dict equals IF
-        dict-index @
-    ELSE
-        arg0 immediate-dict @ equals IF
-            immediate-index @
-        ELSE
-            arg1 arg0 dict-lookup-slow return2
-        THEN
-    THEN
-    arg1 swap btree-find return2
+: dict-index-dump
+    " Immediates" write-heading
+    immediate-index @ dict-index-dump/1
+    " Words" write-heading
+    dict-index @ dict-index-dump/1
 ;

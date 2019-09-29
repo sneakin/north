@@ -273,7 +273,7 @@ field right
 
 : btree-branch-find
     args( key branch sort-fn key-fn ++ item found? )
-    .\n " find" .S arg2 .h
+    .\n " find" .S arg3 .h arg2 .h
     arg2 btree-branch? IF
         arg3 over btree-branch-value @ arg1 arg0 key-slot-cmp
         dup int32 0 equals IF
