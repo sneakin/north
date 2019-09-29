@@ -107,11 +107,6 @@ field: fields
     structure-gen-accessor
 ;
 
-: next-word
-    next-token UNLESS eos error THEN
-    return1
-;
-
 : field/3:
     next-word next-int next-int rot field/3
 ;

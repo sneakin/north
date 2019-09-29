@@ -920,6 +920,11 @@
   int32 0 int32 0 return2
 ;
 
+: next-word
+    next-token UNLESS eos error THEN
+    return1
+;
+
 : eval-loop
   ( ++ str )
   next-token UNLESS drop eval-read-line eval-string THEN ( todo change the tokenizer's string instead )
