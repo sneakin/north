@@ -8,59 +8,7 @@ const fs = require('fs');
 const TextEncoder = require('util/text_encoder');
 
 var TESTING = 0;
-
-const forth_sources = {
-  "00-list": fs.readFileSync(__dirname + '/00/list.4th', 'utf-8'),
-  "00-core": fs.readFileSync(__dirname + '/00/core.4th', 'utf-8'),
-  "00-core-compiler": fs.readFileSync(__dirname + '/00/compiler.4th', 'utf-8'),
-  "00-output": fs.readFileSync(__dirname + '/00/output.4th', 'utf-8'),  
-  "00-ui": fs.readFileSync(__dirname + '/00/ui.4th', 'utf-8'),  
-  "00-about": fs.readFileSync(__dirname + '/00/about.4th', 'utf-8'),  
-  "00-assert": fs.readFileSync(__dirname + '/00/assert.4th', 'utf-8'),  
-  "00-init": fs.readFileSync(__dirname + '/00/init.4th', 'utf-8'),  
-  "00-shorthand": fs.readFileSync(__dirname + '/00/shorthand.4th', 'utf-8'),
-  "01-init": fs.readFileSync(__dirname + '/01/init.4th', 'utf-8'),  
-  "01-atoi": fs.readFileSync(__dirname + '/01/atoi.4th', 'utf-8'),
-  "01-tty": fs.readFileSync(__dirname + '/01/tty.4th', 'utf-8'),
-  "01-output": fs.readFileSync(__dirname + '/01/output.4th', 'utf-8'),  
-  "01-dict": fs.readFileSync(__dirname + '/01/dict.4th', 'utf-8'),  
-  "01-about": fs.readFileSync(__dirname + '/01/about.4th', 'utf-8'),  
-  "01-help": fs.readFileSync(__dirname + '/01/help.4th', 'utf-8'),  
-  "01-data_stack": fs.readFileSync(__dirname + '/01/data_stack.4th', 'utf-8'),  
-  "01-char": fs.readFileSync(__dirname + '/01/char.4th', 'utf-8'),  
-  "01-seq": fs.readFileSync(__dirname + '/01/seq.4th', 'utf-8'),  
-  "01-compiler": fs.readFileSync(__dirname + '/01/compiler.4th', 'utf-8'),  
-  "01-structs": fs.readFileSync(__dirname + '/01/structs.4th', 'utf-8'),  
-  "01-stack": fs.readFileSync(__dirname + '/01/stack.4th', 'utf-8'),  
-  "01-ui": fs.readFileSync(__dirname + '/01/ui.4th', 'utf-8'),  
-  "02-init": fs.readFileSync(__dirname + '/02/init.4th', 'utf-8'),  
-  "02-memdump": fs.readFileSync(__dirname + '/02/memdump.4th', 'utf-8'),  
-  "02-decompiler": fs.readFileSync(__dirname + '/02/decompiler.4th', 'utf-8'),  
-  "02-misc": fs.readFileSync(__dirname + '/02/misc.4th', 'utf-8'),
-  "02-cmp": fs.readFileSync(__dirname + '/02/cmp.4th', 'utf-8'),
-  "02-ordered-seq": fs.readFileSync(__dirname + '/02/ordered-seq.4th', 'utf-8'),
-  "02-btree": fs.readFileSync(__dirname + '/02/btree.4th', 'utf-8'),
-  '02-fast-dict': fs.readFileSync(__dirname + '/02/fast_dict.4th', 'utf-8'),
-  '02-debug': fs.readFileSync(__dirname + '/02/debug.4th', 'utf-8'),
-  "03-assembler": fs.readFileSync(__dirname + '/03/assembler.4th', 'utf-8'),
-  "03-interrupts": fs.readFileSync(__dirname + '/03/interrupts.4th', 'utf-8'),
-  "03-sequence": fs.readFileSync(__dirname + '/03/sequence.4th', 'utf-8'),
-  "03-byte-string": fs.readFileSync(__dirname + '/03/byte_string.4th', 'utf-8'),
-  "03-input-device": fs.readFileSync(__dirname + '/03/input-device.4th', 'utf-8'),
-  "03-storage-devices": fs.readFileSync(__dirname + '/03/storage_devices.4th', 'utf-8'),
-  "03-storage": fs.readFileSync(__dirname + '/03/storage.4th', 'utf-8'),
-  "03-storage-test": fs.readFileSync(__dirname + '/03/storage_test.4th', 'utf-8'),
-  "02-sound": fs.readFileSync(__dirname + '/02/sound.4th', 'utf-8'),
-  "04-tty": fs.readFileSync(__dirname + '/04/tty.4th', 'utf-8'),
-  "04-tty-readline": fs.readFileSync(__dirname + '/04/tty-readline.4th', 'utf-8'),
-  "04-rand": fs.readFileSync(__dirname + '/04/rand.4th', 'utf-8'),
-  "help-tty-attrs": fs.readFileSync(__dirname + '/help/tty-attrs.4th', 'utf-8'),
-  "core-4": fs.readFileSync(__dirname + '/04/core.4th', 'utf-8'),
-  "core-constants": fs.readFileSync(__dirname + '/04/constants.4th', 'utf-8'),
-  extra: fs.readFileSync(__dirname + '/forth_extra.4th', 'utf-8'),
-  assembler: fs.readFileSync(__dirname + '/02/assembler.4th', 'utf-8'),
-  ops: fs.readFileSync(__dirname + '/02/ops.4th', 'utf-8')
-};
+var forth_sources = {};
 
 function Forth()
 {
@@ -477,29 +425,16 @@ function interp(asm, str)
     return asm;
   } catch(e) {
     console.error("Caught " + e);
-    console.error("processing: " + s.substr(0, 32) + "...");
+    if(s) console.error("processing: " + s.substr(0, 32) + "...");
     throw(e);
   }
 }
 
-Forth.assembler = function(ds, cs, info, stage, platform, asm) {
-  info = util.merge_options({
-    input: {
-      irq: 0xA,
-      addr: 0xFFFF1000
-    },
-    output: {
-      irq: 0xB,
-      addr: 0xFFFF2000
-    }
-  }, info);
+Forth.assembler = function(stage, platform, sources) {
+  var ds = platform.data_segment;
+  var cs = platform.code_segment;
+  var asm = platform.assembler;
   
-  var input_dev_irq = info.input.irq;
-  var input_dev_addr = info.input.addr;
-
-  var output_dev_irq = info.output.irq;
-  var output_dev_addr = info.output.addr;
-
   function defop(name, fn, doc, args) {
     var entry = dictionary_add(name, name + "-code", null);
     if(doc) {
@@ -520,79 +455,34 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
 
   strings["version-string-str"] = fs.readFileSync(__dirname + '/version.txt', 'utf-8').trim();
   dictionary_add("version-string", 'value-peeker-code', "version-string-str");
+  strings["stage-string-str"] = stage;
+  dictionary_add("stage-string", 'value-peeker-code', "stage-string-str");
+  strings["platform-string-str"] = platform.name;
+  dictionary_add("platform-string", 'value-peeker-code', "platform-string-str");
 
-  var plat_path = __dirname + '/platform/' + platform.name;
-  if(platform.name == 'bacaw') {
-    eval(fs.readFileSync(plat_path + '/boot.js', 'utf-8'));
-    eval(fs.readFileSync(plat_path + '/forth_00.js', 'utf-8'));
-  } else if(platform.name == 'x86') {
-    interp(asm, fs.readFileSync(plat_path + '/boot.4th', 'utf-8'));
+  function add_source(path, data)
+  {
+    var name = path.match(/(\w+[\\\/]\w+)\.\w+$/);
+    if(name) {
+      name = name[1].replace(/[\\\/]/g, '/');
+      forth_sources[name] = data;
+    }
   }
-  interp(asm, forth_sources['00-core']);
-  interp(asm, forth_sources['00-list']);
-  interp(asm, forth_sources['00-core-compiler']);
-  interp(asm, forth_sources['00-output']);
-  interp(asm, forth_sources['00-about']);
-  interp(asm, forth_sources['00-assert']);
-  interp(asm, forth_sources['00-shorthand']);
-  interp(asm, forth_sources['00-init']);
 
-  if(stage.indexOf('stage0') >= 0) {
-    interp(asm, forth_sources['00-ui']);
-  }
+  // Load the sources
   
-  if(stage.indexOf('stage1') >= 0 ||
-     stage.indexOf('stage2') >= 0) {
-    eval(fs.readFileSync(plat_path + '/forth_01.js', 'utf-8'));
-    eval(fs.readFileSync(plat_path + '/forth_02.js', 'utf-8'));
-    eval(fs.readFileSync(plat_path + '/forth_interrupts.js', 'utf-8'));
-    
-    //interp(asm, forth_sources['01-atoi']);
-    interp(asm, forth_sources['01-output']);
-    interp(asm, forth_sources['01-dict']);
-    interp(asm, forth_sources['01-about']);
-    interp(asm, forth_sources['01-help']);
-    interp(asm, forth_sources['01-data_stack']);
-    interp(asm, forth_sources['01-char']);
-    interp(asm, forth_sources['01-seq']);
-    interp(asm, forth_sources['01-tty']);
-    interp(asm, forth_sources['01-stack']);
-    interp(asm, forth_sources['01-ui']);
-    interp(asm, forth_sources['01-compiler']);
-    interp(asm, forth_sources['01-structs']);
-
-    interp(asm, forth_sources['03-byte-string']);
-    interp(asm, forth_sources['03-assembler']);
-    interp(asm, forth_sources['03-interrupts']);
-    interp(asm, forth_sources['02-memdump']);
-    interp(asm, forth_sources['02-decompiler']);
-    interp(asm, forth_sources['03-sequence']);
-
-    //interp(asm, forth_sources['02-misc']);
-    //interp(asm, forth_sources['extra']);
-    interp(asm, forth_sources['02-cmp']);
-    interp(asm, forth_sources['02-ordered-seq']);
-    interp(asm, forth_sources['02-btree']);
-    interp(asm, forth_sources['02-fast-dict']);
-    interp(asm, forth_sources['02-debug']);
-    interp(asm, forth_sources['03-input-device']);
-    interp(asm, forth_sources['04-tty']);
-    interp(asm, forth_sources['04-tty-readline']);
-    interp(asm, forth_sources['help-tty-attrs']);
-
-    interp(asm, forth_sources['04-rand']);
+  for(var input of sources) {
+    var data = fs.readFileSync(input, 'utf-8');
+    console.log(input, data.length);
+    if(input.match(/\.js$/)) {
+      eval(data);
+    } else if(input.match(/\.4th$/)) {
+      interp(asm, data);
+      add_source(input, data);
+    }
   }
-  
-  if(stage.indexOf('stage1') >= 0) {
-    interp(asm, forth_sources['01-init']);
-  } else if(stage.indexOf('stage2') >= 0) {
-    interp(asm, forth_sources['02-init']);
-    interp(asm, forth_sources['02-sound']);
-    interp(asm, forth_sources['03-storage-devices']);
-    interp(asm, forth_sources['03-storage']);
-    interp(asm, forth_sources['03-storage-test']);
-  }
-  
+
+  // Entries to get the sources
   if(stage.indexOf('min') == -1) {
     for(var n in forth_sources) {
       interp(asm, `: ${n}-src literal sources-${n}-src return1 ;`);
@@ -690,9 +580,8 @@ Forth.assembler = function(ds, cs, info, stage, platform, asm) {
   return asm;
 }
 
-Forth.assemble = function(ds, cs, info, stage, platform, asm) {
-  if(asm == null) asm = new Assembler();
-  return Forth.assembler(ds, cs, info, stage, platform, asm).assemble();
+Forth.assemble = function(stage, platform, sources) {
+  return Forth.assembler(stage, platform, sources).assemble();
 }
 
 Forth.longify = longify;

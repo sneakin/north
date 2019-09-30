@@ -3,7 +3,7 @@ require 'shellwords'
 require 'rbconfig'
 
 $root = Pathname.new(__FILE__).parent.expand_path
-buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', $root.join('build')))
+$buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', $root.join('build')))
 release_root=Pathname.new(ENV.fetch('RELEASE_ROOT', $root.join('tmp/release')))
 pages_root=Pathname.new(ENV.fetch('PAGES_ROOT', $root.join('tmp/gh-pages')))
 
@@ -20,6 +20,8 @@ BCLIB = BCROOT.join('js', 'lib')
 BCCON = "node #{Shellwords.escape(BCBIN)}"
 NODE_PATH << [ $root.join('src'), BCLIB ]
 
+$stage_targets = []
+
 outputs = [ 'north-stage0.bin',
             'north-stage0-min.bin',
             'north-stage1.bin',
@@ -35,31 +37,9 @@ outputs = [ 'north-stage0.bin',
             'index.css',
             'index.js',
             'index.html'
-          ].collect { |s| buildroot.join(s) }
+          ].collect { |s| $buildroot.join(s) }
 
-directory buildroot
-
-def stage(name, target, min_target = nil)
-  desc "Build #{name}"
-  task name => "#{name}:build"
-  
-  namespace name do
-    desc "Build #{name}"
-    task :build => [ target, min_target ]
-    
-    desc "Run #{name}"
-    task :run => target do
-      sh("node #{BCBIN} #{target}")
-    end
-
-    if min_target
-      desc "Run the minimal #{name}"
-      task :run => min_target do
-        sh("node #{BCBIN} #{min_target}")
-      end
-    end
-  end
-end
+directory $buildroot
 
 namespace :version do
   def read_version(path = $root.join('version.txt'))
@@ -122,129 +102,154 @@ file $root.join('src', 'version.txt') => [ $root.join('version.txt'), $root.join
   end
 end
 
-STAGE0_SRC = [ 'forth.js',
-               'platform/bacaw/boot.js',
-               'platform/bacaw/forth_00.js',
-               'version.txt',
-               '00/core.4th',
-               '00/compiler.4th',
-               '00/output.4th',
-               '00/about.4th',
-               '00/assert.4th',
-               '00/init.4th',
-               '00/ui.4th',
-               '00/shorthand.4th'
-             ].collect { |s| $root.join('src', s) }
-STAGE0_TARGET = buildroot.join('north-stage0.bin')
-
-file STAGE0_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
-  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
-  sh("node #{bin} stage0 > #{t.name}")
+def meta_north(opts)
+  sh(["node",
+      $root.join('bin', 'meta-north.js'),
+      '-s', opts.fetch(:stage, 'stage0'),
+      '-p', opts.fetch(:platform, 'bacaw'),
+      '-o', opts.fetch(:output),
+      opts.fetch(:sources).collect(&:to_s)
+     ].flatten.shelljoin)
 end
 
-namespace :x86 do
-  X86_STAGE0_TARGET = buildroot.join('north-x86-stage0.pop')
-  file X86_STAGE0_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
-    bin = Shellwords.escape($root.join('bin', 'meta-x86.js'))
-    sh("node #{bin} stage0 > #{t.name}")
+def stage(name, sources, min_target = nil, platform = :bacaw)
+  target = $buildroot.join("north-#{name}.bin")
+  $stage_targets << target
+
+  file target => [ $buildroot, *META_SRC, *sources ] do |t|
+    meta_north(stage: name.to_s,
+               output: t.name,
+               sources: sources,
+               platform: platform)
   end
 
-  task :build => [ X86_STAGE0_TARGET ]
+  if min_target
+    min_target = $buildroot.join("north-#{name}-min.bin")
+    $stage_targets << min_target
+
+    file min_target => [ $buildroot, *META_SRC, *sources ] do |t|
+      meta_north(stage: "#{name}-min",
+                 output: t.name,
+                 sources: sources,
+                 platform: platform)
+    end
+  end
+
+  desc "Build #{name}"
+  task name => "#{name}:build"
+  
+  namespace name do
+    desc "Build #{name}"
+    task :build => [ target, min_target ]
+    
+    desc "Run #{name}"
+    task :run => target do
+      sh("node #{BCBIN} #{target}")
+    end
+
+    if min_target
+      namespace :min do
+        desc "Run the minimal #{name}"
+        task :run => min_target do
+          sh("node #{BCBIN} #{min_target}")
+        end
+      end
+    end
+  end
 end
 
-STAGE0_MIN_TARGET = buildroot.join('north-stage0-min.bin')
-file STAGE0_MIN_TARGET => [ buildroot, *STAGE0_SRC ] do |t|
-  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
-  sh("node #{bin} stage0-min > #{t.name}")
+def src(*names)
+  names.collect { |s| $root.join('src', s) }
 end
 
-stage :stage0, STAGE0_TARGET, STAGE0_MIN_TARGET
+META_SRC = src 'forth.js', 'version.txt'             
+PLATFORM_SRC = {
+  bacaw: src('platform/bacaw/boot.js', 'platform/bacaw/forth_00.js'),
+  x86: src('platform/x86/boot.js', 'platform/x86/ops.js')
+}
 
-STAGE1_SRC = [ *STAGE0_SRC,
-               'platform/bacaw/forth_01.js',
-               '01/atoi.4th',
-               '01/tty.4th',
-               '01/dict.4th',
-               '01/char.4th',
-               '01/output.4th',
-               '01/about.4th',
-               '01/help.4th',
-               '01/seq.4th',
-               '01/ui.4th',
-               '01/structs.4th',
-               '02/memdump.4th',
-               '02/decompiler.4th',
-               '02/misc.4th',
-               '02/assembler.4th',
-               '02/debug.4th',
-               '02/ordered-seq.4th',
-               '02/cmp.4th',
-               '02/btree.4th',
-               '02/fast_dict.4th',
-               '03/assembler.4th',
-               '03/byte_string.4th',
-               '03/sequence.4th',
-               'platform/bacaw/forth_interrupts.js',
-               '03/interrupts.4th',
-               '03/input-device.4th',
-               'forth_extra.4th',
-               '04/core.4th',
-               '04/constants.4th',
-               '02/ops.4th',
-               '04/tty.4th',
-               '04/tty-readline.4th',
-               '04/rand.4th',
-               'help/tty-attrs.4th'
-             ].collect { |s| $root.join('src', s) }
-STAGE1_TARGET = buildroot.join('north-stage1.bin')
+STAGE0_SRC = src('00/core.4th',
+                 '00/compiler.4th',
+                 '00/output.4th',
+                 '00/about.4th',
+                 '00/assert.4th',
+                 '00/init.4th',
+                 '00/ui.4th',
+                 '00/shorthand.4th')
 
-file STAGE1_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
-  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
-  sh("node #{bin} stage1 > #{t.name}")
-end
+stage :stage0, PLATFORM_SRC[:bacaw] + STAGE0_SRC, true
 
-STAGE1_MIN_TARGET = buildroot.join('north-stage1-min.bin')
+stage 'stage0-x86', PLATFORM_SRC[:x86] + STAGE0_SRC, true, :x86
 
-file STAGE1_MIN_TARGET => [ buildroot, *STAGE1_SRC ] do |t|
-  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
-  sh("node #{bin} stage1-min > #{t.name}")
-end
+STAGE1_SRC = src(*STAGE0_SRC,
+                 'platform/bacaw/forth_01.js',
+                 'platform/bacaw/forth_02.js',
+                 # '01/atoi.4th', # todo need source file only flag
+                 '01/tty.4th',
+                 '01/dict.4th',
+                 '01/char.4th',
+                 '01/output.4th',
+                 '01/about.4th',
+                 '01/help.4th',
+                 '01/seq.4th',
+                 '01/stack.4th',
+                 '01/ui.4th',
+                 '01/data_stack.4th',
+                 '00/list.4th',
+                 '01/compiler.4th',
+                 '01/structs.4th',
+                 '02/memdump.4th',
+                 '02/decompiler.4th',
+                 #'02/misc.4th',
+                 #'02/assembler.4th',
+                 '02/debug.4th',
+                 '02/ordered-seq.4th',
+                 '02/cmp.4th',
+                 '02/btree.4th',
+                 '02/fast_dict.4th',
+                 '03/assembler.4th',
+                 '03/byte_string.4th',
+                 '03/sequence.4th',
+                 'platform/bacaw/forth_interrupts.js',
+                 '03/interrupts.4th',
+                 '03/input-device.4th',
+                 #'forth_extra.4th',
+                 '04/core.4th',
+                 #'04/constants.4th',
+                 #'02/ops.4th',
+                 '04/tty.4th',
+                 '04/tty-readline.4th',
+                 '04/rand.4th',
+                 'help/tty-attrs.4th')
 
-stage :stage1, STAGE1_TARGET, STAGE1_MIN_TARGET
+stage :stage1, PLATFORM_SRC[:bacaw] + STAGE1_SRC, true
 
-STAGE2_SRC = [ *STAGE1_SRC,
-               '03/storage.4th',
-               '03/storage_devices.4th',
-               '03/storage_test.4th',
-               '02/sound.4th'
-             ].collect { |s| $root.join('src', s) }
-STAGE2_TARGET = buildroot.join('north-stage2.bin')
+STAGE2_SRC = src(*STAGE1_SRC,
+                 '03/storage.4th',
+                 '03/storage_devices.4th',
+                 '03/storage_test.4th',
+                 '02/sound.4th')
 
-file STAGE2_TARGET => [ buildroot, *STAGE2_SRC ] do |t|
-  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
-  sh("node #{bin} stage2 > #{t.name}")
-end
+stage :stage2, PLATFORM_SRC[:bacaw] + STAGE2_SRC, true
 
-STAGE2_MIN_TARGET = buildroot.join('north-stage2-min.bin')
+STAGE3_SRC = src('build-stage3.4th',
+                 '02/assembler.4th',
+                 '02/ops.4th')
 
-file STAGE2_MIN_TARGET => [ buildroot, *STAGE2_SRC ] do |t|
-  bin = Shellwords.escape($root.join('bin', 'meta-north.js'))
-  sh("node #{bin} stage2-min > #{t.name}")
-end
+stage :stage3, PLATFORM_SRC[:bacaw] + STAGE3_SRC, true
 
-stage :stage2, STAGE2_TARGET, STAGE2_MIN_TARGET
+STAGE4_SRC = src(*STAGE1_SRC,
+                 'dev-tests.4th',
+                 '03/storage.4th',
+                 '03/storage_devices.4th',
+                 '03/storage_test.4th',
+                 '02/dict.4th')
 
-STAGE3_SRC = [ 'build-stage3.4th',
-               '02/assembler.4th',
-               '02/ops.4th'
-             ].collect { |s| $root.join('src', s) }
-STAGE3_TARGET = buildroot.join('north-stage3.bin')
+stage :stage4, PLATFORM_SRC[:bacaw] + STAGE4_SRC, true
 
-file STAGE3_TARGET => [ buildroot, STAGE0_TARGET, *STAGE3_SRC ] do |t|
-  sh("#{BCCON} #{STAGE0_TARGET} < src/build-stage2.4th > #{t.name}")
-end
-
-stage :stage3, STAGE3_TARGET
+#
+# Web building
+#
 
 [ 'forth.css',
   'index.css',
@@ -252,38 +257,30 @@ stage :stage3, STAGE3_TARGET
   'sounds/startup.mp3',
   'manifest.webmanifest'
 ].each do |name|
-  output = buildroot.join(name)
+  output = $buildroot.join(name)
   src = $root.join('www', name)
 
   directory File.dirname(output)
   
-  file output => [ src, buildroot, File.dirname(output) ] do |t|
+  file output => [ src, $buildroot, File.dirname(output) ] do |t|
     FileUtils.copy(t.sources[0], t.name)
   end
 end
 
-desc "Build stage3: stage0 built with stage3"
-task :stage4 do
-  raise NotImplementedError
-end
+BrowserifyRunner.bundle $buildroot.join('service_worker.js') => [ $root.join('www/service_worker.js') ]
+BrowserifyRunner.bundle $buildroot.join('ipfs.js') => [ $root.join('www/ipfs.js') ]
+BrowserifyRunner.bundle $buildroot.join('index.js') => [ $root.join('www/index.js'), *$stage_targets ]
+html_file $buildroot.join('index.html') => [ $root.join('www/index.src.html'), $buildroot.join('index.js'), $buildroot.join('xterm.css') ]
 
-BrowserifyRunner.bundle buildroot.join('service_worker.js') => [ $root.join('www/service_worker.js') ]
-BrowserifyRunner.bundle buildroot.join('ipfs.js') => [ $root.join('www/ipfs.js') ]
-BrowserifyRunner.bundle buildroot.join('index.js') => [ $root.join('www/index.js'), STAGE0_TARGET, STAGE1_TARGET, STAGE2_TARGET ]
-html_file buildroot.join('index.html') => [ $root.join('www/index.src.html'), buildroot.join('index.js'), buildroot.join('xterm.css') ]
-
-file buildroot.join('xterm.css') => $root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
+file $buildroot.join('xterm.css') => $root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
   FileUtils.copy(t.sources[0], t.name)
 end
-
-desc "Build all stages."
-task :default => outputs
 
 desc 'Start a webserver on port 9090 to serve the build directory. Values are taken from the DOMAIN, IP, CA, and CANAME enviroment variables.'
 task :serve do
   require 'rake-node/http/server'
   RakeNode::HTTP.run(:Port => ENV.fetch('PORT', 9090).to_i,
-                     :DocumentRoot => buildroot,
+                     :DocumentRoot => $buildroot,
                      :SSLCertPrefix => $root.join('server'),
                      :Domain => ENV.fetch('DOMAIN', nil),
                      :IP => ENV.fetch('IP', nil),
@@ -291,8 +288,12 @@ task :serve do
                      :cname => ENV.fetch('CANAME', nil))
 end
 
+#
+# Web pages from source files.
+#
+
 namespace :doc do
-  DOC_SRC_DIR = buildroot.join('doc', 'src')
+  DOC_SRC_DIR = $buildroot.join('doc', 'src')
 
   directory DOC_SRC_DIR
   
@@ -306,6 +307,10 @@ namespace :doc do
   end
 end
 
+#
+# Github Pages updating
+#
+
 directory pages_root do
   sh("git branch -f gh-pages origin/gh-pages && git clone -b gh-pages #{$root} #{pages_root}")
 end
@@ -314,7 +319,7 @@ namespace :pages do
   task :deps => [ :default, pages_root ]
 
   task :sync => [ 'pages:deps' ] do
-    sh("cp -rav #{buildroot}/* #{pages_root}")
+    sh("cp -rav #{$buildroot}/* #{pages_root}")
     sh("cd #{pages_root} && git add -A #{pages_root} && git commit && git push origin gh-pages")
   end
 
@@ -328,6 +333,10 @@ task :pages do
   ENV['ENV'] = 'production'
   sh("rake pages:sync")
 end
+
+#
+# Releasing to Pages from a clean repository.
+#
 
 task :prerelease => [ 'version:bump:release' ]
 
@@ -353,3 +362,6 @@ task :release do
   ENV['ENV'] = 'production'
   sh("rake release:sync")
 end
+
+desc "Build all stages."
+task :default => outputs

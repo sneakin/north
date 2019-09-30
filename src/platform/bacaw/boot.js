@@ -14,8 +14,8 @@ var FP_REG = HEAP_REG - 5;
 
 asm_isr(asm, VM.CPU.INTERRUPTS.user * 3);
 asm_memcpy(asm);
-asm_input(asm, input_dev_irq, input_dev_addr);
-asm_output(asm, output_dev_irq, output_dev_addr);
+asm_input(asm, platform.machine.input.irq, platform.machine.input.addr);
+asm_output(asm, platform.machine.output.irq, platform.machine.output.addr);
 
 asm.label('isr_reset').
     call(0, VM.CPU.REGISTERS.CS).uint32('data_init').
