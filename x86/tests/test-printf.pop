@@ -1,5 +1,7 @@
 %include "north.h"
 
+include "libc/stdio.pop"
+
 string long_str "Hello %i %i %i %i, %i %i %i %i, %i %i %i %i",0xA
 string short_str "Hello %i %i %i %i",0xA
 

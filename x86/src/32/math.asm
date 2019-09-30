@@ -28,7 +28,28 @@ defop int_div
 	pop ecx
   pop eax
   mov edx, 0
-	div ecx
+	idiv ecx
 	push eax
+	push ebx
+	ret
+
+defop int_mod
+	pop ebx
+	pop ecx
+  pop eax
+  mov edx, 0
+	idiv ecx
+	push edx
+	push ebx
+	ret
+
+defop int_divmod
+	pop ebx
+	pop ecx
+  pop eax
+  mov edx, 0
+	idiv ecx
+	push eax
+  push edx
 	push ebx
 	ret

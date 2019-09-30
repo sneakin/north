@@ -1,4 +1,4 @@
-;; _op loads rax+dict_data ino r11
+;; _op loads rax+dict_entry_data ino r11
 ;; _r11 calls or jmps to the function in r11
 ;; no suffix loads ToS into r11
 
@@ -66,27 +66,27 @@ defop ffi_sysv_64_%+ num_args %+ _0
 	pop rbx
 	pop r11
 	push rbx
-	jmp [op0+dict_code]
+	jmp [op0+dict_entry_code]
 
 defop ffi_sysv_64_op_%+ num_args %+ _0
-	mov r11, [rax+dict_data]
-	jmp [op0+dict_code]
+	mov r11, [rax+dict_entry_data]
+	jmp [op0+dict_entry_code]
 
 defop ffi_sysv_64_r11_%+ num_args %+ _1
 %if num_args > 0
 	call copy_args_%+ num_args
 %endif
-	jmp [d_doffi_sysv_64_r11_1+dict_code]
+	jmp [d_doffi_sysv_64_r11_1+dict_entry_code]
 
 defop ffi_sysv_64_%+ num_args %+ _1
 	pop rbx
 	pop r11
 	push rbx
-	jmp [op1+dict_code]
+	jmp [op1+dict_entry_code]
 
 defop ffi_sysv_64_op_%+ num_args %+ _1
-	mov r11, [rax+dict_data]
-	jmp [op1+dict_code]
+	mov r11, [rax+dict_entry_data]
+	jmp [op1+dict_entry_code]
 
 %assign num_args num_args + 1
 %endrep
@@ -117,11 +117,11 @@ defop ffi_sysv_64_7_%+ counter
 	pop rbx
 	pop r11
 	push rbx
-	jmp [d_ffi_sysv_64_r11_7_%+ counter +dict_code]
+	jmp [d_ffi_sysv_64_r11_7_%+ counter +dict_entry_code]
 
 defop ffi_sysv_64_op_7_%+ counter
-	mov r11, [rax+dict_data]
-	jmp [d_ffi_sysv_64_r11_7_%+ counter +dict_code]
+	mov r11, [rax+dict_entry_data]
+	jmp [d_ffi_sysv_64_r11_7_%+ counter +dict_entry_code]
 
 defop ffi_sysv_64_r11_n_%+ counter
 	mov r15, rsp
@@ -168,11 +168,11 @@ defop ffi_sysv_64_n_%+ counter
   pop rbx
   pop r11
   push rbx
-	jmp [d_ffi_sysv_64_r11_n_%+ counter +dict_code]
+	jmp [d_ffi_sysv_64_r11_n_%+ counter +dict_entry_code]
 
 defop ffi_sysv_64_op_n_%+ counter
-	mov r11, [rax+dict_data]
-	jmp [d_ffi_sysv_64_r11_n_%+ counter +dict_code]
+	mov r11, [rax+dict_entry_data]
+	jmp [d_ffi_sysv_64_r11_n_%+ counter +dict_entry_code]
 
 %assign counter counter + 1
 %endrep

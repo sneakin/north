@@ -9,10 +9,11 @@
 %define VALUE dd
 %endif
   
-dict_code equ 0
-dict_data equ ptrsize
-dict_name equ ptrsize*2
-dict_entry_size equ ptrsize*3
+dict_entry_code equ 0
+dict_entry_data equ ptrsize
+dict_entry_name equ ptrsize*2
+dict_entry_label equ ptrsize*3
+dict_entry_size equ ptrsize*4
 
 section .text_dict
 
@@ -21,53 +22,75 @@ section .text_dict
 dictionary_start:
 	VALUE m_dictionary_size
 
-%macro create 3
+%macro create 4
 section .text_dict
-d_%1:
-%1_code: POINTER %2
-%1_data: POINTER %3
-%1_name: POINTER %1_name_str
+d_%2:
+%2_code: POINTER %3
+%2_data: POINTER %4
+%2_name: POINTER %2_name_str
+%ifidni %1,%2
+%2_label: POINTER %2_name_str
+%else
+%2_label: POINTER %2_label_str
+%endif
+
 %assign m_dictionary_size m_dictionary_size + 1
-%define %1_i (d_%1-dictionary_start+ptrsize)/dict_entry_size
-%define %1_off (d_%1-dictionary_start)
+%define %2_i (d_%2-dictionary_start+ptrsize)/dict_entry_size
+%define %2_off (d_%2-dictionary_start)
 
 section .rdata
-%defstr %1_name_str_str %1
-%strlen %1_name_str_len %1_name_str_str
-%1_name_str:
-	VALUE %1_name_str_len
-	db %1_name_str_str,0
+%defstr %2_name_str_str %1
+%strlen %2_name_str_len %2_name_str_str
+%2_name_str:
+	VALUE %2_name_str_len
+	db %2_name_str_str,0
 
+%ifnidni %1,%2
+%defstr %2_label_str_str %2
+%strlen %2_label_str_len %2_label_str_str
+%2_label_str:
+	VALUE %2_label_str_len
+	db %2_label_str_str,0
+%endif
+    
 section .text
 
 %ifidni PLATFORM,windows
 %if BITS==32
-global _%1
-_%1:
+global _%2
+_%2:
 %else
-global %1
+global %2
 %endif
 %else
-global %1
+global %2
 %endif
 
-%1:
+%2:
 %if BITS==32
-  mov eax, d_%1
+  mov eax, d_%2
 %else
-  mov rax, d_%1
+  mov rax, d_%2
   %endif
-%ifnidni %2,%1_asm
-  jmp %2
+%ifnidni %3,%2_asm
+  jmp %3
 %endif
+%endmacro
+
+%macro create 3
+create %1, %1, %2, %3
+%endmacro
+    
+%macro defop 2
+create %1, %2, %2_asm, 0
+section .text
+%2_asm:
 %endmacro
 
 %macro defop 1
-create %1, %1_asm, 0
-section .text
-%1_asm:
+defop %1, %1
 %endmacro
-
+        
 %macro def 1
 create %1, dodirect_asm, %1_ops
 section .rdata_forth
@@ -94,6 +117,10 @@ constant dictionary_size,m_dictionary_size
 %endif
 %endmacro
 
+%macro defalias 3
+create %1,%2,%3_code,%3_data
+%endmacro
+  
 %macro defalias 2
 create %1,%2_code,%2_data
 %endmacro

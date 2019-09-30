@@ -1,5 +1,7 @@
 %include "north.h"
 
+include "libc/stdio.pop"
+
 string initstr "init"
 string astr "A"
 string bstr "B"

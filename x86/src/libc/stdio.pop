@@ -1,0 +1,2 @@
+import libc puts/1/0 printf/n/0 gets/1/1 fputc/1/1 fgetc/1/1 fwrite/4/1 fread/4/1
+import_var libc stdin stdout stderr

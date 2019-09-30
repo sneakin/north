@@ -1,5 +1,7 @@
 %include "north.h"
 
+include "libc/stdio.pop"
+
 import libc exit/1/0
 import testlib fun4/4/1
 

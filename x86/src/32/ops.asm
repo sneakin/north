@@ -56,6 +56,9 @@ defop pointer
 	push ebx
 	ret
 
+defalias string,pointer
+defalias uint32,int32
+  
 defop peek
 	mov eax, [esp+ptrsize]
 	mov eax, [eax]
@@ -203,14 +206,14 @@ defop stack_allot
 defop dict_offset_a
   imul eax, dict_entry_size
   add eax, ptrsize
-	add eax, [d_dictionary+dict_data]
+	add eax, [d_dictionary+dict_entry_data]
   ret
 
 defop dict_entry_index
   pop ebx
   pop eax
   sub eax, ptrsize
-  sub eax, [d_dictionary+dict_data]
+  sub eax, [d_dictionary+dict_entry_data]
   mov ecx, dict_entry_size
   mov edx, 0
   div ecx
@@ -220,14 +223,14 @@ defop dict_entry_index
   
 defop doconstant
 	pop ebx
-	mov eax, [eax+dict_data]
+	mov eax, [eax+dict_entry_data]
 	push eax
 	push ebx
 	ret
 
 defop dovar
 	pop ebx
-	mov eax, [eax+dict_data]
+	mov eax, [eax+dict_entry_data]
 	push eax
 	push ebx
 	ret

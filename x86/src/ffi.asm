@@ -1,6 +1,11 @@
 %ifndef FFI_H
 %define FFI_H 1
 
+%macro defcvar 1
+extern %1
+constant c%1, %1
+%endmacro
+  
 %ifidni PLATFORM,windows
 %if BITS == 32
 

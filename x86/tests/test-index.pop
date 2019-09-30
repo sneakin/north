@@ -1,5 +1,6 @@
 %include "north.h"
-%include "indexed.h"
+
+include "libc.pop"
 
 ; import libc printf/n
 

@@ -40,10 +40,11 @@ main:
 	ret
 
 outer_eval:
-	jmp [eax+dict_code]
+	jmp [eax+dict_entry_code]
 
 %include "ops.asm"
 %include "math.asm"
+%include "cmp.asm"
 %include "frames.asm"
 %include "direct.asm"
 %include "indirect.asm"

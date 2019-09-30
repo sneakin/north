@@ -1,0 +1,10 @@
+def assert_failed
+  drop_call_frame
+  shift_call_frame
+  cputs drop
+  fexit
+  
+def assert
+  shift_call_frame ifzero assert_failed
+  shift_call_frame fexit
+  

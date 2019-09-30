@@ -1,5 +1,6 @@
 %include "north.h"
-%include "offset-indirect.h"
+
+include "libc/stdio.pop"
 
 ; import libc printf/n
 

@@ -56,6 +56,9 @@ defop pointer
 	push rbx
 	ret
 
+defalias string,pointer
+defalias uint32,int32
+  
 defop peek
 	mov rax, [rsp+ptrsize]
 	mov rax, [rax]
@@ -131,46 +134,6 @@ defop roll ; ( a b c -- c a b )
 	mov [rsp+ptrsize*3], rax
 	ret
 
-defop ifzero
-	pop rbx
-	pop rax
-	push rbx
-	test rax, rax
-	jz .done
-	add eval_ip, ptrsize
-.done:
-	ret
-
-defop ifnotzero
-	pop rbx
-	pop rax
-	push rbx
-	test rax, rax
-	jnz .done
-	add eval_ip, ptrsize
-.done:
-	ret
-
-defop ifpositive
-	pop rbx
-	pop rax
-	push rbx
-	cmp rax, 0
-	jge .done
-	add eval_ip, ptrsize
-.done:
-	ret
-
-defop ifnegative
-	pop rbx
-	pop rax
-	push rbx
-	cmp rax, 0
-	jl .done
-	add eval_ip, ptrsize
-.done:
-	ret
-
 defop eq
 	pop rcx
 	pop rbx
@@ -202,14 +165,14 @@ defop stack_allot
 defop dict_offset_a
   imul rax, dict_entry_size
   add rax, ptrsize
-	add rax, [d_dictionary+dict_data]
+	add rax, [d_dictionary+dict_entry_data]
   ret
 
 defop dict_entry_index
   pop rbx
   pop rax
   sub rax, ptrsize
-  sub rax, [d_dictionary+dict_data]
+  sub rax, [d_dictionary+dict_entry_data]
   mov rcx, dict_entry_size
   mov rdx, 0
   div rcx
@@ -219,14 +182,14 @@ defop dict_entry_index
   
 defop doconstant
 	pop rbx
-	mov rax, [rax+dict_data]
+	mov rax, [rax+dict_entry_data]
 	push rax
 	push rbx
 	ret
 
 defop dovar
 	pop rbx
-	mov rax, [rax+dict_data]
+	mov rax, [rax+dict_entry_data]
 	push rax
 	push rbx
 	ret

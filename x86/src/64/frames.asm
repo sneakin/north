@@ -20,6 +20,10 @@ defop end_frame
   mov fp, [fp]
   ret
 
+;;;
+;;; Returns
+;;;
+
 defop drop_locals
   pop rax
   mov rsp, fp
@@ -83,6 +87,17 @@ defop quit
   push rbx                      ; return with the ToS
   jmp rax
 
+;;;
+;;; Call Arguments
+;;;
+  
+defop args
+  lea rax, [fp+ptrsize*3]
+  pop rbx
+  push rax
+  push rbx
+  ret
+  
 defop arg0
   mov rax, [fp+ptrsize*3]
   pop rbx
@@ -92,6 +107,17 @@ defop arg0
   
 defop arg1
   mov rax, [fp+ptrsize*4]
+  pop rbx
+  push rax
+  push rbx
+  ret
+
+;;;
+;;; Local data
+;;;
+
+defop locals
+  lea rax, [fp-ptrsize*1]
   pop rbx
   push rax
   push rbx

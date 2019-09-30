@@ -1,0 +1,25 @@
+include "pseudo-ops.pop"
+
+def input_reset
+  fexit
+
+def read_byte
+  cstdin cfgetc
+  swap drop unshift_call_frame
+  fexit
+
+def write_byte
+  shift_call_frame
+  cstdout cfputc
+  drop3
+  fexit
+
+def write_word
+  shift_call_frame
+  cstdout swap
+  literal 4 swap
+  literal 1 swap
+  cfwrite
+  literal 5 dropn
+  fexit
+
