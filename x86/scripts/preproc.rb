@@ -23,6 +23,7 @@ def find_source_file(name)
   raise ArgumentError.new("#{name} not found in #{INCLUDE_PATH.join(', ')}")
 end
 
+$included_files = Array.new
 $definition = nil
 $suffix = ''
 
@@ -70,13 +71,26 @@ def process_lines(iter)
         returns = 0 unless returns
         puts "defc #{name},#{ari},#{returns}"
       end
+    elsif line =~ /^import_var\s+(\w+)\s+(.*)/
+      # import library variables...
+      puts ";; #{$1}"
+      $2.split(/[, ]+/).each do |name|
+        puts "defcvar #{name}"
+      end
     elsif line =~ /^(export|global)\s+(.*)/
       $2.split(/\s+/).each do |fn|
         puts "global #{fn}"
       end
     elsif line =~ /^include\s+"(.*)"/
-      process_lines(File.readlines(find_source_file($1)).each)
-      process_lines([ "\n" ])
+      path = find_source_file($1)
+      if $included_files.include?(path)
+        puts(";; Skipping include #{$1}")
+      else
+        puts(";; Including #{$1}")
+        $included_files.push(path)
+        process_lines(File.readlines(path).each)
+        process_lines([ "\n" ])
+      end
     else
       # inside a definition
       if $definition
