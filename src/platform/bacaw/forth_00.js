@@ -291,6 +291,7 @@ defop('literal', function(asm) {
       ret();
 });
 
+defalias('pointer', 'literal');
 defalias('string', 'literal');
 defalias('int32', 'literal');
 defalias('uint32', 'literal');

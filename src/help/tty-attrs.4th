@@ -2,12 +2,12 @@
     doc( View the 16 TTY colors in a table with color numbers. )
     arg0
     int32 10 DOTIMES[
-        arg3
-        arg1
+        arg2
+        arg0
         int32 10 DOTIMES[
-            arg3 arg1 color/2
+            arg2 arg0 color/2
             swap .d .d
-            int32 4 argn write-string
+            arg3 write-string
         ]DOTIMES
         int32 0 int32 0 color/2 write-crnl
     ]DOTIMES

@@ -206,7 +206,13 @@
 ;
 
 ( Terminator on stack search and replace: )
-  
+
+: bytes-to-terminator
+    args( start-offset -- distance )
+    arg0 terminator stack-find
+    arg0 int-sub return1-1
+;
+
 : patch-terminator/2
     doc( Search up the stack from arg1, replacing the first terminator with "[ terminator - arg1 ] + arg0". )
     args( start-offset adjustment ++ )
@@ -323,31 +329,53 @@
   return-locals
 ; immediate-only
 
+: DONE
+    literal end
+    ( Patch the loop's abort increment. )
+    here int32 16 int-add patch-terminator drop
+    return-locals
+; immediate-only
+
 : WHILE
   doc( jump back to do )
     ( Use this w/o IF: literal arg0 literal ifthenjump )
     POSTPONE IF
       POSTPONE AGAIN
-      POSTPONE THEN
-    literal end
-    ( Patch the loop's abort increment. )
-    here int32 16 int-add patch-terminator drop
+    POSTPONE THEN
+    DONE
   return-locals
 ; immediate-only
 
 : DOTIMES[
   args( times )
-  doc( Loop an N number of times. The counter is in arg1.)
-  literal zero
-  POSTPONE DO
+  doc( Loop an N number of times. The counter is in arg0, max in arg1, and anything on the stack starts with arg2. Returns exit the loop. )
+  literal zero ( counter )
+  ( patched to the offset to end of loop )
+  literal int32 terminator
+  ( loop return address )
+  literal cell/ literal swapdrop
+  literal next-op+ literal swapdrop
+  literal begin ( loop in a frame )
+      literal arg0 literal arg1 literal < ( check the counter )
+      POSTPONE UNLESS literal return-locals POSTPONE THEN
   return-locals
 ; immediate-only
 
 : ]DOTIMES
-  doc( Close `DOTIMES[`. )
-  literal arg1 literal literal int32 1 literal int-add literal set-arg1
-  literal arg1 literal arg2 literal < POSTPONE WHILE
-  return-locals
+    doc( Close `DOTIMES[`. )
+    ( inc the counter )
+    literal arg0 literal literal int32 1 literal int-add literal set-arg0
+    ( calculate jump offset )
+    literal int32
+    call-frame-size int32 4 cell+n rotdrop2
+    here bytes-to-terminator int-sub
+    ( loop )
+    literal jumprel
+    ( patch the terminator to here less call frame )
+    here
+    call-frame-size int32 3 cell+n rotdrop2 negate swapdrop
+    patch-terminator/2 drop2
+    return-locals
 ; immediate-only
 
 ( Quoting: )
