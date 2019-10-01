@@ -433,7 +433,7 @@ function interp(asm, str)
   }
 }
 
-Forth.assembler = function(stage, platform, sources) {
+Forth.assembler = function(stage, platform, opts) {
   var ds = platform.data_segment;
   var cs = platform.code_segment;
   var asm = platform.assembler;
@@ -463,20 +463,25 @@ Forth.assembler = function(stage, platform, sources) {
   strings["platform-string-str"] = platform.name;
   dictionary_add("platform-string", 'value-peeker-code', "platform-string-str");
 
-  function add_source(path, data)
+  function add_source(path, data, binary)
   {
     var name = path.match(/(\w+[\\\/]\w+)\.\w+$/);
-    if(name) {
-      name = name[1].replace(/[\\\/]/g, '/');
+    if(name) name = name[1];
+    else name = path;
+    
+    name = name.replace(/[\\\/]/g, '/');
+    if(binary) {
       forth_sources[name] = data;
+    } else {
+      forth_sources[name] = cellpad(data);
     }
   }
 
   // Load the sources
   
-  for(var input of sources) {
+  for(var input of opts.sources) {
     var data = fs.readFileSync(input, 'utf-8');
-    console.log(input, data.length);
+    console.log("Src:", input, data.length);
     if(input.match(/\.js$/)) {
       eval(data);
     } else if(input.match(/\.4th$/)) {
@@ -485,6 +490,16 @@ Forth.assembler = function(stage, platform, sources) {
     }
   }
 
+  for(var path of opts.texts) {
+    console.log("Text: " + path);
+    add_source(path, fs.readFileSync(path, 'utf-8'));
+  }
+  
+  for(var path of opts.binaries) {
+    console.log("Binary: " + path);
+    add_source(path, fs.readFileSync(path, 'ASCII'), true);
+  }
+  
   // Entries to get the sources
   if(stage.indexOf('min') == -1) {
     for(var n in forth_sources) {
@@ -575,7 +590,8 @@ Forth.assembler = function(stage, platform, sources) {
   if(stage.indexOf('min') == -1) {
     asm.label('sources').uint32('sources-end', true);
     for(var n in forth_sources) {
-      asm.label('sources-' + n + '-src').bytes(cellpad(forth_sources[n]));
+      var data = forth_sources[n];
+      asm.label('sources-' + n + '-src').bytes(data);
     }
     asm.label('sources-end');
   }
@@ -583,8 +599,8 @@ Forth.assembler = function(stage, platform, sources) {
   return asm;
 }
 
-Forth.assemble = function(stage, platform, sources) {
-  return Forth.assembler(stage, platform, sources).assemble();
+Forth.assemble = function(stage, platform, opts) {
+  return Forth.assembler(stage, platform, opts).assemble();
 }
 
 Forth.longify = longify;

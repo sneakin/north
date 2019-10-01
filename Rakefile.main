@@ -107,31 +107,45 @@ def meta_north(opts)
       $root.join('bin', 'meta-north.js'),
       '-s', opts.fetch(:stage, 'stage0'),
       '-p', opts.fetch(:platform, 'bacaw'),
+      *(opts[:texts] || []).collect { |t| [ '--text-file', t ] },
+      *(opts[:binaries] || []).collect { |t| [ '--binary-file', t ] },
       '-o', opts.fetch(:output),
       opts.fetch(:sources).collect(&:to_s)
      ].flatten.shelljoin)
 end
 
-def stage(name, sources, min_target = nil, platform = :bacaw)
+def stage(name, options)
+  options = {
+    sources: [],
+    minimal: nil,
+    platform:  :bacaw
+  }.merge(options)
+
   target = $buildroot.join("north-#{name}.bin")
   $stage_targets << target
 
-  file target => [ $buildroot, *META_SRC, *sources ] do |t|
+  file target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
     meta_north(stage: name.to_s,
                output: t.name,
-               sources: sources,
-               platform: platform)
+               sources: options[:sources],
+               platform: options[:platform],
+               texts: options[:texts],
+               binaries: options[:binaries])
   end
 
-  if min_target
+  min_target = nil
+  
+  if options[:minimal]
     min_target = $buildroot.join("north-#{name}-min.bin")
     $stage_targets << min_target
 
-    file min_target => [ $buildroot, *META_SRC, *sources ] do |t|
+    file min_target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
       meta_north(stage: "#{name}-min",
                  output: t.name,
-                 sources: sources,
-                 platform: platform)
+                 sources: options[:sources],
+                 platform: options[:platform],
+                 texts: options[:texts],
+                 binaries: options[:binaries])
     end
   end
 
@@ -177,9 +191,14 @@ STAGE0_SRC = src('00/core.4th',
                  '00/ui.4th',
                  '00/shorthand.4th')
 
-stage :stage0, PLATFORM_SRC[:bacaw] + STAGE0_SRC, true
+stage(:stage0,
+      sources: PLATFORM_SRC[:bacaw] + STAGE0_SRC,
+      minimal: true)
 
-stage 'stage0-x86', PLATFORM_SRC[:x86] + STAGE0_SRC, true, :x86
+stage('stage0-x86',
+      sources: PLATFORM_SRC[:x86] + STAGE0_SRC,
+      minimal: true,
+      platform: :x86)
 
 STAGE1_SRC = src(*STAGE0_SRC,
                  'platform/bacaw/forth_01.js',
@@ -222,7 +241,10 @@ STAGE1_SRC = src(*STAGE0_SRC,
                  '04/rand.4th',
                  'help/tty-attrs.4th')
 
-stage :stage1, PLATFORM_SRC[:bacaw] + STAGE1_SRC, true
+stage(:stage1,
+      sources: PLATFORM_SRC[:bacaw] + STAGE1_SRC,
+      texts: src('01/atoi.4th'),
+      minimal: true)
 
 STAGE2_SRC = src(*STAGE1_SRC,
                  '03/storage.4th',
@@ -230,13 +252,17 @@ STAGE2_SRC = src(*STAGE1_SRC,
                  '03/storage_test.4th',
                  '02/sound.4th')
 
-stage :stage2, PLATFORM_SRC[:bacaw] + STAGE2_SRC, true
+stage(:stage2,
+      sources: PLATFORM_SRC[:bacaw] + STAGE2_SRC,
+      minimal: true)
 
 STAGE3_SRC = src('build-stage3.4th',
                  '02/assembler.4th',
                  '02/ops.4th')
 
-stage :stage3, PLATFORM_SRC[:bacaw] + STAGE3_SRC, true
+stage(:stage3,
+      sources: PLATFORM_SRC[:bacaw] + STAGE3_SRC,
+      minimal: true)
 
 STAGE4_SRC = src(*STAGE1_SRC,
                  'dev-tests.4th',
@@ -245,7 +271,10 @@ STAGE4_SRC = src(*STAGE1_SRC,
                  '03/storage_test.4th',
                  '02/dict.4th')
 
-stage :stage4, PLATFORM_SRC[:bacaw] + STAGE4_SRC, true
+stage(:stage4,
+      sources: PLATFORM_SRC[:bacaw] + STAGE4_SRC,
+      texts: src('04/tiler.4th'),
+      minimal: true)
 
 #
 # Web building
