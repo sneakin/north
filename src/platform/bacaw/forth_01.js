@@ -65,7 +65,7 @@ defop('end-frame', function(asm) {
 });
 
 defop('exit-frame', function(asm) {
-  asm.load(VM.CPU.REGISTERS.R0, 0, FP_REG).int32(4).
+  asm.load(VM.CPU.REGISTERS.R0, 0, FP_REG).int32(CELL_SIZE).
       load(FP_REG, 0, FP_REG).uint32(0).
       mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');;

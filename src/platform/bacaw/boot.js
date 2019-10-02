@@ -37,13 +37,13 @@ asm.label('goodbye').
 
 var offset = data_segment_offset;
 asm.label('input_data_position', offset).
-    label('output_data_position', offset + 4).
-    label('waiting_for_input', offset + 8).
-    label('waiting_for_output', offset + 12).
-    label('heap_top', offset + 16).
-    label('stack_top', offset + 20).
-    label('data_segment_end', offset + 24);
-data_segment_offset = 4 + asm.resolve('data_segment_end');
+    label('output_data_position', offset + CELL_SIZE * 1).
+    label('waiting_for_input', offset + CELL_SIZE * 2).
+    label('waiting_for_output', offset + CELL_SIZE * 3).
+    label('heap_top', offset + CELL_SIZE * 4).
+    label('stack_top', offset + CELL_SIZE * 5).
+    label('data_segment_end', offset + CELL_SIZE * 6);
+data_segment_offset = CELL_SIZE + asm.resolve('data_segment_end');
 
 asm.label('data_init').
     load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).

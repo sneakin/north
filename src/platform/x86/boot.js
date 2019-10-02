@@ -6,4 +6,3 @@ define own words; loop through symbol table
 change to new dictionary
 indexes now zero from imports
 */
-

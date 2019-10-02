@@ -5,8 +5,8 @@ defop('eip', function(asm) {
 
 defop('call-seq', function(asm) {
   asm.push(EVAL_IP_REG).
-      load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.SP).uint32(4).
-      inc(EVAL_IP_REG).uint32(4).
+      load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
+      inc(EVAL_IP_REG).uint32(CELL_SIZE).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('begin-code').
       ret();
 });
@@ -15,7 +15,7 @@ defop('call-seq', function(asm) {
 defop('exec-data-seq', function(asm) {
   // Given an entry in R0, load IP with the address after the data value's length.
   asm.load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.R0).uint32(8). // load entry data
-  inc(VM.CPU.REGISTERS.R1).uint32(4). // skip length
+  inc(VM.CPU.REGISTERS.R1).uint32(CELL_SIZE). // skip length
   mov(VM.CPU.REGISTERS.IP, VM.CPU.REGISTERS.R1);
 });
 
@@ -75,14 +75,14 @@ defop('pick', function(asm) {
 
 defop('localn', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(4).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
       cls(VM.CPU.STATUS.NUMERICS).
       muli(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
       mov(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
       mov(VM.CPU.REGISTERS.R0, FP_REG).
       cls(VM.CPU.STATUS.NUMERICS).
       subi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
-      dec(VM.CPU.REGISTERS.R0).uint32(4).
+      dec(VM.CPU.REGISTERS.R0).uint32(CELL_SIZE).
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');

@@ -20,8 +20,7 @@
   dhere
   terminator dpush
   ( calc length )
-  arg0 int-sub
-  int32 4 int-div
+  arg0 int-sub cell/
   ( set length )
   arg0 poke
 ;

@@ -2,7 +2,7 @@
 
 : emit-long ( addr value ++ next-addr )
   arg0 arg1 poke
-  arg1 int32 4 int-add return1
+  arg1 int32 cell-size int-add return1
 ;
 
 : poke-short ( value addr )
