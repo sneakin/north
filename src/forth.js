@@ -478,14 +478,19 @@ Forth.assembler = function(stage, platform, opts) {
     else name = path;
     
     name = name.replace(/[\\\/]/g, '/');
-    if(binary) {
-      forth_sources[name] = data;
-    } else {
-      forth_sources[name] = cellpad(data);
+    if(!binary) {
+      data = cellpad(data);
     }
+    var label = 'sources-' + name + '-src';
+    forth_sources[label] = data;
+    dictionary_add('src/' + name, 'value-peeker-code', label);
   }
 
   // Load the sources
+
+  function min_stage() {
+    return (stage.indexOf('min') == -1);
+  }
   
   for(var input of opts.sources) {
     var data = fs.readFileSync(input, 'utf-8');
@@ -494,7 +499,7 @@ Forth.assembler = function(stage, platform, opts) {
       eval(data);
     } else if(input.match(/\.4th$/)) {
       interp(asm, data);
-      add_source(input, data);
+      if(!min_stage()) add_source(input, data);
     }
   }
 
@@ -508,13 +513,6 @@ Forth.assembler = function(stage, platform, opts) {
     add_source(path, fs.readFileSync(path, 'ASCII'), true);
   }
   
-  // Entries to get the sources
-  if(stage.indexOf('min') == -1) {
-    for(var n in forth_sources) {
-      interp(asm, `: ${n}-src literal sources-${n}-src return1 ;`);
-    }
-  }
-
   // trampolines
   if(platform.name == 'bacaw') {
     for(var n in dictionary) {
@@ -595,14 +593,14 @@ Forth.assembler = function(stage, platform, opts) {
   
   asm.label('immediate-dictionary').uint32(last_label);
 
-  if(stage.indexOf('min') == -1) {
+  //if(!min_stage()) {
     asm.label('sources').uint32('sources-end', true);
     for(var n in forth_sources) {
       var data = forth_sources[n];
-      asm.label('sources-' + n + '-src').bytes(data);
+      asm.label(n).bytes(data);
     }
     asm.label('sources-end');
-  }
+//}
   
   return asm;
 }

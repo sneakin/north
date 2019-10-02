@@ -156,7 +156,8 @@ def stage(name, options)
   
   namespace name do
     desc "Build #{name}"
-    task :build => [ target, min_target ]
+    task :build => [ target ]
+    task :build => [ min_target ] if min_target
     
     desc "Run #{name}"
     task :run => target do
@@ -165,11 +166,16 @@ def stage(name, options)
 
     if min_target
       namespace :min do
+        desc "Build the minimal target for #{name}"
+        task :build => min_target
+        
         desc "Run the minimal #{name}"
         task :run => min_target do
           sh("node #{BCBIN} #{min_target}")
         end
       end
+
+      task :min => "#{name}:min:build"
     end
   end
 end
