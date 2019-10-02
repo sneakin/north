@@ -14,7 +14,7 @@ defop('call-seq', function(asm) {
 
 defop('exec-data-seq', function(asm) {
   // Given an entry in R0, load IP with the address after the data value's length.
-  asm.load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.R0).uint32(8). // load entry data
+  asm.load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load entry data
   inc(VM.CPU.REGISTERS.R1).uint32(CELL_SIZE). // skip length
   mov(VM.CPU.REGISTERS.IP, VM.CPU.REGISTERS.R1);
 });
@@ -57,7 +57,7 @@ defop('tailcall-op', function(asm) {
 
 defop('dup2', function(asm) {
   asm.
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(8).
+      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
       ret();

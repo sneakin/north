@@ -17,7 +17,7 @@ defop('return-2', function(asm) {
       mov(VM.CPU.REGISTERS.SP, FP_REG).
       pop(FP_REG).
       pop(EVAL_IP_REG).
-      inc(VM.CPU.REGISTERS.SP).uint32(8).
+      inc(VM.CPU.REGISTERS.SP).uint32(CELL_SIZE*2).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 

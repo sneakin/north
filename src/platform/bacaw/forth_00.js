@@ -28,13 +28,13 @@ defop('exec', function(asm) {
 });
 
 defop('exec-word', function(asm) {
-  asm.load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.R0).uint32(4);
+  asm.load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE);
 });
 
 defop('call-data', function(asm) {
   // Given an entry in R0, load eval IP with the data value.
   asm.push(EVAL_IP_REG). // save return
-  load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(8). // load data value
+  load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load data value
   load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('begin-code').
       ret();
 });
@@ -42,7 +42,7 @@ defop('call-data', function(asm) {
 defop('call-data-seq', function(asm) {
   // Given an entry in R0, jump to it's data sequence's first value.
   asm.push(EVAL_IP_REG). // save return
-  load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(8). // load entry data
+  load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load entry data
   inc(EVAL_IP_REG).uint32(CELL_SIZE). // skip the length
   load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('begin-code').
       ret();
@@ -51,7 +51,7 @@ defop('call-data-seq', function(asm) {
 defop('jump-entry-data', function(asm) {
   // Load the eval IP with the entry at the ToS's data value.
   asm.pop(VM.CPU.REGISTERS.R0). // entry
-  load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(8). // load data value
+  load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load data value
   inc(EVAL_IP_REG).uint32(CELL_SIZE). // skip sequence length
   load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
       ret();
@@ -347,7 +347,7 @@ defop('drop', function(asm) {
 });
 
 defop('drop2', function(asm) {
-  asm.inc(VM.CPU.REGISTERS.SP).uint32(8).
+  asm.inc(VM.CPU.REGISTERS.SP).uint32(CELL_SIZE*2).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
@@ -849,7 +849,7 @@ defop('dallot-seq', function(asm) {
       // increase heap ptr
       cls(VM.CPU.STATUS.NUMERICS).
       addi(HEAP_REG, VM.CPU.REGISTERS.STATUS).
-      inc(VM.CPU.REGISTERS.R0).uint32(8).
+      inc(VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       mov(HEAP_REG, VM.CPU.REGISTERS.R0).
       // terminate seq
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(TERMINATOR).
@@ -891,8 +891,8 @@ defop('set-dict', function(asm) {
 defop('rot', function(asm) {
   // a b c -> c b a
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
-      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.SP).uint32(8).
-      store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(8).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE*2).
+      store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE*2).
       store(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.SP).uint32(0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
@@ -933,26 +933,26 @@ defop('swapdrop', function(asm) {
   */
 
 defop('value-peeker', function(asm) {
-  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
+  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
 defop('variable-peeker', function(asm) {
-  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
+  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
 defop('pointer-peeker', function(asm) {
-  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
+  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
 defop('do-accessor', function(asm) {
-  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(8).
+  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       pop(VM.CPU.REGISTERS.R1).
       cls(VM.CPU.REGISTERS.STATUS).
       addi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
