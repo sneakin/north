@@ -2,7 +2,7 @@ require 'pathname'
 require 'shellwords'
 require 'rbconfig'
 
-$root = Pathname.new(__FILE__).parent.expand_path
+$root = Pathname.new(__FILE__).parent.relative_path_from(Dir.pwd)
 $buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', $root.join('build')))
 release_root=Pathname.new(ENV.fetch('RELEASE_ROOT', $root.join('tmp/release')))
 pages_root=Pathname.new(ENV.fetch('PAGES_ROOT', $root.join('tmp/gh-pages')))
@@ -19,6 +19,7 @@ BCLIB = BCROOT.join('js', 'lib')
 
 BCCON = "node #{Shellwords.escape(BCBIN)}"
 NODE_PATH << [ $root.join('src'), BCLIB ]
+# ENV['NODE_PATH'] = NODE_PATH.flatten.join(':')
 
 $stage_targets = []
 
@@ -103,6 +104,7 @@ file $root.join('src', 'version.txt') => [ $root.join('version.txt'), $root.join
 end
 
 def meta_north(opts)
+  sh("env")
   sh(["node",
       $root.join('bin', 'meta-north.js'),
       '-s', opts.fetch(:stage, 'stage0'),
@@ -200,8 +202,7 @@ stage('stage0-x86',
       minimal: true,
       platform: :x86)
 
-STAGE1_SRC = src(*STAGE0_SRC,
-                 'platform/bacaw/forth_01.js',
+STAGE1_SRC = STAGE0_SRC + src('platform/bacaw/forth_01.js',
                  'platform/bacaw/forth_02.js',
                  #'01/atoi.4th',
                  '01/tty.4th',
@@ -247,8 +248,7 @@ stage(:stage1,
       texts: src('01/atoi.4th'),
       minimal: true)
 
-STAGE2_SRC = src(*STAGE1_SRC,
-                 '03/storage.4th',
+STAGE2_SRC = STAGE1_SRC + src('03/storage.4th',
                  '03/storage_devices.4th',
                  '03/storage_test.4th',
                  '02/sound.4th')
@@ -265,8 +265,7 @@ stage(:stage3,
       sources: PLATFORM_SRC[:bacaw] + STAGE3_SRC,
       minimal: true)
 
-STAGE4_SRC = src(*STAGE1_SRC,
-                 'dev-tests.4th',
+STAGE4_SRC = STAGE1_SRC + src('dev-tests.4th',
                  '03/storage.4th',
                  '03/storage_devices.4th',
                  '03/storage_test.4th',
