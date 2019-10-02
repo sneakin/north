@@ -456,12 +456,20 @@ Forth.assembler = function(stage, platform, opts) {
     dictionary_add(name, entry.code, entry.data);
   }
 
-  strings["version-string-str"] = fs.readFileSync(__dirname + '/version.txt', 'utf-8').trim();
-  dictionary_add("version-string", 'value-peeker-code', "version-string-str");
-  strings["stage-string-str"] = stage;
-  dictionary_add("stage-string", 'value-peeker-code', "stage-string-str");
-  strings["platform-string-str"] = platform.name;
-  dictionary_add("platform-string", 'value-peeker-code', "platform-string-str");
+  function constant(name, value)
+  {
+    if(typeof(value) == 'string') {
+      var label = name + '-str';
+      strings[label] = value;
+      value = label;
+    }
+    dictionary_add(name, 'value-peeker-code', value);
+  }
+  
+  constant("version-string", fs.readFileSync(__dirname + '/version.txt', 'utf-8').trim());
+  constant("stage-string", stage);
+  constant("platform-string", platform.name);
+  constant("cell-size", CELL_SIZE);
 
   function add_source(path, data, binary)
   {

@@ -56,10 +56,6 @@
 
 ( Cells )
 
-: cell-size
-  int32 4 return1
-;
-
 : cell*
   arg0 cell-size int-mul
   return1
