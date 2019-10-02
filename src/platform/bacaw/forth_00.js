@@ -458,6 +458,13 @@ for(var f in conv_ops) {
   });
 }
 
+defop('logi', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      logi(VM.CPU.REGISTERS.R0).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 defop('bsl', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).

@@ -1,6 +1,61 @@
+( VT100+ TTY control: )
+
+: write-bell int32 char-code \b write-byte ;
+
 : tty-reset
     " \ec" write-string
 ;
+
+: tty-enter-raw-mode
+    doc( Switches the input device to raw mode. Returns the previous state of the device. )
+    args( ++ prior-state )
+    input-dev-addr input-dev-intr-mode peek
+    input-reset
+    swap input-dev-enter-raw-mode
+    swap return1
+;
+
+: tty-exit-raw-mode
+    doc( Returns the input device to its prior state. )
+    args( prior-state )
+    arg0 input-dev-addr input-dev-intr-mode swapdrop poke
+    input-reset
+;
+
+( Helper functions: )
+
+: tty-basic-escape2
+    base peek dec
+    " \e[" write-string
+    arg2 write-int
+    " ;" write-string
+    arg1 write-int
+    arg0 write-string
+    local0 base poke
+;
+
+: tty-basic-escape1
+    args( arg code )
+    " \e[" write-string
+    arg1 write-int
+    arg0 write-string
+;
+
+: tty-escape-private/1
+    arg0 UNLESS longify l return1 THEN
+    longify h return1
+;
+
+: tty-escape-private!
+    arg0 write-string
+    arg1 tty-escape-private/1 write-byte
+;
+
+( Tabs... )
+
+: tty-tab-set " \eH" write-string ;
+: tty-tab-clear " \e[g" write-string ;
+: tty-tab-clear-all " \e[3g" write-string ;
 
 ( Erasure: )
 
@@ -54,21 +109,8 @@
     " \eH" write-string
 ;
 
-: tty-basic-escape2
-    base peek dec
-    " \e[" write-string
-    arg2 write-int
-    " ;" write-string
-    arg1 write-int
-    arg0 write-string
-    local0 base poke
-;
-
-: tty-basic-escape1
-    args( arg code )
-    " \e[" write-string
-    arg1 write-int
-    arg0 write-string
+: tty-cursor-home-bottom
+    " \eF" write-string
 ;
 
 : tty-cursor-to arg0 arg1 " f" tty-basic-escape2 ;
@@ -78,55 +120,68 @@
 : tty-cursor-right arg0 " C" tty-basic-escape1 ;
 : tty-cursor-left arg0 " D" tty-basic-escape1 ;
 
+: tty-cursor-down-1 " \eD" write-string ;
+: tty-cursor-up-1 " \eM" write-string ;
+
 : tty-cursor-next-line arg0 " E" tty-basic-escape1 ;
 : tty-cursor-prev-line arg0 " F" tty-basic-escape1 ;
 : tty-cursor-to-col arg0 " G" tty-basic-escape1 ;
+
+: tty-cursor-move
+    arg1 negative? IF negate tty-cursor-left ELSE tty-cursor-right THEN
+    arg0 negative? IF negate tty-cursor-up ELSE tty-cursor-down THEN
+;
 
 : tty-get-cursor
     " \e[6n" write-string
 ;
 
+: tty-scroll-screen " \e[r" write-string ;
+: tty-scroll-screen/2 arg1 arg0 " r" tty-basic-escape2 ;
+
 : tty-scroll-up
-    " \eD" write-string
+    " \eM" write-string
 ;
 
 : tty-scroll-down
-    " \eM" write-string
+    " \eD" write-string
 ;
 
 ( Private escape sequences: )
 
-: tty-escape-private/1
-    arg0 UNLESS longify l return1 THEN
-    longify h return1
-;
+: tty-linewrap/1 arg0 " \e[7" tty-escape-private! ;
+: tty-linewrap-on int32 1 tty-linewrap/1 ;
+: tty-linewrap-off int32 0 tty-linewrap/1 ;
 
-: tty-escape-private!
-    arg0 write-string
-    tty-escape-private/1 write-byte
-;
+: tty-local-echo/1 arg0 " \e[12" tty-escape-private! ;
+: tty-local-echo-on int32 1 tty-local-echo/1 ;
+: tty-local-echo-off int32 0 tty-local-echo/1 ;
 
-: tty-newline-mode/1 " \e[20" tty-escape-private! ;
+: tty-newline-mode/1 arg0 " \e[20" tty-escape-private! ;
 : tty-newline-mode int32 1 tty-newline-mode/1 ;
 : tty-line-feed-mode int32 0 tty-newline-mode/1 ;
 
-: tty-show-cursor/1 " \e[?25" tty-escape-private! ;
+: tty-show-cursor/1 arg0 " \e[?25" tty-escape-private! ;
 : tty-show-cursor int32 1 tty-show-cursor/1 ;
 : tty-hide-cursor int32 0 tty-show-cursor/1 ;
 
-: tty-alt-buffer/1 " \e[?1047" tty-escape-private! ;
+: tty-alt-buffer/1 arg0 " \e[?1047" tty-escape-private! ;
 : tty-alt-buffer int32 1 tty-alt-buffer/1 ;
 : tty-normal-buffer int32 0 tty-alt-buffer/1 ;
 
-: tty-alt-buffer-clear/1 " \e[?1049" tty-escape-private! ;
-: tty-alt-buffer-clear int32 1 tty-alt-buffer-clear/1 ;
-: tty-normal-buffer-clear int32 0 tty-alt-buffer-clear/1 ;
+: tty-alt-buffer-switch/1 arg0 " \e[?1049" tty-escape-private! ;
+: tty-alt-buffer-save int32 1 tty-alt-buffer-switch/1 ;
+: tty-normal-buffer-restore int32 0 tty-alt-buffer-switch/1 ;
 
-: tty-mouse/1 " \e[?1000" tty-escape-private! ;
+: tty-alt-cursor-save/1 arg0 " \e[?1048" tty-escape-private! ;
+: tty-alt-cursor-save int32 1 tty-alt-cursor-save/1 ;
+: tty-alt-cursor-restore int32 0 tty-alt-cursor-save/1 ;
+
+: tty-mouse/1 arg0 " \e[?1000" tty-escape-private! ;
 : tty-mouse-on int32 1 tty-mouse/1 ;
 : tty-mouse-off int32 0 tty-mouse/1 ;
 
-: tty-bracket-paste/1 " \e[?2004" tty-escape-private! ;
+: tty-bracket-paste/1 arg0 " \e[?2004" tty-escape-private! ;
 : tty-bracket-paste-on int32 1 tty-bracket-paste/1 ;
 : tty-bracket-paste-off int32 0 tty-bracket-paste/1 ;
 
@@ -158,20 +213,50 @@
 
 : tty-reset-font int32 10 color-attr ;
 
+( Font selection: )
+
+: tty-font-g0 int32 15 write-byte ;
+: tty-font-g1 int32 14 write-byte ;
+: tty-font-g2 " \eN" write-string ;
+: tty-font-g2-1 " \en" write-string ;
+: tty-font-g3 " \eO" write-string ;
+: tty-font-g3-1 " \eo" write-string ;
+
+: TTY-FONT-US int32 char-code B return1 ;
+: TTY-FONT-UK int32 char-code A return1 ;
+: TTY-FONT-BOX int32 char-code 0 return1 ;
+
+: tty-set-g0 " \e(" write-string arg0 write-byte ;
+: tty-set-g1 " \e)" write-string arg0 write-byte ;
+: tty-set-g2 " \e*" write-string arg0 write-byte ;
+: tty-set-g3 " \e+" write-string arg0 write-byte ;
+
+: tty-box-drawing-on TTY-FONT-BOX tty-set-g1 tty-font-g1 ;
+: tty-box-drawing-off tty-font-g0 ;
+
 ( Bad codes? )
 
-: tty-blinking-cursor/1 " \e[?12" tty-escape-private! ;
+: tty-reversed/1 arg0 " \e[?12" tty-escape-private! ;
+: tty-reversed-on int32 1 tty-reversed/1 ;
+: tty-reversed-off int32 0 tty-reversed/1 ;
+
+: tty-blinking-cursor/1 arg0 " \e[?12" tty-escape-private! ;
 : tty-blinking-cursor int32 1 tty-blinking-cursor/1 ;
 : tty-solid-cursor int32 0 tty-blinking-cursor/1 ;
 
-: tty-hi-mouse/1 " \e[?1001" tty-escape-private! ;
+: tty-hi-mouse/1 arg0 " \e[?1001" tty-escape-private! ;
 : tty-hi-mouse-on int32 1 tty-hi-mouse/1 ;
 : tty-hi-mouse-off int32 0 tty-hi-mouse/1 ;
 
-: tty-font-normal " \e(A" write-string ;
-: tty-font-special " \e)A" write-string ;
+: tty-mouse-cell-motion/1 arg0 " \e[?1002" tty-escape-private! ;
+: tty-mouse-cell-motion-on int32 1 tty-mouse-cell-motion/1 ;
+: tty-mouse-cell-motion-off int32 0 tty-mouse-cell-motion/1 ;
 
-: tty-relative/1 " \e[?6" tty-escape-private! ;
+: tty-mouse-tracking/1 arg0 " \e[?1003" tty-escape-private! ;
+: tty-mouse-tracking-on int32 1 tty-mouse-tracking/1 ;
+: tty-mouse-tracking-off int32 0 tty-mouse-tracking/1 ;
+
+: tty-relative/1 arg0 " \e[?6" tty-escape-private! ;
 : tty-relative int32 1 tty-relative/1 ;
 : tty-absolute int32 0 tty-relative/1 ;
 
@@ -275,11 +360,24 @@ constant TTY-READ-MOUSE 4
 ;
 
 : tty-read
-    doc( Read the next byte ormescape sequence from theminput device. )
+    doc( Read the next byte or escape sequence from the input device. )
     args( ++ ...event-data event-kind )
     tty-read-byte
     escape? IF ' tty-read-escape-seq cont THEN
     TTY-READ-BYTE return2
+;
+
+: tty-read-cursor
+    doc( Query the terminal for the cursor position. )
+    args( ++ row col )
+    tty-enter-raw-mode
+    tty-get-cursor tty-read
+    TTY-READ-CSI equals IF
+      local0 tty-exit-raw-mode drop
+      drop3 return2
+    ELSE
+      int32 0 int32 0 return2
+    THEN
 ;
 
 ( TTY ReadEval: reader + dictionary word execution by key name: )
@@ -422,16 +520,14 @@ constant TTY-READ-MOUSE 4
 ;
 
 : tty-readeval-start
-    input-dev-addr input-dev-intr-mode peek
-    input-reset
-    swap input-dev-enter-raw-mode
+    tty-enter-raw-mode
     tty-mouse-on
-    drop return1
+    return1
 ;
 
 : tty-readeval-end
     tty-mouse-off
-    arg0 ,d input-dev-addr input-dev-intr-mode swapdrop poke
+    arg0 tty-exit-raw-mode
     input-reset
 ;
 
@@ -525,10 +621,18 @@ constant TTY-READ-MOUSE 4
     arg1 .d arg2 .d arg3 .d .\n
 ;
 
+: tty-readeval-on-report-cursor
+    " on-report-cursor" .s
+    arg1 .d arg2 .d arg3 .d .\n
+;
+
 : tty-readeval-test-dict
     terminator
     " <up>" aliases> tty-readeval-on-up
     " \e[M" aliases> tty-readeval-on-mouse
+    " \e[R" aliases> tty-readeval-on-report-cursor
+    " C" aliases> tty-get-cursor
+    " M-O-P" aliases> help
     " C-l" aliases> tty-reset
     " C-m" aliases> tty-readeval-on-return
     " C-j" aliases> tty-readeval-on-newline
