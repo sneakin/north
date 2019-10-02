@@ -256,7 +256,7 @@ field right
         dup int32 0 equals IF
             arg2 true return2
         THEN
-        dup int32 0 < IF
+        int32 0 < IF
             arg2 btree-branch-left @
         ELSE
             arg2 btree-branch-right @
@@ -275,11 +275,12 @@ field right
     args( key branch sort-fn key-fn ++ item found? )
     .\n " find" .S arg3 .h arg2 .h
     arg2 btree-branch? IF
-        arg3 over btree-branch-value @ arg1 arg0 key-slot-cmp
+        " branch" .S
+        arg3 over btree-branch-value @ arg1 arg0 key-slot-cmp ,i
         dup int32 0 equals IF
             arg2 btree-branch-value @ true return2
         THEN
-        dup int32 0 < IF
+        int32 0 < IF
             arg2 btree-branch-left @
         ELSE
             arg2 btree-branch-right @
@@ -287,10 +288,12 @@ field right
         drop-locals RECURSE
     THEN
     terminator? UNLESS
+        " leaves" .S
         arg3 arg2 arg1 arg0 ordered-seq-find IF
             true return2
         THEN
     THEN
+    " done" .S
     int32 0 false return2
 ;
 
