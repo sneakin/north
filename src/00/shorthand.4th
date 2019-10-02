@@ -1,6 +1,17 @@
+( Short aliases for common & helpful functions. )
+
 alias ! poke
 alias @ peek
 alias . drop
+
+: q quit ; immediate
+
+: .
+  doc( Print the top of stack. )
+  arg0 write-int
+;
+
+( Printers: )
 
 : ,sp write-space ;
 : .\n write-crnl ;
@@ -21,4 +32,8 @@ alias . drop
 : ,d arg0 write-space write-int ;
 : .d arg0 ,d return-1 ;
 
-: q quit ; immediate
+( Base helpers: )
+
+: binary int32 %10 base poke ;
+: hex int32 $10 base poke ;
+: dec int32 #10 base poke ;

@@ -43,6 +43,15 @@ field: items
     arg2 arg1 ordered-seq-items @ arg0 seq-poke
 ;
 
+: ordered-seq-last
+    arg0 ordered-seq-count @
+    dup int32 0 > IF
+        int32 1 int-sub
+        arg0 swap ordered-seq-peek true return2
+    THEN
+    int32 -1 false return2
+;
+
 : ordered-seq-add/5
     args( item seq sort-fn key-fn counter ++ reject added? )
     arg0 arg3 ordered-seq-max-count swapdrop >= IF
@@ -123,15 +132,6 @@ field: items
     arg2 ordered-seq-count @
     arg1 arg0 reduce-seq-n
     return1
-;
-
-: ordered-seq-last
-    arg0 ordered-seq-count @
-    dup int32 0 > IF
-        int32 1 int-sub
-        arg0 swap ordered-seq-peek true return2
-    THEN
-    int32 -1 false return2
 ;
 
 : ordered-seq-pop

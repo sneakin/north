@@ -40,10 +40,6 @@
 
 ( Exercise routines of the above. Lots could be desired. Clipping... )
 
-: negative?
-    arg0 int32 0 < IF true ELSE false THEN return1
-;
-
 : write-repeated-byte
     args( times char )
     arg0

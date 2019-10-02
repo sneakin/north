@@ -1,11 +1,6 @@
 ( Entry )
 
-global-var *tokenizer*
-global-var *status*
 global-var *debug*
-global-var *state*
-global-var base
-global-var immediate-dict
 
 : init-00
   int32 0 *tokenizer* poke

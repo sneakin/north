@@ -48,6 +48,10 @@
     longify \e[2m write-word
 ;
 
+: underline
+    longify \e[4m write-word
+;
+
 : black
   int32 8 int32 0 color/2 
 ;
@@ -82,4 +86,9 @@
 
 : tty-default-fg
   int32 8 int32 9 color/2 
+;
+
+: write-heading
+    doc( Print the argument out underlined, bold, and on its own line. )
+    bold underline arg0 write-line color-reset write-crnl
 ;

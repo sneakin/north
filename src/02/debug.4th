@@ -30,6 +30,18 @@
 
 ( Call tracing: )
 
+global-var *tracing* doc( Controls if trace messages are printed. )
+
+: start-tracing
+    doc( Turns tracing on. All traced words will be logged. )
+    true *tracing* !
+;
+
+: stop-tracing
+    doc( Turns tracing off. No logging will be done.)
+    false *tracing* !
+;
+
 : trace-definition
     doc( Changes a dictionary entry's code to trace a definition. )
     args( dict-entry ++ changed? )
@@ -124,19 +136,6 @@
 
         start-tracing
     THEN
-;
-
-global-var *tracing*
-doc( Controls if trace messages are printed. )
-
-: start-tracing
-    doc( Turns tracing on. All traced words will be logged. )
-    true *tracing* !
-;
-
-: stop-tracing
-    doc( Turns tracing off. No logging will be done.)
-    false *tracing* !
 ;
 
 : on-trace

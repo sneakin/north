@@ -189,7 +189,11 @@
     int32 1 int-add return0-n
 ; immediate-as ;
 
-: eos " EOS" return1 ;
+: return-locals
+  doc( Causes the caller to return all of its local data shifted over the frame and return pointers. )
+  drop-call-frame
+  locals here int-sub cell/ swapdrop returnN
+;
 
 : :
   doc( Start a new definition with the following name. Definition ends with a ";". )
@@ -248,12 +252,6 @@
   literal literal swap
   return2
 ; immediate
-
-: return-locals
-  doc( Causes the caller to return all of its local data shifted over the frame and return pointers. )
-  drop-call-frame
-  locals here int-sub cell/ swapdrop returnN
-;
 
 : ELSE
     doc( Evaluate the calls until THEN when an IF or UNLESS's condition fails. )

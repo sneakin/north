@@ -50,14 +50,3 @@
   dict dict-entry-name write-string drop2 write-ok
   ' endcol jump-entry-data
 ; immediate-only
-
-: .
-  doc( Print the top of stack. )
-  arg0 write-int
-;
-
-( Base helpers: )
-
-: binary int32 %10 base poke ;
-: hex int32 $10 base poke ;
-: dec int32 #10 base poke ;

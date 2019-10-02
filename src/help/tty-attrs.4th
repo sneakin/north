@@ -35,11 +35,6 @@
     color-reset write-crnl
 ;
 
-: write-heading
-    doc( Print the argument out underlined, bold, and on its own line. )
-    bold underline arg0 write-line color-reset write-crnl
-;
-
 : help-tty-attrs
     doc( View a table of colors and styles availeble on a TTY. )
     int32 1 int32 1 tty-cursor-to

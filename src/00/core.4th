@@ -1,5 +1,71 @@
 ( Functions for a token evaluator using the primitive ops. )
 
+( Cells )
+
+: cell*
+  arg0 cell-size int-mul
+  return1
+;
+
+: cell/
+  arg0 cell-size int-div
+  return1
+;
+
+: cell+n
+  arg0 cell*
+  arg1 int-add
+  return1
+;
+
+: cell+
+  cell-size arg0 int-add
+  return1
+;
+
+: cell+2
+  arg0 int32 2 cell+n
+  return1
+;
+
+: cell+3
+  arg0 int32 3 cell+n
+  return1
+;
+
+: cell-n
+  arg0 cell*
+  arg1 int-sub
+  return1
+;
+
+: cell-
+  arg0 cell-size int-sub
+  return1
+;
+
+: cell-2
+  arg0 int32 -2 cell+n
+  return1
+;
+
+( Call frames: )
+
+: frame-size
+  int32 2 cell* return1
+;
+
+: parent-frame
+    ( first element, so nop )
+;
+
+: set-arg0
+  current-frame parent-frame peek
+  frame-size int-add
+  arg0 swap poke
+  return-1
+;
+
 ( Sequences )
 
 : terminator
@@ -54,55 +120,6 @@
   peek return1
 ;
 
-( Cells )
-
-: cell*
-  arg0 cell-size int-mul
-  return1
-;
-
-: cell/
-  arg0 cell-size int-div
-  return1
-;
-
-: cell+n
-  arg0 cell*
-  arg1 int-add
-  return1
-;
-
-: cell+
-  cell-size arg0 int-add
-  return1
-;
-
-: cell+2
-  arg0 int32 2 cell+n
-  return1
-;
-
-: cell+3
-  arg0 int32 3 cell+n
-  return1
-;
-
-: cell-n
-  arg0 cell*
-  arg1 int-sub
-  return1
-;
-
-: cell-
-  arg0 cell-size int-sub
-  return1
-;
-
-: cell-2
-  arg0 int32 -2 cell+n
-  return1
-;
-
 ( Strings )
 
 ( Compares to values returning -1 if the first is less, 0 if equal, and 1 if greater. )
@@ -149,23 +166,6 @@
   THEN
 
   arg1 arg0 seq-length string-equal-n return1
-;
-
-( Call frames: )
-
-: frame-size
-  int32 2 cell* return1
-;
-
-: parent-frame
-    ( first element, so nop )
-;
-
-: set-arg0
-  current-frame parent-frame @
-  frame-size int-add
-  arg0 swap poke
-  return-1
 ;
 
 ( Sequence copying )
@@ -336,109 +336,14 @@
 
 ( Basic error quiting )
 
-(
+global-var *state* doc( Holds a function pointer that determines how words are interpreted. See `compile`. )
+
+global-var *status* doc( The last error value. )
+
 : error
-  ( error-msg2 error-msg1 )
-(  arg0 int32 *status*-sym set-var
-  int32 0 int32 *state*-sym set-var drop3
-  quit ( exit caller )
-( ;
-)
-
-( Dictionary helpers )
-
-: [create]
-  arg1 arg0 intern-seq
-  int32 0 int32 0 add-dict
-  return1
-;
-
-: create
-  next-token dup UNLESS " End of stream" error THEN
-  [create] return1
-;
-
-( Constants )
-
-( Returns a colon sequence that returns the argument. )
-: constant-capturer
-  start-seq
-  literal literal dpush
-  arg0 dpush
-  literal return1 dpush
-  end-seq
-  cell+ return1
-;
-  
-: does-constant
-  ( entry init-value )
-  literal value-peeker dict-entry-code swapdrop
-  arg1 set-dict-entry-code
-  arg0 arg1 set-dict-entry-data
-;
-
-: [constant]
-  ( value name )
-  arg0 seq-length [create] arg1 does-constant
-  drop return1
-;
-
-: constant'
-  ( value : name )
-  arg0 next-param [constant]
-;
-
-: constant
-  ( value : name )
-  create arg0 does-constant
-;
-
-( Variables )
-
-: does-var
-  ( entry init-value )
-  literal variable-peeker dict-entry-code swapdrop
-  arg1 set-dict-entry-code
-  arg0 dpush dhere arg1 set-dict-entry-data
-;
-
-: [variable]
-  ( value name )
-  arg0 [create] arg1 does-var
-  drop return1
-;
-
-: variable
-  doc( Add an entry to the dictionary for a new variable that stores its value at `dhere`. The entry stores a pointer. `peek` gets the value and `poke` will set it. )
-  args( value : name ++ )
-  create arg0 does-var
-;
-
-( Dictionary initialization )
-
-: mark
-  dict lit *mark* [constant]
-;
-
-: forget
-  lit *mark* dict dict-lookup
-  dict-entry-data set-dict
-;
-
-: drop-dict
-  dict dict-entry-next set-dict
-;
-
-: immediate-dict-init
-  literal immediate-dictionary peek
-  immediate-dict poke
-;
-
-: dict-init
-  literal dictionary peek
-  set-dict
-  immediate-dict-init
-  mark
+  arg0 *status* poke
+  int32 0 *state* poke
+  quit
 ;
 
 ( Input )
@@ -552,6 +457,9 @@
 
 ( Tokenizing with state )
 
+: token-max-cell-size int32 128 return1 ;
+: token-max-byte-size token-max-cell-size cell* return1 ;
+
 : tokenizer-str-offset
   arg0 cell+ peek
   return1
@@ -614,65 +522,18 @@
   drop RECURSE
 ;
 
-( fixme limit length read to buffer size )
-
-: tokenizer-read-until-loop
-  ( tokenizer needle ++ output-seq length )
-  arg1 tokenizer-next-word null? UNLESS
-    dup arg0 equals UNLESS
-      tokenizer-push drop2
-      RECURSE
-    THEN
-  THEN
-
-  drop tokenizer-finish-output return2
-;
-
-: tokenizer-read-until
-  ( tokenizer needle ++ output-seq length )
-  arg1 tokenizer-buffer-reset
-  arg0 tokenizer-read-until-loop return2
-;
-
-: token-max-cell-size int32 128 return1 ;
-: token-max-byte-size token-max-cell-size cell* return1 ;
-
-( token-buffer string ++ tokenizer )
-( tokenizer structure: str-ptr str-offset token-seq token-seq-offset )
-: make-tokenizer
-  arg0 dpush
-  dhere
-  int32 0 dpush
-  arg1 dpush
-  int32 0 dpush
-  return1
-;
-
-: make-the-tokenizer
-  *tokenizer* peek dup IF tokenizer-buffer THEN
-  dup UNLESS token-max-cell-size dallot-seq THEN
-  arg0 make-tokenizer ( tokenizer )
-  *tokenizer* poke
-;
-
 : tokenizer-buffer
   arg0 cell+2 peek return1
-;
-
-: tokenizer-buffer-start
-  arg0 cell+2 peek
-  cell+ return1
 ;
 
 : tokenizer-buffer-offset
   arg0 cell+3 peek return1
 ;
 
-: tokenizer-buffer-ptr
-  arg0 cell+2 swapdrop peek
-  arg0 cell+3 swapdrop peek
-  int-add cell+2 ( skip the seq and fake lengths )
-  return1
+: set-tokenizer-buffer-offset
+  arg1 cell+3
+  arg0
+  swap poke
 ;
 
 : tokenizer-inc-buffer-offset
@@ -683,6 +544,22 @@
   return0
 ;
 
+: tokenizer-buffer-ptr
+  arg0 cell+2 swapdrop peek
+  arg0 cell+3 swapdrop peek
+  int-add cell+2 ( skip the seq and fake lengths )
+  return1
+;
+
+: tokenizer-buffer-start
+  arg0 cell+2 peek
+  cell+ return1
+;
+
+: set-tokenizer-buffer-length
+  arg0 arg1 poke
+;
+
 : tokenizer-push
   ( tokenizer character )
   arg1 tokenizer-buffer-ptr
@@ -690,10 +567,11 @@
   tokenizer-inc-buffer-offset
 ;
 
-: set-tokenizer-buffer-offset
-  arg1 cell+3
-  arg0
-  swap poke
+: tokenizer-finish-output
+  arg0 terminator tokenizer-push drop
+  tokenizer-buffer-start swap
+  tokenizer-buffer-offset swapdrop cell/ swapdrop int32 1 int-sub set-tokenizer-buffer-length
+  return2
 ;
 
 : fill-loop ( ptr number-bytes counter )
@@ -715,8 +593,44 @@
   fill
 ;
 
-: set-tokenizer-buffer-length
-  arg0 arg1 poke
+( fixme limit length read to buffer size )
+
+: tokenizer-read-until-loop
+  ( tokenizer needle ++ output-seq length )
+  arg1 tokenizer-next-word null? UNLESS
+    dup arg0 equals UNLESS
+      tokenizer-push drop2
+      RECURSE
+    THEN
+  THEN
+
+  drop tokenizer-finish-output return2
+;
+
+: tokenizer-read-until
+  ( tokenizer needle ++ output-seq length )
+  arg1 tokenizer-buffer-reset
+  arg0 tokenizer-read-until-loop return2
+;
+
+( token-buffer string ++ tokenizer )
+( tokenizer structure: str-ptr str-offset token-seq token-seq-offset )
+: make-tokenizer
+  arg0 dpush
+  dhere
+  int32 0 dpush
+  arg1 dpush
+  int32 0 dpush
+  return1
+;
+
+global-var *tokenizer* doc( The interpreter's tokenizer. )
+
+: make-the-tokenizer
+  *tokenizer* peek dup IF tokenizer-buffer THEN
+  dup UNLESS token-max-cell-size dallot-seq THEN
+  arg0 make-tokenizer ( tokenizer )
+  *tokenizer* poke
 ;
 
 : tokenizer-next-token-loop
@@ -740,13 +654,6 @@
   tokenizer-next-token-loop return2
 ;
 
-: tokenizer-finish-output
-  arg0 terminator tokenizer-push drop
-  tokenizer-buffer-start swap
-  tokenizer-buffer-offset swapdrop cell/ swapdrop int32 1 int-sub set-tokenizer-buffer-length
-  return2
-;
-
 ( Call frames continued: )
 
 : return1-1
@@ -755,7 +662,7 @@
 ;
 
 : set-arg1
-  current-frame parent-frame @
+  current-frame parent-frame peek
   frame-size cell+ swapdrop
   int-add
   arg0 swap poke
@@ -763,7 +670,7 @@
 ;
   
 : set-arg2
-  current-frame parent-frame @
+  current-frame parent-frame peek
   frame-size cell+2 swapdrop
   int-add
   arg0 swap poke
@@ -771,7 +678,7 @@
 ;
 
 : set-arg3
-  current-frame parent-frame @
+  current-frame parent-frame peek
   frame-size cell+3 swapdrop
   int-add
   arg0 swap poke
@@ -784,13 +691,13 @@
 
 : argn
     arg0 cell* call-frame-size int-add
-    current-frame parent-frame @ int-add
+    current-frame parent-frame peek int-add
     peek set-arg0
 ;
 
 : set-argn
     arg0 cell* call-frame-size int-add
-    current-frame parent-frame @ int-add
+    current-frame parent-frame peek int-add
     arg1 swap poke
 ;
 
@@ -799,7 +706,7 @@
 ;
 
 : frame-arg-byte-size
-    arg0 parent-frame @
+    arg0 parent-frame peek
     arg0 frame-args
     int-sub return1-1
 ;
@@ -810,17 +717,23 @@
 
 ( Some signed math: )
 
+: negative?
+    arg0 int32 0 < IF true ELSE false THEN return1
+;
+
+: negate
+  int32 0 arg0 int-sub return1
+;
+
 : abs-int
   arg0 int32 0 > UNLESS
     arg0 negate set-arg0
   THEN
 ;
-  
-: negate
-  int32 0 arg0 int-sub return1
-;
 
 ( String to number conversion. )
+
+global-var base doc( The input and output number conversion base. )
 
 ( Convert an ASCII character to a digit. )
 : digit-char
@@ -915,6 +828,8 @@
   int32 0 int32 0 return2
 ;
 
+: eos " EOS" return1 ;
+
 : next-word
     next-token UNLESS eos error THEN
     return1
@@ -943,4 +858,102 @@
 
 : load
   literal eval-string jump-entry-data
+;
+
+( Dictionary helpers )
+
+: [create]
+  arg1 arg0 intern-seq
+  int32 0 int32 0 add-dict
+  return1
+;
+
+: create
+  next-token dup UNLESS " End of stream" error THEN
+  [create] return1
+;
+
+( Constants )
+
+( Returns a colon sequence that returns the argument. )
+: constant-capturer
+  start-seq
+  literal literal dpush
+  arg0 dpush
+  literal return1 dpush
+  end-seq
+  cell+ return1
+;
+  
+: does-constant
+  ( entry init-value )
+  literal value-peeker dict-entry-code swapdrop
+  arg1 set-dict-entry-code
+  arg0 arg1 set-dict-entry-data
+;
+
+: [constant]
+  ( value name )
+  arg0 seq-length [create] arg1 does-constant
+  drop return1
+;
+
+: constant'
+  ( value : name )
+  arg0 next-param [constant]
+;
+
+: constant
+  ( value : name )
+  create arg0 does-constant
+;
+
+( Variables )
+
+: does-var
+  ( entry init-value )
+  literal variable-peeker dict-entry-code swapdrop
+  arg1 set-dict-entry-code
+  arg0 dpush dhere arg1 set-dict-entry-data
+;
+
+: [variable]
+  ( value name )
+  arg0 [create] arg1 does-var
+  drop return1
+;
+
+: variable
+  doc( Add an entry to the dictionary for a new variable that stores its value at `dhere`. The entry stores a pointer. `peek` gets the value and `poke` will set it. )
+  args( value : name ++ )
+  create arg0 does-var
+;
+
+( Dictionary initialization )
+
+global-var immediate-dict
+
+: mark
+  dict lit *mark* [constant]
+;
+
+: forget
+  lit *mark* dict dict-lookup
+  dict-entry-data set-dict
+;
+
+: drop-dict
+  dict dict-entry-next set-dict
+;
+
+: immediate-dict-init
+  literal immediate-dictionary peek
+  immediate-dict poke
+;
+
+: dict-init
+  literal dictionary peek
+  set-dict
+  immediate-dict-init
+  mark
 ;
