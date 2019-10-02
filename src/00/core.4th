@@ -903,10 +903,10 @@
 
 ( Look a token up or try converting to a number. )
 : interp ( token ++ value executable? )
-  arg0 dict dict-lookup dup IF *state* peek not return2 THEN
-  drop2 number IF int32 0 return2 THEN
+  arg0 number IF int32 0 return2 THEN
+  drop dict dict-lookup dup IF *state* peek not return2 THEN
 
-  drop " Not Found" error
+  drop2 " Not Found" error
   int32 0 int32 0 return2
 ;
 
@@ -920,9 +920,18 @@
     return1
 ;
 
+: eval-read-line
+   read-line return1
+;
+
+: eval-string
+     ( todo change the tokenizer's string instead )
+  arg0 make-the-tokenizer drop
+;
+
 : eval-loop
   ( ++ str )
-  next-token UNLESS drop eval-read-line eval-string THEN ( todo change the tokenizer's string instead )
+  next-token UNLESS drop eval-read-line eval-string drop RECURSE THEN
   ( compile lookup )
   *state* peek UNLESS interp THEN
   *state* peek IF *state* peek exec THEN
@@ -930,12 +939,6 @@
   IF swapdrop exec RECURSE THEN
   swapdrop RECURSE
   ( literal eval-loop tailcall )
-;
-
-: eval-string
-  drop-call-frame ( not coming back! ) ( todo needs to return to the caller )
-  ( arg0 ) make-the-tokenizer drop
-  literal eval-loop jump-entry-data
 ;
 
 : load
