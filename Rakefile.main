@@ -104,7 +104,6 @@ file $root.join('src', 'version.txt') => [ $root.join('version.txt'), $root.join
 end
 
 def meta_north(opts)
-  sh("env")
   sh(["node",
       $root.join('bin', 'meta-north.js'),
       '-s', opts.fetch(:stage, 'stage0'),
