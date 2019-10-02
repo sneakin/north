@@ -4,3 +4,7 @@ package-lock.json
 tmp/*
 build/*
 node_modules/*
+*.exe
+*.dll
+*.o
+*.so
