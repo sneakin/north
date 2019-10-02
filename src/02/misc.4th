@@ -5,7 +5,7 @@
 ;
 
 : set-arg
-  current-frame parent-frame frame-size arg0 cell* swapdrop int-add int-add
+  current-frame parent-frame @ frame-size arg0 cell* swapdrop int-add int-add
   arg1 swap poke
   return-2
 ;
@@ -191,7 +191,7 @@
 ;
 
 : seq0
-  arg1 arg0 2dup int-sub dallot
+  arg1 arg0 2dup int-sub dallot-seq
   do arg1 write-int arg0 arg1 seq-poke drop3
      write-ok write-crnl
      arg1 int32 10 equals literal again ifthencall
@@ -200,3 +200,4 @@
   write-ok int32 1146048327 write-word drop
   local2 return1
 ;
+

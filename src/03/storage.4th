@@ -90,7 +90,7 @@
 
 : storage-read ( dev-addr key offset ++ new-seq status )
   ( todo allot and copy key )
-  int32 1024 dallot
+  int32 1024 dallot-seq
   arg2 arg1 arg0 storage-read/4
   local0 swap return2
 ;

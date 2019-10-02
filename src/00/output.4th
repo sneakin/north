@@ -1,18 +1,22 @@
 ( String output: )
 
 : write-string
-  arg0 int32 4 int-add
+  args( seq )
+  doc( Write a string to the output device. )
+  arg0 seq-data swapdrop
 
   write-string-loop:
-    dup peek dup
-    terminator equals IF drop2 return0 THEN
+    dup peek
+    terminator? IF return0 THEN
     write-byte
-    int32 4 int-add
+    cell+ swapdrop
     literal write-string-loop jump
 ;
 
 : write-string-n
-  arg1 int32 4 int-add
+  args( seq number )
+  doc( Write a number of characters from the sequence to the output device. )
+  arg1 seq-data swapdrop
   dup
   arg0 cell* swapdrop
   int-add
@@ -21,15 +25,16 @@
 
   write-string-n-loop:
   dup peek
-  dup
-  terminator equals IF drop2 return0 THEN
+  terminator? IF return0 THEN
   write-byte
-  int32 4 int-add
-  2dup equals IF drop2 return0 THEN
+  cell+ swapdrop
+  2dup equals IF return0 THEN
   literal write-string-n-loop jump
 ;
   
 : write-string-rev
+  args( seq )
+  doc( Write a string to the output device backwards. )
   arg0
   dup
   dup seq-byte-size int-add
@@ -37,64 +42,92 @@
 
   write-string-rev-loop:
   dup peek write-byte
-  int32 -4 int-add
-  2dup equals IF drop2 return0 THEN
+  cell- swapdrop
+  2dup equals IF return0 THEN
   literal write-string-rev-loop jump
 ;
 
 ( Integer output: )
 
-( Convert an unsigned integer value to a string possibly adding a negative sign. )
-: unsigned-int-to-string-inner ( negative? number -- 0 str-ptr )
-  arg0 base peek uint-mod char-digit swapdrop
-  arg0 base peek uint-div dup set-arg0
+: unsigned-int-to-chars-inner
+  args( base negative? number -- base negative? terminator chars... number )
+  doc( Convert an unsigned integer value to a sequence of characters on the stack possibly adding a negative sign. )
+  arg0 arg2 uint-mod char-digit swapdrop
+  arg0 arg2 uint-div dup set-arg0
   IF RECURSE THEN
 
   arg1 IF negative-sign THEN
 
-  here
-  dup current-frame swap uint-sub
+  terminator set-arg0
+  here current-frame swap uint-sub
   cell/ swapdrop
-  intern return1
+  return-locals
 ;
 
-( Convert an unsigned integer value to a string. )
-: unsigned-int-to-string ( number ++ str-ptr )
-  int32 0 arg0 unsigned-int-to-string-inner return1
+: unsigned-int-to-chars
+  args( number ++ base negative? terminator chars... length )
+  doc( Convert an unsigned integer value to a sequencemof characters on the stack. )
+  base peek int32 0 arg0 ' unsigned-int-to-chars-inner cont
 ;
 
-( Convert an integer value to a string. )
-: int-to-string ( number ++ str-ptr )
+: int-to-chars
+  args( number ++ base negative? terminator chars... length )
+  doc( Convert an integer value to a sequence of characters on the stack. )
+  base peek
   arg0 int32 0 <
   arg0 abs-int
-  unsigned-int-to-string-inner return1
+  ' unsigned-int-to-chars-inner cont
 ;
 
-( Write out an unsigned integer. )
+: unsigned-int-to-string
+    args( uint ++ str-ptr)
+    doc( Convert an unsigned integer value to an interned string. )
+    arg0 unsigned-int-to-chars
+    here seq-length intern-seq
+    return1
+;
+
+: int-to-string
+    args( int ++ str-ptr)
+    doc( Convert an integer value to an interned string. )
+    arg0 int-to-chars
+    here seq-length intern-seq
+    return1
+;
+
 : write-unsigned-int
-  arg0 unsigned-int-to-string write-string
+  args( uint )
+  doc( Write out an unsigned integer. )
+  arg0 unsigned-int-to-chars here write-string
 ;
 
-( Write out an integer. )
 : write-int
-  arg0 int-to-string write-string
+  args( integer )
+  doc( Write out an integer. )
+  arg0 int-to-chars here write-string
 ;
 
 ( Line output: )
 
 : crnl
+  doc( Returns a carriage return and linefeed in a word. )
   int32 $0a0d return1
 ;
 
 : write-crnl
+  doc( Write a CRNL to the output device. )
   crnl write-word 
 ;
 
 : write-line
+  doc( Write a stringmplus a CRNL. )
+  args( string )
   arg0 write-string write-crnl
 ;
 
 : write-line-n
+  doc( Write a number of characters from a string followed by a CRNL. )
+  args( string number )
   arg1 arg0 write-string-n write-crnl
 ;
 
@@ -105,13 +138,22 @@
 
 ( Common outputs: )
 
-: space int32 $20 return1 ;
-: write-space space write-byte ;
+: space
+    doc( An ASCII space. )
+    int32 $20 return1
+;
+
+: write-space
+    doc( Writes a space out. )
+    space write-byte
+;
 
 : write-tab
+  doc( Write a TAB out. )
   int32 9 write-byte
 ;
 
 : write-helo
+  doc( Write HELO out. )
   int32 $4f4c4548 write-word 
 ;

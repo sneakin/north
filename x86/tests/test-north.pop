@@ -1,5 +1,7 @@
 %include "north.h"
 
+include "libc.pop"
+
 ; import libc printf/n puts/1
 import libc atoi/1/1 exit/1
 ; import libdl dlopen/2/1 dlsym/2/1
@@ -28,7 +30,7 @@ string boo "BOO"
 string world "world"
 const worldlen $ - world
 string num "254"
-string args "%x %s %x",0xA
+string arg_str "%x %s %x",0xA
 string yesstr "YES"
 string noostr "NOO"
 
@@ -88,7 +90,7 @@ def init
 	; print argc, argv[0], and the ??
 	; todo frame pointer for argn
 	write_stack
-	literal 4 overn literal 4 overn peek literal 4 overn literal args literal 4 cprintf literal 5 dropn
+	literal 4 overn literal 4 overn peek literal 4 overn literal arg_str literal 4 cprintf literal 5 dropn
 	; make some calls internally and externally
 	hello literal msg literal boo cputs cputs drop cputs drop
 	; external calls with args and a return

@@ -8,3 +8,8 @@ node_modules/*
 *.dll
 *.o
 *.so
+src/version.txt
+ssl_ca.crt
+ssl_ca.key
+server.crt
+server.key

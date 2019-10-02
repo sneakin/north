@@ -12,11 +12,11 @@ ptrsize equ 8
 %include "dict_macros.h"
 
 %define eval_ip r12
-%define fp r10
+%define fp rbp
 
 main:
-  push rbp
-  mov rbp, rsp
+  push fp
+  mov fp, 0
 %ifidni PLATFORM,windows
 	push rdx
 	push rcx
@@ -26,19 +26,31 @@ main:
 %endif
 	mov rax, d_init
 	call outer_eval
+%ifidni LIBC,0
+  call osexit_asm
+%else
 	pop rax ; return value
 	add rsp, ptrsize*2
-  pop rbp
+  pop fp
 	ret
+%endif
 
 outer_eval:
-	jmp [rax+dict_code]
+	jmp [rax+dict_entry_code]
 
 %include "ops.asm"
 %include "math.asm"
+%include "jumps.asm"
 %include "frames.asm"
+  
 %include "direct.asm"
 %include "indirect.asm"
+%include "indexed-64.asm"
+%include "offset-indirect.asm"
+  
+%include "cmp.asm"
+%include "bits.asm"
+%include "core-ops.asm"
 
 %ifidni PLATFORM,windows
 %include "windows.asm"
@@ -47,9 +59,10 @@ outer_eval:
 %endif
 
 %include "../ffi.asm"
+%ifidni LIBC,1
 %include "dynlibs.asm"
-%include "../libc.asm"
-
+%endif
+  
 constant cpu_bits,BITS
 constant cell_size,ptrsize
 constant builtin_size,m_dictionary_size

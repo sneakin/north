@@ -25,7 +25,7 @@
 : memdump/2 ( start-ptr num-bytes -- start-ptr num-bytes )
   arg0 int32 0 > UNLESS return0 THEN
   arg1 arg0 int32 32 min rotdrop2 memdump-line ( arg1 bytes-to-dump )
-  arg0 dup1 int-sub set-arg0
+  arg0 over int-sub set-arg0
   int-add set-arg1
   RECURSE
 ;

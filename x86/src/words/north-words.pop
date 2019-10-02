@@ -1,5 +1,8 @@
 %include "north.h"
-%include "indexed.h"
+
+include "data_stack.pop"
+include "pseudo-ops.pop"
+include "libc.pop"
 
 ; import libc printf/n
 
@@ -9,14 +12,14 @@ string stack_fmt "%x %x %x %x %x %x %x | %x %x %x %x %x %x %x",0xA
 def map_dict ; ( fn dict num-entries )
 	literal 3 overn literal 5 overn direct_eval
 	literal 5 overn swap
-	cell_size int_add cell_size int_add cell_size int_add
+	int32 dict_entry_size int_add
 	literal 4 overn
 	literal 1 int_sub
 	dup ifnotzero map_dict
 	literal 3 dropn
 	fexit
 
-string dict_entry_fmt "%4i %4x %20s %8x %8x %8x %x",0xA
+string dict_entry_fmt "%4i %4x %28s %8x %8x %8x %x",0xA
 
 def print_dict_entry
 	; entry addr
@@ -35,18 +38,34 @@ def print_dict_entry
 	literal 9 dropn
 	fexit
 
-string short_dict_entry_fmt "%s equ %i",0xA
+string short_dict_entry_fmt "%32s equ %6i ;; %s",0xA
 
 def short_print_dict_entry
 	; entry addr
 	literal 2 overn
+  ; entry name
+  dup int32 dict_entry_name int_add peek seq_data
 	; entry index number
-	dup dict_entry_index swap
-	; entry name
-	cell_size int_add cell_size int_add peek seq_data
+	swap dup dict_entry_index swap
+	; entry label
+	int32 dict_entry_label int_add peek seq_data
 	; print
-	literal short_dict_entry_fmt literal 3 cprintf
-	literal 4 dropn
+	literal short_dict_entry_fmt literal 4 cprintf
+	literal 5 dropn
+	fexit
+
+def print_dict_entry_offset
+	; entry addr
+	literal 2 overn
+  ; entry name
+  dup int32 dict_entry_name int_add peek seq_data
+	; entry offset
+	swap dup dictionary int_sub swap
+	; entry name
+	int32 dict_entry_label int_add peek seq_data
+	; print
+	literal short_dict_entry_fmt literal 4 cprintf
+	literal 5 dropn
 	fexit
 
 string heading "Index Hex Word Data Code Address",0xA
@@ -74,14 +93,20 @@ def short_print_dict
 	literal 3 dropn
 	fexit
   
+def print_dict_offsets
+	literal print_dict_entry_offset dictionary seq_data dictionary_size map_dict
+	literal 3 dropn
+	fexit
+  
 def init
 	; try the first two entries
 	;dictionary seq_data print_dict_entry
 	;cell_size int_add cell_size int_add cell_size int_add short_print_dict_entry
 	;literal 1 dropn
-	; print the short list if a command line arg is supplied
-	literal 2 overn literal 1 eq dup ifzero short_print_dict
-	ifnotzero print_dict
+  ;; number of command line args determines mode
+	literal 2 overn literal 3 eq ifnotzero print_dict_offsets
+	literal 2 overn literal 2 eq ifnotzero short_print_dict
+	literal 2 overn literal 1 eq ifnotzero print_dict
 	; clean exit
 	literal 0 roll
 	fexit

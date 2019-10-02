@@ -11,6 +11,19 @@ $word_prefix='dd'
 #  $word_prefix = 'dq'
 #end
 
+INCLUDE_PATH = ENV.fetch('INCLUDE_PATH', '').split(':')
+INCLUDE_PATH.push('.')
+
+def find_source_file(name)
+  INCLUDE_PATH.each do |path|
+    fn = File.join(path, name)
+    return fn if File.exists?(fn)
+  end
+
+  raise ArgumentError.new("#{name} not found in #{INCLUDE_PATH.join(', ')}")
+end
+
+$included_files = Array.new
 $definition = nil
 $suffix = ''
 
@@ -24,10 +37,12 @@ def process_lines(iter)
       $definition = line
       $suffix = case $1
                when 'i' then ENV.fetch('SUFFIX', '_i')
+               when 'oi' then ENV.fetch('SUFFIX', '_off')
                else ''
                end
       $word_prefix = case $1
                     when 'i' then 'dd'
+                    when 'oi' then 'dd'
                     else if $bits == 64
                            'dq'
                          else
@@ -56,13 +71,26 @@ def process_lines(iter)
         returns = 0 unless returns
         puts "defc #{name},#{ari},#{returns}"
       end
+    elsif line =~ /^import_var\s+(\w+)\s+(.*)/
+      # import library variables...
+      puts ";; #{$1}"
+      $2.split(/[, ]+/).each do |name|
+        puts "defcvar #{name}"
+      end
     elsif line =~ /^(export|global)\s+(.*)/
       $2.split(/\s+/).each do |fn|
         puts "global #{fn}"
       end
     elsif line =~ /^include\s+"(.*)"/
-      process_lines(File.readlines($1).each)
-      process_lines([ "\n" ])
+      path = find_source_file($1)
+      if $included_files.include?(path)
+        puts(";; Skipping include #{$1}")
+      else
+        puts(";; Including #{$1}")
+        $included_files.push(path)
+        process_lines(File.readlines(path).each)
+        process_lines([ "\n" ])
+      end
     else
       # inside a definition
       if $definition

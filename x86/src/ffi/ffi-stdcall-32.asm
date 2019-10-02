@@ -8,7 +8,7 @@ defop ffi_stdcall_op_%+ num_args %+_0
 	mov ebx, [esp+ptrsize*num_args]
 	push ebx
 %endrep
-	call [eax+dict_data]
+	call [eax+dict_entry_data]
   ret
 
 defop ffi_stdcall_op_%+ num_args %+_1
@@ -16,8 +16,8 @@ defop ffi_stdcall_op_%+ num_args %+_1
 	mov ebx, [esp+ptrsize*num_args]
 	push ebx
 %endrep
-	call [eax+dict_data]
-	jmp [d_ffiexit_1+dict_code]
+	call [eax+dict_entry_data]
+	jmp [d_ffiexit_1+dict_entry_code]
 
 %assign num_args num_args + 1
 %endrep

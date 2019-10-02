@@ -1,5 +1,3 @@
-include "page_align.pop"
-
 def read_file_size ( path ++ file-size )
   begin_frame
   stat_alloc arg0 cstat literal 2 dropn

@@ -1,4 +1,4 @@
-( Dictionary forgeting: )
+( Dictionary manipulation: )
 
 : dict-forget
   ( name dict )
@@ -8,6 +8,13 @@
   dict-entry-next dict-entry-next ( parent child grandkid )
   ( link parent to child )
   rot set-dict-entry-next
+;
+
+: add-dict-after
+    arg0 dict-entry-next swapdrop
+    arg3 arg2 arg1 make-dict/4
+    arg0 set-dict-entry-next
+    drop return1
 ;
 
 ( Dictionary iteration: )
@@ -22,7 +29,7 @@
 ( Dictionary output listing: )
 
 : write-dict-entry-name
-  arg0 dict-entry-name write-string
+  arg0 dict-entry-name write-escaped-string
 ;
 
 : write-dict-entry-data
@@ -31,6 +38,10 @@
 
 : write-dict-entry-code
   arg0 dict-entry-code write-unsigned-int 
+;
+
+: write-dict-entry-next
+  arg0 dict-entry-next write-unsigned-int
 ;
 
 : write-dict-entry-kind
@@ -58,8 +69,9 @@
   arg0
   write-dict-entry-kind write-tab 
   write-dict-entry-name write-tab 
-  write-dict-entry-code write-tab 
-  write-dict-entry-data write-crnl 
+  write-dict-entry-code write-tab
+  write-dict-entry-data write-tab 
+  write-dict-entry-next write-crnl 
 ;
 
 ( Write a dictionary out entry by entry. )
@@ -67,11 +79,13 @@
   literal write-dict-entry arg0 dict-each 
 ;
 
-( Write the primary dictionary out. )
-: words dict dict-list ;
+: words doc( Write the primary dictionary out. )
+  dict dict-list
+;
 
-( Write the immediate dictionary out. )
-: iwords immediate-dict peek dict-list ;
+: iwords doc( Write the immediate dictionary out. )
+  immediate-dict peek dict-list
+;
 
 ( Dictionary predicates: )
 
@@ -90,7 +104,7 @@
 : dict-entry-indirect?
   arg0 dict-entry-code swapdrop
   literal call-data-seq dict-entry-code swapdrop
-  dup1 equals UNLESS
+  over equals UNLESS
     literal call-data dict-entry-code swapdrop
     equals UNLESS
       false return1
@@ -105,4 +119,17 @@
   int-add cell+ peek
   terminator?
   return1
+;
+
+( Dictionary building helpers: )
+
+: aliases>
+    doc( Creates a dictionary entry named NAME, linked to the PREV-ENTRY
+    and with the same code and data values as the following param. )
+    args( prev-entry name : entry-to-copy ++ dict-entry )
+    arg1
+    arg0
+    next-param dict-entry-code
+    swap dict-entry-data swapdrop
+    make-dict/4 return1
 ;

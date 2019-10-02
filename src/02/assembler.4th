@@ -120,7 +120,7 @@ int32 9 a-def-op a-dec
   int32 0 int32 0 int32 1 a-load int16,
   int32 8 int32,
   int32 1 a-inc int16,
-  int32 4 int32,
+  int32 cell-size int32,
   int32 1 a-ip a-mov int16,
   local0 end-seq return1
 ;

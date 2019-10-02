@@ -72,7 +72,7 @@
 : seq1 ( max min )
   arg1
   arg0
-  2dup int-sub dallot
+  2dup int-sub dallot-seq
 
   ( todo already bumped the args for keeping the exit offset on stack )
   do
@@ -89,7 +89,7 @@
 : seq2 ( max min )
   arg1
   arg0
-  2dup int-sub dallot
+  2dup int-sub dallot-seq
 
   DO
     arg2 write-int arg1 arg2 seq-poke drop3 ( fixme min != 0 is a problem )

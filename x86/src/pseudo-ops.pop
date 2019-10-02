@@ -1,0 +1,98 @@
+const terminator 1347376211
+const call_frame_size 2
+const call_frame_byte_size ptrsize*2
+
+def cell_add_1
+  shift_call_frame
+  cell_size int_add
+  unshift_call_frame
+  fexit
+
+def cell_add_n
+  call_frame_size overn
+  cell_size int_mul
+  call_frame_size literal 1 int_add overn
+  int_add
+  unshift_call_frame
+  fexit
+
+def shift_call_frame
+  arg0 ; next addr
+  arg1 ; return address
+  arg2 ; arg0
+  set_arg0
+  set_arg2
+  set_arg1
+  fexit
+
+def unshift_call_frame
+  arg0 ; new arg0
+  arg1 ; next addr
+  arg2 ; return address
+  set_arg1
+  set_arg0
+  set_arg2
+  fexit
+
+def parent_frame
+  ; first field
+  fexit
+
+def frame_return_address
+  shift_call_frame literal 2 cell_add_n unshift_call_frame fexit
+
+def frame_args
+  shift_call_frame call_frame_size int_add unshift_call_frame fexit
+
+def argn
+  shift_call_frame args swap cell_add_n rotdrop2
+  unshift_call_frame
+  fexit
+
+def arg4
+  literal 4 argn unshift_call_frame fexit
+  
+def return_address
+  current_frame frame_return_address peek
+  unshift_call_frame
+  fexit
+
+def local1
+  locals cell_add_1 peek
+  unshift_call_frame fexit
+
+def store_local1
+  shift_call_frame locals cell_add_1 poke
+  fexit
+
+def copydown
+  begin_frame
+  arg0 cell_size uint_gte ifzero exit
+  arg0 arg2 int_add peek
+  arg0 arg1 int_add poke
+  arg0 cell_size int_sub set_arg0
+  end_frame
+  literal copydown jump
+    
+def returnN
+  shift_call_frame
+  cell_size int_mul
+  here
+  current_frame parent_frame peek
+  literal 2 overn
+  copydown
+  int_sub
+  here int_sub
+  dropn
+  exit ;_frame
+
+include "data_stack.pop"
+
+def dallot_seq
+  shift_call_frame cell_size int_mul
+  dup cell_size literal 2 int_mul int_add
+  dup dallot
+  over over int_add terminator swap poke
+  swap drop
+  over swap poke
+  unshift_call_frame fexit

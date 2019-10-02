@@ -1,0 +1,64 @@
+data_size_value equ 1024*1024
+constant data_size, data_size_value
+
+variable _dptr,0
+variable _dhere,0
+
+def dhere
+  begin_frame
+  _dhere peek return1
+
+%ifidni LIBC,1
+import libc malloc/1/1 free/1/0 atexit/1
+
+def data_init
+  begin_frame
+  data_size cmalloc
+  dup
+  _dptr poke
+  _dhere poke
+  literal data_cleanup catexit
+  return0
+
+def data_cleanup
+  _dptr peek cfree drop fexit
+
+%else
+
+segment .bss
+data_stack_bss: resb data_size_value
+segment .text
+
+def data_init
+  literal data_stack_bss dup
+  _dptr poke
+  _dhere poke
+  fexit
+
+%endif
+  
+def dmove
+  begin_frame
+  arg0 _dhere poke
+  return0
+  
+def dallot
+  begin_frame
+  dhere dup
+  arg0 cell_size int_mul int_add dmove
+  local0 return1
+  
+def dpush
+  begin_frame
+  literal 1 dallot arg0 swap poke
+  return_1
+  
+def dpop
+  begin_frame
+  literal -1 dallot
+  dhere peek
+  return1
+
+def ddrop
+  literal -1 dallot drop drop
+  fexit

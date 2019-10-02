@@ -6,11 +6,11 @@ defop direct_eval
   
 defop dodirect ; the pointer in rax
 	push eval_ip
-	mov eval_ip, [rax+dict_data]
-	jmp [d_direct_next+dict_code]
+	mov eval_ip, [rax+dict_entry_data]
+	jmp [d_direct_next+dict_entry_code]
 
 defop direct_next
 	mov rax, [eval_ip]
 	add eval_ip, ptrsize
 	call rax
-	jmp [d_direct_next+dict_code]
+	jmp [d_direct_next+dict_entry_code]

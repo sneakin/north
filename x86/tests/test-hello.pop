@@ -1,5 +1,7 @@
 %include "north.h"
 
+include "libc/stdio.pop"
+
 string hey "Hey there!"
 
 def init

@@ -3,6 +3,8 @@
 ( todo javascript compiler needs to track a data segment offset for variable pointers )
 ( variable interrupt-waiting-for int32 0 )
 ( variable isr-handlers num-interrupts make-array )
+global-var isr-handlers
+global-var interrupt-waiting-for
 
 constant isr-byte-size 8
 

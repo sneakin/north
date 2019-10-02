@@ -1,8 +1,8 @@
 %include "north.h"
-%include "indexed.h"
 
 include "libc.pop"
 include "output.pop"
+include "page_align.pop"
 
 %ifidni PLATFORM,windows
 include "map_libc.pop"

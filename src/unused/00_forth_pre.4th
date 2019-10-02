@@ -34,7 +34,7 @@
 ( Barebones evaluation loop. )
 
 : prompt0
-  bright yellow 
+  bold yellow 
   literal PS0 write-word 
   color-reset 
 ;

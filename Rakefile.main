@@ -1,0 +1,397 @@
+require 'pathname'
+require 'shellwords'
+require 'rbconfig'
+
+$root = Pathname.new(__FILE__).parent.expand_path
+$buildroot ||= Pathname.new(ENV.fetch('BUILDROOT', $root.join('build')))
+release_root=Pathname.new(ENV.fetch('RELEASE_ROOT', $root.join('tmp/release')))
+pages_root=Pathname.new(ENV.fetch('PAGES_ROOT', $root.join('tmp/gh-pages')))
+
+$: << $root.join('lib')
+$: << $root.join('vendor/rake-node/lib')
+$:.unshift($root.join('vendor/webrick/lib'))
+
+require 'rake/browserify'
+
+BCROOT = Pathname.new(ENV.fetch('BACAW', $root.join('vendor', 'bacaw')))
+BCBIN = BCROOT.join('bin', 'bccon.js')
+BCLIB = BCROOT.join('js', 'lib')
+
+BCCON = "node #{Shellwords.escape(BCBIN)}"
+NODE_PATH << [ $root.join('src'), BCLIB ]
+
+$stage_targets = []
+
+outputs = [ 'north-stage0.bin',
+            'north-stage0-min.bin',
+            'north-stage1.bin',
+            'north-stage1-min.bin',
+            'north-stage2.bin',
+            'north-stage2-min.bin',
+            #'north-stage3.bin',
+            'service_worker.js',
+            'ipfs.js',
+            'manifest.webmanifest',
+      	    'unscii-8.ttf',
+            'sounds/startup.mp3',
+            'index.css',
+            'index.js',
+            'index.html'
+          ].collect { |s| $buildroot.join(s) }
+
+directory $buildroot
+
+namespace :version do
+  def read_version(path = $root.join('version.txt'))
+    v = File.read(path)
+    p = v.match(/(\d+)\.(\d+)\.(\d+)/)
+    if p
+      v = [ p[1], p[2], p[3] ].collect(&:to_i)
+    else
+      v = [ 0, 0, 0 ]
+    end
+  end
+
+  def version_string(v)
+    v.collect(&:to_s).join('.')
+  end
+
+  def write_version_io(v, io)
+    io.puts(version_string(v))
+  end
+
+  def write_version(v, path = $root.join('version.txt'))
+    File.open(path, 'w') do |f|
+      write_version_io(v, f)
+    end
+  end
+
+  task :echo do
+    write_version_io(read_version, $stdout)
+  end
+
+  task :commit do
+    commit_version
+  end
+
+  def commit_version
+    v = version_string(read_version)
+    sh("git commit -m 'Bumped version to #{v}.' version.txt")
+  end
+
+  namespace :bump do
+    { major: 0, minor: 1, release: 2 }.each do |name, index|
+      desc "Bump the #{name} version number in version.txt."
+      task name do
+        v = read_version
+        v[index] += 1
+        write_version(v)
+        write_version_io(v, $stdout)
+        commit_version
+      end
+    end
+  end
+end
+
+file $root.join('src', 'version.txt') => [ $root.join('version.txt'), $root.join('.git/HEAD') ] do |t|
+  head = `git rev-parse HEAD`
+  now = Time.now
+  File.open(t.name, 'w') do |f|
+    f.write(File.read(t.sources[0]).strip)
+    f.write(" #{now.year}.#{now.month}.#{now.day} #{head[0, 8]}")
+  end
+end
+
+def meta_north(opts)
+  sh(["node",
+      $root.join('bin', 'meta-north.js'),
+      '-s', opts.fetch(:stage, 'stage0'),
+      '-p', opts.fetch(:platform, 'bacaw'),
+      *(opts[:texts] || []).collect { |t| [ '--text-file', t ] },
+      *(opts[:binaries] || []).collect { |t| [ '--binary-file', t ] },
+      '-o', opts.fetch(:output),
+      opts.fetch(:sources).collect(&:to_s)
+     ].flatten.shelljoin)
+end
+
+def stage(name, options)
+  options = {
+    sources: [],
+    minimal: nil,
+    platform:  :bacaw
+  }.merge(options)
+
+  target = $buildroot.join("north-#{name}.bin")
+  $stage_targets << target
+
+  file target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
+    meta_north(stage: name.to_s,
+               output: t.name,
+               sources: options[:sources],
+               platform: options[:platform],
+               texts: options[:texts],
+               binaries: options[:binaries])
+  end
+
+  min_target = nil
+  
+  if options[:minimal]
+    min_target = $buildroot.join("north-#{name}-min.bin")
+    $stage_targets << min_target
+
+    file min_target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
+      meta_north(stage: "#{name}-min",
+                 output: t.name,
+                 sources: options[:sources],
+                 platform: options[:platform],
+                 texts: options[:texts],
+                 binaries: options[:binaries])
+    end
+  end
+
+  desc "Build #{name}"
+  task name => "#{name}:build"
+  
+  namespace name do
+    desc "Build #{name}"
+    task :build => [ target, min_target ]
+    
+    desc "Run #{name}"
+    task :run => target do
+      sh("node #{BCBIN} #{target}")
+    end
+
+    if min_target
+      namespace :min do
+        desc "Run the minimal #{name}"
+        task :run => min_target do
+          sh("node #{BCBIN} #{min_target}")
+        end
+      end
+    end
+  end
+end
+
+def src(*names)
+  names.collect { |s| $root.join('src', s) }
+end
+
+META_SRC = src 'forth.js', 'version.txt'             
+PLATFORM_SRC = {
+  bacaw: src('platform/bacaw/boot.js', 'platform/bacaw/forth_00.js'),
+  x86: src('platform/x86/boot.js', 'platform/x86/ops.js')
+}
+
+STAGE0_SRC = src('00/core.4th',
+                 '00/compiler.4th',
+                 '00/output.4th',
+                 '00/about.4th',
+                 '00/shorthand.4th',
+                 '00/assert.4th',
+                 '00/init.4th',
+                 '00/ui.4th')
+
+stage(:stage0,
+      sources: PLATFORM_SRC[:bacaw] + STAGE0_SRC,
+      minimal: true)
+
+stage('stage0-x86',
+      sources: PLATFORM_SRC[:x86] + STAGE0_SRC,
+      minimal: true,
+      platform: :x86)
+
+STAGE1_SRC = src(*STAGE0_SRC,
+                 'platform/bacaw/forth_01.js',
+                 'platform/bacaw/forth_02.js',
+                 #'01/atoi.4th',
+                 '01/tty.4th',
+                 '01/char.4th',
+                 '01/output.4th',
+                 '01/dict.4th',
+                 '01/about.4th',
+                 '01/help.4th',
+                 '01/seq.4th',
+                 '01/stack.4th',
+                 '01/ui.4th',
+                 '01/data_stack.4th',
+                 '00/list.4th',
+                 '01/compiler.4th',
+                 '01/structs.4th',
+                 '02/memdump.4th',
+                 '02/decompiler.4th',
+                 #'02/misc.4th',
+                 #'02/assembler.4th',
+                 '02/debug.4th',
+                 '02/cmp.4th',
+                 '02/ordered-seq.4th',
+                 '02/rand.4th',
+                 '02/btree.4th',
+                 '02/fast_dict.4th',
+                 '03/assembler.4th',
+                 '03/byte_string.4th',
+                 '03/sequence.4th',
+                 'platform/bacaw/forth_interrupts.js',
+                 '03/interrupts.4th',
+                 '03/input-device.4th',
+                 #'forth_extra.4th',
+                 '04/core.4th',
+                 #'04/constants.4th',
+                 #'02/ops.4th',
+                 '04/tty.4th',
+                 '04/tty-box.4th',
+                 '04/tty-readline.4th',
+                 'help/tty-attrs.4th')
+
+stage(:stage1,
+      sources: PLATFORM_SRC[:bacaw] + STAGE1_SRC,
+      texts: src('01/atoi.4th'),
+      minimal: true)
+
+STAGE2_SRC = src(*STAGE1_SRC,
+                 '03/storage.4th',
+                 '03/storage_devices.4th',
+                 '03/storage_test.4th',
+                 '02/sound.4th')
+
+stage(:stage2,
+      sources: PLATFORM_SRC[:bacaw] + STAGE2_SRC,
+      minimal: true)
+
+STAGE3_SRC = src('build-stage3.4th',
+                 '02/assembler.4th',
+                 '02/ops.4th')
+
+stage(:stage3,
+      sources: PLATFORM_SRC[:bacaw] + STAGE3_SRC,
+      minimal: true)
+
+STAGE4_SRC = src(*STAGE1_SRC,
+                 'dev-tests.4th',
+                 '03/storage.4th',
+                 '03/storage_devices.4th',
+                 '03/storage_test.4th',
+                 '02/dict.4th')
+
+stage(:stage4,
+      sources: PLATFORM_SRC[:bacaw] + STAGE4_SRC,
+      texts: src('04/tiler.4th'),
+      minimal: true)
+
+#
+# Web building
+#
+
+[ 'forth.css',
+  'index.css',
+  'unscii-8.ttf',
+  'sounds/startup.mp3',
+  'manifest.webmanifest'
+].each do |name|
+  output = $buildroot.join(name)
+  src = $root.join('www', name)
+
+  directory File.dirname(output)
+  
+  file output => [ src, $buildroot, File.dirname(output) ] do |t|
+    FileUtils.copy(t.sources[0], t.name)
+  end
+end
+
+BrowserifyRunner.bundle $buildroot.join('service_worker.js') => [ $root.join('www/service_worker.js') ]
+BrowserifyRunner.bundle $buildroot.join('ipfs.js') => [ $root.join('www/ipfs.js') ]
+BrowserifyRunner.bundle $buildroot.join('index.js') => [ $root.join('www/index.js'), *$stage_targets ]
+html_file $buildroot.join('index.html') => [ $root.join('www/index.src.html'), $buildroot.join('index.js'), $buildroot.join('xterm.css') ]
+
+file $buildroot.join('xterm.css') => $root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
+  FileUtils.copy(t.sources[0], t.name)
+end
+
+desc 'Start a webserver on port 9090 to serve the build directory. Values are taken from the DOMAIN, IP, CA, and CANAME enviroment variables.'
+task :serve do
+  require 'rake-node/http/server'
+  RakeNode::HTTP.run(:Port => ENV.fetch('PORT', 9090).to_i,
+                     :DocumentRoot => $buildroot,
+                     :SSLCertPrefix => $root.join('server'),
+                     :Domain => ENV.fetch('DOMAIN', nil),
+                     :IP => ENV.fetch('IP', nil),
+                     :ca => ENV.fetch('CA', nil),
+                     :cname => ENV.fetch('CANAME', nil))
+end
+
+#
+# Web pages from source files.
+#
+
+namespace :doc do
+  DOC_SRC_DIR = $buildroot.join('doc', 'src')
+
+  directory DOC_SRC_DIR
+  
+  desc "Turn the source into HTML."
+  task :src => DOC_SRC_DIR do |t|
+    STAGE2_SRC.each do |src|
+      lang = 'forth'
+      lang = 'javascript' if src.extname == '.js'
+      sh("pygmentize -f html -O full -l #{lang} -o #{Shellwords.escape(DOC_SRC_DIR.join(src.basename))}.html #{Shellwords.escape(src)}")
+    end
+  end
+end
+
+#
+# Github Pages updating
+#
+
+directory pages_root do
+  sh("git branch -f gh-pages origin/gh-pages && git clone -b gh-pages #{$root} #{pages_root}")
+end
+
+namespace :pages do
+  task :deps => [ :default, pages_root ]
+
+  task :sync => [ 'pages:deps' ] do
+    sh("cp -rav #{$buildroot}/* #{pages_root}")
+    sh("cd #{pages_root} && git add -A #{pages_root} && git commit && git push origin gh-pages")
+  end
+
+  task :clean do
+    sh("rm -rf #{pages_root}")
+  end
+end
+
+desc "Build and update the gh-pages branch."
+task :pages do
+  ENV['ENV'] = 'production'
+  sh("rake pages:sync")
+end
+
+#
+# Releasing to Pages from a clean repository.
+#
+
+task :prerelease => [ 'version:bump:release' ]
+
+directory release_root => :prerelease do
+  sh("git clone -b master #{$root} #{release_root}")
+end
+
+namespace :release do
+  task :deps => [ release_root ]
+
+  task :sync => [ 'release:deps' ] do
+    sh("cd #{release_root} && git pull && rake init && rake pages")
+    sh("cd #{release_root} && git push origin gh-pages")
+  end
+
+  task :clean do
+    sh("rm -rf #{release_root}")
+  end
+end
+
+desc "Build in a clean clone."
+task :release do
+  ENV['ENV'] = 'production'
+  sh("rake release:sync")
+end
+
+desc "Build all stages."
+task :default => outputs

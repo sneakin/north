@@ -1,22 +1,44 @@
 // -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 2 -*-
 
-const VM = require('vm');
+const Commander = require('commander');
 const Forth = require('forth');
+const fs = require('fs');
 
-var data_segment = 1024*1024;
+var program = new Commander.Command();
+program.option('-p, --platform <name>', 'Platform to target', 'bacaw')
+    .option('-m, --machine <name>', 'Specific machine to target', 'north-runner')
+    .option('-s, --stage <stage>', 'The build stage', 'stage0')
+    .option('-o, --output <path>', 'Path to write output to')
+    .option('--data-segment <addr>', 'Offset for the data segment', 1024*1024, parseInt)
+    .option('--code-segment <addr>', 'Offset for the code segment', 0, parseInt)
+    .option('--binary-file <path>', 'Include a file in the output without processing.', (v, prev) => prev.concat([v]), [])
+    .option('--text-file <path>', 'Include a file in the output with minimal processing.', (v, prev) => prev.concat([v]), [])
+    .option('--debug-args', 'Print the parsed arguments andbexit.')
+    .option('-v, --verbose', 'Log more');
 
-//var info = VM.default_info();
-var info = {
-  "gfx":{"width":640,"height":480,"mem_size":16384,"addr":0xF0010000,"swap_addr":4026613756,"irq":25},
-  "keyboard":{"addr":0xF0005000,"irq":14},
-  "console":{"addr":0xF0001000},
-  "timer":{"addr":0xF0002000,"irq":11},
-  "rtc":{"addr":0xF0006000},
-  "input":{"addr":0xF0004000,"irq":13},
-  "output":{"addr":0xF0003000,"irq":12}
-};
+program.parse(process.argv);
 
-var stage = process.argv[2] || 'stage0';
-var bin = Forth.assemble(data_segment, 0, info, stage);
-var buf = new Buffer(bin.buffer);
-process.stdout.write(buf);
+if(program.debugArgs) {
+  console.info("Argv", process.argv, program.args, program, program.binary);
+  process.exit();
+}
+
+//var platform = require(options.platform);
+//var argv = platform.parse_options(process.argv);
+
+var Platform = require('platform/' + program.platform);
+var platform = new Platform(program.machine, program.dataSegment, 0);
+var bin = Forth.assemble(program.stage, platform, {
+  sources: program.args,
+  binaries: program.binaryFile,
+  texts: program.textFile
+});
+var buf = Buffer.from(bin.buffer);
+
+if(program.output != null && program.output != '-') {
+  fs.writeFile(program.output, buf, (err) => {
+    if(err) throw err;
+  });
+} else {
+  process.stdout.write(buf);
+}

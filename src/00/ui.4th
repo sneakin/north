@@ -21,16 +21,16 @@
 
 ( More input prompt: )
 
-: error
+:: error
   ( error-msg2 error-msg1 )
   arg0 write-line
   arg1 write-line
   arg0 *status* poke
   int32 0 *state* poke
-  quit ( exit caller )
+  eval-loop ( let's poke around )
 ;
 
-: eval-read-line
+:: eval-read-line
   write-status arg0 write-int drop write-tab
   prompt read-line return1
 ;

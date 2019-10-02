@@ -1,0 +1,12 @@
+%include "north.h"
+include "data_stack.pop"
+
+def init
+  begin_frame
+	hello
+  data_init
+  literal 17 dallot
+  literal 12 dpush
+  literal 44 dpush
+	dpop dpop
+  return1

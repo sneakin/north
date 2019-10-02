@@ -1,116 +1,106 @@
-: cons args return1 ;
-: dcons arg0 dpush dhere arg1 dpush return1 ;
-: tail arg0 cell+ peek return1 ;
-: head arg0 peek return1 ;
+global-var dict-index
+global-var immediate-index
+constant *dict-index-span* 4
 
-: map-list! ( cons! fn ++ )
-  arg1 UNLESS return0 THEN
-  arg1 head swapdrop arg0 exec ( todo only dictionary entries can be passed, bracketed definitions, :noname maybe, should work too. )
-  arg1 tail swapdrop set-arg1
-  RECURSE
+: dict-index-add
+    args( entry btree )
+    arg1 arg0 btree-add
 ;
 
-: map-list ( cons fn ++ )
-  arg1 arg0 map-list!
+: dict-reindex-loop
+    args( entry index )
+    arg1 terminator? IF return0 THEN
+    ( write-dict-entry )
+    dict-entry-name .S
+    arg0 dict-index-add
+    arg1 dict-entry-next set-arg1
+    drop-locals RECURSE
 ;
 
-: count-inner
-  arg0 IF
-    arg0 tail set-arg0
-    arg1 int32 1 int-add set-arg1
-    ( literal count tailcall )
-    RECURSE
-  THEN
-  arg1 return1
+: dict-reindex
+    args( dict index )
+    arg1 arg0 dict-reindex-loop
 ;
 
-: count int32 0 arg0 count-inner return1 ;
-
-: nil int32 0 return1 ;
-
-( Tree structure: btree-ptr -> tip predicate.
-  Tip -> Branch -> [ Value, [ Left Branch, Right Branch ] ] | [ Value, nil ]
-struct btree-branch
-  field value
-  field left
-  field right
-
-struct btree
-  field tip
-  field predicate
-)
-
-: make-btree ( predicate tip -- btree-list )
-  nil arg1 cons arg0 cons exit
+: dict-index-reset
+    *dict-index-span* ' string-cmp ' dict-entry-name make-btree
+    dict-index !
+    *dict-index-span* ' string-cmp ' dict-entry-name make-btree
+    immediate-index !    
 ;
 
-: make-empty-btree ( predicate -- btree-list )
-  arg0 nil make-btree exit
+: dict-entry-copy
+    arg1 dict-entry-data arg0 set-dict-entry-data
+    arg1 dict-entry-code arg0 set-dict-entry-code
+    arg1 dict-entry-args arg0 set-dict-entry-args
+    arg1 dict-entry-doc arg0 set-dict-entry-doc
 ;
 
-: btree-predicate
-  arg0 tail head return1
+: dict-entry-patch
+    args( target new storage )
+    arg2 dict-entry-data swapdrop
+    arg1 dict-entry-data swapdrop
+    equals IF return0 THEN
+    arg2 arg0 dict-entry-copy
+    arg1 arg2 dict-entry-copy
 ;
 
-: btree-set-tip
-  arg0 btree-predicate arg1 make-btree return1
+: dict-index-lookup
+    arg0 dict-index @ btree-find return2
 ;
 
-: btree-tip
-  arg0 head return1
+: immediate-index-lookup
+    arg0 immediate-index @ btree-find return2
 ;
 
-( Branches )
-
-: btree-make-branch ( left right value -- ptr )
-  nil arg2 cons arg1 cons arg0 cons exit
+: dict-lookup-slow
+    arg1 arg0 dict-lookup return1
 ;
 
-: btree-branch-value
-  arg0 head return1
-;
-
-: btree-branch-left
-  arg0 tail head return1
-;
-
-: btree-branch-right
-  arg0 tail tail head return1
-;
-
-: btree-leaf? arg0 tail null? return1 ;
-
-: btree-add ( value btree )
-  ( go head if <, go tail if >=; )
-  arg1 arg0 btree-find-parent-for IF
-    dup2 swap btree-make-branch return1
-  THEN
-  btree-set-tip return1
-;
-
-: btree-find-parent-for ( obj btree )
-  arg1
-  arg0 btree-predicate swap
-  btree-tip
-  
-  DO
-    ( compare needle with value using the predicate )
-    arg3 arg1 arg2 call dup UNLESS drop LEAVE THEN
-    ( > so go left )
-    int32 0 > IF
-      drop btree-branch-left dup UNLESS LEAVE THEN
-      set-arg1 drop
-      AGAIN
+: dict-lookup-fast
+    args( name dict ++ entry )
+    dict-index @ IF
+        arg0 dict equals IF
+            dict-index @
+        ELSE
+            arg0 immediate-dict @ equals IF
+                immediate-index @
+            ELSE
+                arg1 arg0 dict-lookup-slow return1
+            THEN
+        THEN
+        arg1 swap btree-find UNLESS int32 0 THEN return1
+    ELSE
+        arg1 arg0 dict-lookup-slow return1
     THEN
-    ( < 0 so go right )
-    drop btree-branch-right dup UNLESS LEAVE THEN
-    set-arg1 drop
-  arg1 btree-leaf? swapdrop UNTIL
 ;
-: btree-find ( value btree )
-  arg1 arg0 btree-find-parent-for
-  btree-branch-left dup arg1 equals IF true return2 THEN
-  btree-branch-right dup arg1 equals IF true return2 THEN
-  false return2
+
+: dict-index-patch
+    ' dict-lookup ' dict-lookup-fast ' dict-lookup-slow dict-entry-patch
 ;
-: btree-rm ;
+
+: dict-index-init
+    dict-index @ UNLESS
+        dict-index-reset
+        .\n bold " Indexing immediates" .s color-reset
+        immediate-dict @ immediate-index @ dict-reindex
+        .\n bold " Indexing dictionary" .s color-reset
+        dict dict-index @ dict-reindex
+        dict-index-patch
+    THEN
+;
+
+: dict-index-dump/1
+    args( btree )
+    .\n " Tree" .s .\n
+    arg0 btree-dump
+    .\n " Nodes" .s .\n
+    arg0 ' write-dict-entry btree-map
+;
+
+: dict-index-dump
+    " Immediates" write-heading
+    immediate-index @ dict-index-dump/1
+    " Words" write-heading
+    dict-index @ dict-index-dump/1
+;

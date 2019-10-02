@@ -1,5 +1,7 @@
 %include "north.h"
 
+include "libc/stdio.pop"
+
 string ok_str "OK"
 
 def write_ok

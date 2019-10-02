@@ -1,19 +1,19 @@
 ( Colorize the prompt: )
 
 :: write-ok
-  bright green 
+  bold green 
   int32 $204b4f20 write-word 
   color-reset 
 ;
 
 :: write-err
-  bright red 
+  bold red 
   int32 $20524520 write-word 
   color-reset 
 ;
 
 :: prompt
-  bright yellow
+  bold yellow
   int32 $203e0a0d write-word 
   color-reset 
 ;
@@ -28,11 +28,11 @@
 ( Colorful error output: )
 :: error
   ( error-msg2 error-msg1 )
-  bright red arg0 write-line color-reset
+  bold red arg0 write-line color-reset
   arg1 write-line
   arg0 *status* poke
   int32 0 *state* poke
-  quit ( exit caller )
+  eval-loop ( let's poxe around )
 ;
 
 ( Pretty eval-loop. )
@@ -46,15 +46,7 @@
 
 ( Make ; print the new entry's name and OK. )
 : ;
-dict dict-entry-name write-string drop2 write-ok
-literal endcol jump-entry-data
+  doc( Closes a colon definition updating the last word's data field. )
+  dict dict-entry-name write-string drop2 write-ok
+  ' endcol jump-entry-data
 ; immediate-only
-
-( Print the top of stack. )
-: . arg0 write-int ;
-
-( Base helpers: )
-
-: binary int32 %10 base poke ;
-: hex int32 $10 base poke ;
-: dec int32 #10 base poke ;
