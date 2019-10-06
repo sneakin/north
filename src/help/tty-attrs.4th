@@ -37,7 +37,6 @@
 
 : help-tty-attrs
     doc( View a table of colors and styles availeble on a TTY. )
-    int32 1 int32 1 tty-cursor-to
     " Normal" write-heading
     "  hey! " dim help-tty-color-table
     write-crnl

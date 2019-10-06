@@ -35,23 +35,42 @@
 : help doc( Print introductory help.)
   about
   write-crnl
-  " Helpful Commands:" write-line
+  " Helpful Commands:" write-heading
   ' words help/1
   ' help: help/1
   ' iwords help/1
   ' ihelp: help/1
+  ' ' help/1
+  ' i' help/1
+  ' decompile help/1
   write-crnl
-  " System commands:" write-line
+  " System commands:" write-heading
   ' reboot help/1
   ' quit help/1
   ' bye help/1
-  write-crnl
-  " Compiling words:" write-line
-  ' : help/1
-  ( fixme way have a discrepancy in meta and self compiling with immediate lookups )
-  ' ; help/1
-  ' ' help/1
+  ' exit help/1
+    write-crnl
+  " Compiling words:" write-heading
   ' variable help/1
+  ' : help/1
+  ( fixme may have a discrepancy in meta and self compiling with immediate lookups )
+  ' ; help/1
+  ' ( help/1
+  ' " help/1
+  ' begin help/1
+  ' end help/1
+  ' return1 help/1
+  ' RECURSE help/1
+  ' IF help/1
+  ' UNLESS help/1
+  ' ELSE help/1
+  ' THEN help/1
+  ' [ help/1
+  ' DOTIMES[ help/1
+  write-crnl " Data Values:" write-heading
+  ' literal help/1
+  ' int32 help/1
+  ' POSTPONE help/1
 ;
 
 ( todo categorical help commands for help, stack, system, compiling, frame & data, math, logic, input/output, assembly, internals ... )
