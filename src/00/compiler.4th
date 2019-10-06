@@ -206,7 +206,7 @@
   args( _ : name ++ entry open-seq )
   next-token dup UNLESS eos eos error return0 THEN
   over dict dict-lookup dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
-  docol> return2
+  docol> return-locals
 ;
 
 ( Terminator on stack search and replace: )
