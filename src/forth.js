@@ -8,35 +8,39 @@ const fs = require('fs');
 const TextEncoder = require('util/text_encoder');
 
 var TESTING = 0;
-var forth_sources = {};
 
-function Forth()
+function Forth(platform)
 {
+  this.platform = platform;
+  this.cell_size = platform.cell_size;
+  this.emitter = platform.assembler;
+  this.sources = {};
+  this.stack = [];
+  this.dictionary = {};
+  this.immediates = {};
+  this.last_dictionary = null;
+  this.strings = {};
+  this.data_segment_offset = 0;
+  this.indexed_ops = false;
+  this.next_index = 0x80000000;
 }
 
-function longify(str)
+Forth.longify = function(str)
 {
   var bytes = (new TextEncoder()).encode(str);
   return bytes.slice(0, 4).reverse().reduce((a, c) => (a << 8) | c);
 }
 
-const CELL_SIZE = 4;
-var TERMINATOR = longify("STOP");
-var CRNL = longify("\r\n");
-var HELO = longify("HELO");
-var BYE = longify("\nBYE");
-var OK1 = longify(" OK ");
-var PS0 = longify("\r\n$ ");
-var PS1 = longify("\r\n> ");
-var ERR1 = longify("\r\nER");
-var ERR2 = longify("\r\n> ");
+const TERMINATOR = Forth.longify("STOP");
 
-function cell_align(n)
+Forth.prototype.longify = Forth.longify;
+
+Forth.prototype.cell_align = function(n)
 {
-  return Math.ceil(n / CELL_SIZE) * CELL_SIZE;
+  return Math.ceil(n / this.cell_size) * this.cell_size;
 }
 
-function cellpad(str)
+Forth.prototype.cellpad = function(str)
 {
   var bytes = (new TextEncoder()).encode(str);
   var arr = new Uint8Array((2 + bytes.length) * VM.TYPES.ULONG.byte_size);
@@ -52,9 +56,7 @@ function cellpad(str)
   return arr;
 }
 
-var strings = {};
-
-function next_token(str)
+Forth.prototype.next_token = function(str)
 {
   var sp = str.match(/[ \t\n\r\f\v]*([^ \t\n\r\f\v]+)/)
     
@@ -75,7 +77,7 @@ const base_chars = {
   "%": 2
 };
 
-function parse_number(str)
+Forth.prototype.parse_number = function(str)
 {
   var m = str.match(/^([$#x%]?)(-?[0-9a-fA-F]+)$/);
   if(m) {
@@ -90,36 +92,37 @@ function parse_number(str)
   return null;
 }
 
-function compile(asm, e, quote_numbers)
+Forth.prototype.lookup = function(word)
 {
-  if(e.length == 0) return;
+  var e = this.dictionary[word];
+  if(e) return e.op;
+  //e = asm && asm.resolve(word);
+  if(e === undefined) console.warn("Undefined word: " + word);
+  return word;
+}
+
+Forth.prototype.compile = function(word, quote_numbers)
+{
+  if(word.length == 0) return;
   
-  var m = e.match(/^(.+):$/);
+  var m = word.match(/^(.+):$/);
   if(m) {
-    asm.label(m[1]);
+    this.emitter.label(m[1]);
   } else {
-    var n = parse_number(e);
+    var n = this.parse_number(word);
     if(n != null) {
       if(quote_numbers) {
-        asm.uint32('literal');
+        this.emitter.uint32('literal');
       }
 
-      asm.uint32(n);
+      this.emitter.uint32(n);
     } else {
-      asm.uint32(e);
+      this.emitter.uint32(this.lookup(word));
     }
   }
 }
 
-var stack = [];
-var dictionary = {
-};
-var immediates = {
-};
-var last_dictionary;
-var data_segment_offset = 0;
-
-function unslash(str)
+Forth.prototype.unslash = function(str)
 {
   return str.
       replace(/\\a/g, "\x07").
@@ -136,240 +139,239 @@ function unslash(str)
      ;
 }
 
-function dictionary_add(name, code, data, doc, args)
+Forth.prototype.dictionary_add = function(name, code, data, doc, args)
 {
+  var op = name;
+  if(this.indexed_ops) {
+    if(this.dictionary[name]) {
+      op = this.dictionary[name].op;
+    } else {
+      op = this.next_index++;
+    }
+  }
+
   var entry = {
     code: code,
     data: data,
     doc: doc,
     args: args,
-    next: last_dictionary,
-    prior: dictionary[name] // keep old definitions
+    op: op,
+    next: this.last_dictionary,
+    prior: this.dictionary[name] // keep old definitions
   };
   
-  last_dictionary = name;
-  dictionary[name] = entry;
+  this.last_dictionary = name;
+  this.dictionary[name] = entry;
 
   return entry;
 }
 
-function dictionary_variable(name)
+Forth.prototype.dictionary_variable = function(name)
 {
-  data_segment_offset += VM.TYPES.ULONG.byte_size;
-  var e = dictionary_add(name, 'variable-peeker-code', data_segment_offset);
+  this.data_segment_offset += VM.TYPES.ULONG.byte_size;
+  var e = this.dictionary_add(name, 'variable-peeker-code', this.data_segment_offset);
   e.segment = 'data';
   return e;
 }
+
 var genlabel_counter = util.counter();
 
-function genlabel(prefix)
+Forth.prototype.genlabel = function(prefix)
 {
   if(prefix == null) prefix = 'gen';
   var n = genlabel_counter();
   return `${prefix}-${n}`;
 }
 
-function colon_def(asm, token, code)
+function colon_def(token, code)
 {
-  var tok = next_token(code);
+  var tok = this.next_token(code);
   var name = tok[0];
 
-  dictionary_add(name, 'call-data-seq-code', name + '-entry-data');
+  this.dictionary_add(name, 'call-data-seq-code', name + '-entry-data');
 
-  asm.
+  this.emitter.
       label(name + '-entry-data').
-      uint32(name + '-end', true, (v) => v / CELL_SIZE - 1).
+      uint32(name + '-end', true, (v) => v / this.cell_size - 1).
       label(name + '-ops');
   
   return tok[1];
 }
 
-function literal_immediate(asm, token, code)
+Forth.prototype.literal_immediate = function(token, code)
 {
-    var tok = next_token(code);
-    var label = genlabel('data');
-    strings[label] = tok[0];
-    asm.uint32('literal').uint32(label);
-    return tok[1];
+  var tok = this.next_token(code);
+  var label = this.genlabel('data');
+  this.strings[label] = tok[0];
+  this.interp(`literal ${label}`);
+  return tok[1];
 }
 
-var macros = {
+Forth.macros = {
   ":": colon_def,
   "::": colon_def,
-  ";": function(asm, token, code) {
-    var name = last_dictionary;
-    dictionary[name].data = name + '-entry-data';
-    
-    asm.uint32('return0').
-        label(name + '-end').
-        label(name + '-size', (asm.resolve(name + '-end') - asm.resolve(name + '-ops')) / CELL_SIZE).
+  ";": function(token, code) {
+    var name = this.last_dictionary;
+    this.dictionary[name].data = name + '-entry-data';
+
+    this.interp('return0');
+    this.emitter.label(name + '-end').
+        label(name + '-size', (this.emitter.resolve(name + '-end') - this.emitter.resolve(name + '-ops')) / this.cell_size).
         uint32(TERMINATOR);
   },
-  alias: function(asm, token, code) {
+  alias: function(token, code) {
     // alias NAME AS
     // Adds a dictionary entry named NAME that is a copy of AS.
-    var tok = next_token(code);
+    var tok = this.next_token(code);
     var name = tok[0];
-    tok = next_token(tok[1]);
-    var entry = dictionary[tok[0]];
+    tok = this.next_token(tok[1]);
+    var entry = this.dictionary[tok[0]];
     
-    dictionary_add(name, entry.code, entry.data, entry.doc, entry.args);
+    this.dictionary_add(name, entry.code, entry.data, entry.doc, entry.args);
 
     return tok[1];
   },    
-  constant: function(asm, token, code) {
+  constant: function(token, code) {
     // constant NAME NUMBER-VALUE
     // Adds a dictionary entry with the name and value.
-    var tok = next_token(code);
+    var tok = this.next_token(code);
     var name = tok[0];
-    tok = next_token(tok[1]);
-    var value = parse_number(tok[0]);
+    tok = this.next_token(tok[1]);
+    var value = this.parse_number(tok[0]);
 
-    dictionary_add(name, 'value-peeker-code', value);
+    this.dictionary_add(name, 'value-peeker-code', value);
 
     return tok[1];
   },    
-  "global-var": function(asm, token, code) {
+  "global-var": function(token, code) {
     // variable NAME
     // Adds a dictionary entry with the name and space in the data segment
-    var tok = next_token(code);
+    var tok = this.next_token(code);
     var name = tok[0];
 
-    dictionary_variable(name);
+    this.dictionary_variable(name);
 
     return tok[1];
   },    
-  longify: function(asm, token, code) {
-    var tok = next_token(code);
-    var v = unslash(tok[0]);
-    var l = longify(v);
-    asm.uint32('uint32').uint32(l);
+  longify: function(token, code) {
+    var tok = this.next_token(code);
+    var v = this.unslash(tok[0]);
+    var l = Forth.longify(v);
+    this.interp(`uint32 ${l}`);
     return tok[1];
   },
-  'longify"': function(asm, token, code) {
+  'longify"': function(token, code) {
     var m = code.indexOf('"');
     if(m >= 0) {
       var tok = code.slice(1, m + 1);
-      var l = longify(unslash(tok[0]));
-      asm.uint32('uint32').uint32(l);
+      var l = Forth.longify(this.unslash(tok[0]));
+      this.interp(`uint32 ${l}`);
       return tok[1];
     } else {
       throw "parse error";
     }
   },
-  "char-code": function(asm, token, code) {
-    var tok = next_token(code);
-    var v = unslash(tok[0]);
+  "char-code": function(token, code) {
+    var tok = this.next_token(code);
+    var v = this.unslash(tok[0]);
     var n = v.codePointAt(0);
-    asm.uint32(n);
+    this.emitter.uint32(n);
     return tok[1];
   },
-  immediate: function(asm, token, code) {
-    var name = last_dictionary;
-    immediates[name] = dictionary[name];
+  immediate: function(token, code) {
+    var name = this.last_dictionary;
+    this.immediates[name] = this.dictionary[name];
   },
-  "immediate-as": function(asm, token, code) {
-    var name = last_dictionary;
-    var tok = next_token(code);
+  "immediate-as": function(token, code) {
+    var name = this.last_dictionary;
+    var tok = this.next_token(code);
     var im_name = tok[0]
-    immediates[im_name] = dictionary[name];
+    this.immediates[im_name] = this.dictionary[name];
     return tok[1];
   },
-  "immediate-only": function(asm, token, code) {
-    var name = last_dictionary;
-    immediates[name] = dictionary[name];
-    immediates[name].only = true;
-    dictionary[name] = null;
+  "immediate-only": function(token, code) {
+    var name = this.last_dictionary;
+    this.immediates[name] = this.dictionary[name];
+    this.immediates[name].only = true;
+    this.dictionary[name] = null;
   },
-  IF: function(asm, token, code) {
-    var jump_label = genlabel(last_dictionary);
-    stack.push(jump_label);
-    
-    asm.uint32('literal').
-        uint32(jump_label).
-        uint32('unlessjump');
+  IF: function(token, code) {
+    var jump_label = this.genlabel('if-' + this.last_dictionary);
+    this.stack.push(jump_label);
+    this.interp(`literal ${jump_label} unlessjump`);  },
+  UNLESS: function(token, code) {
+    var jump_label = this.genlabel('unless-' + this.last_dictionary);
+    this.stack.push(jump_label);
+    this.interp(`literal ${jump_label} ifthenjump`);
   },
-  UNLESS: function(asm, token, code) {
-    var jump_label = genlabel(last_dictionary);
-    stack.push(jump_label);
-    
-    asm.uint32('literal').
-        uint32(jump_label).
-        uint32('ifthenjump');
+  ELSE: function(token, code) {
+    var if_label = this.stack.pop();
+    var then_label = this.genlabel('else-' + this.last_dictionary);
+    this.stack.push(then_label);
+    this.interp(`literal ${then_label} jump`);
+    this.emitter.label(if_label);
   },
-  ELSE: function(asm, token, code) {
-    var if_label = stack.pop();
-    var then_label = genlabel(last_dictionary);
-    stack.push(then_label);
-    
-    asm.uint32('literal').uint32(then_label).
-        uint32('jump').
-        label(if_label);
-  },
-  THEN: function(asm, token, code) {
+  THEN: function(token, code) {
     // fix the IF to jump here
-    var label = stack.pop();
-    asm.label(label);
+    var label = this.stack.pop();
+    this.emitter.label(label);
   },
-  RECURSE: function(asm, token, code) {
-    asm.uint32('literal').uint32(last_dictionary).uint32('jump-entry-data');
+  RECURSE: function(token, code) {
+    this.interp(`literal ${this.last_dictionary} jump-entry-data`);
   },
-  "DOTIMES[": function(asm, token, code) {
-    var start_label = genlabel('dotimes');
-    var finish_label = genlabel('dotimes');
-    stack.push(start_label);
-    stack.push(finish_label);
-    asm.uint32('int32').uint32(0).
-        uint32('pointer').uint32(finish_label).
-        uint32('begin').
-        label(start_label).
-        uint32('arg0').uint32('arg1').uint32('<').
-        uint32('int32').uint32(CELL_SIZE).uint32('ifthenreljump').uint32('return-locals');
+  "DOTIMES[": function(token, code) {
+    var start_label = this.genlabel('dotimes');
+    var finish_label = this.genlabel('dotimes');
+    this.stack.push(start_label);
+    this.stack.push(finish_label);
+    this.interp(`int32 0 pointer ${finish_label} begin`);
+    this.emitter.label(start_label);
+    this.interp(`arg0 arg1 < int32 ${this.cell_size} ifthenreljump return-locals`);
   },
-  "]DOTIMES": function(asm, token, code) {
-    var finish_label = stack.pop();
-    var start_label = stack.pop();
-    asm.uint32('arg0').uint32('int32').uint32(1).uint32('int-add').
-        uint32('set-arg0').
-        uint32('int32').uint32(start_label, true, (p) => p - CELL_SIZE * 2).uint32('jumprel').
-        label(finish_label);
+  "]DOTIMES": function(token, code) {
+    var finish_label = this.stack.pop();
+    var start_label = this.stack.pop();
+    this.interp('arg0 int32 1 int-add set-arg0');
+    this.interp('int32');
+    this.emitter.uint32(start_label, true, (p) => p - this.cell_size * 2);
+    this.interp('jumprel');
+    this.emitter.label(finish_label);
   },  
-  POSTPONE: function(asm, token, code) {
-    var tok = next_token(code);
-    asm.uint32(tok[0]);
+  POSTPONE: function(token, code) {
+    var tok = this.next_token(code);
+    this.emitter.uint32(this.lookup(tok[0]));
     return tok[1];
   },
-  '"': function(asm, token, code) {
+  '"': function(token, code) {
     var m = code.indexOf('"');
     if(m >= 0) {
-      var label = genlabel('data');
-      strings[label] = code.slice(1, m);
-
-      asm.uint32('string').uint32(label);
-
+      var label = this.genlabel('data');
+      this.strings[label] = code.slice(1, m);
+      this.interp(`string ${label}`);
       return code.slice(m + 1);
     } else {
       return "parse error: unterminated string";
     }
   },
-  lit: function(asm, token, code) {
-    var tok = next_token(code);
-    var label = genlabel('data');
-    strings[label] = tok[0];
-    asm.uint32('literal').uint32(label);
+  lit: function(token, code) {
+    var tok = this.next_token(code);
+    var label = this.genlabel('data');
+    this.strings[label] = tok[0];
+    this.emitter.uint32('literal').uint32(label);
     return tok[1];
   },
-  "'": function(asm, token, code) {
-    var tok = next_token(code);
-    asm.uint32('literal').uint32(tok[0]);
+  "'": function(token, code) {
+    var tok = this.next_token(code);
+    this.interp('literal');
+    this.emitter.uint32(this.lookup(tok[0]));
     return tok[1];
   },
-  "i'": function(asm, token, code) {
-    var tok = next_token(code);
-    asm.uint32('literal').uint32('immed-' + tok[0]);
+  "i'": function(token, code) {
+    var tok = this.next_token(code);
+    this.interp(`literal immed-${tok[0]}`);
     return tok[1];
   },
-  "(": function(asm, token, code) {
+  "(": function(token, code) {
     var m = code.indexOf(')');
     if(m >= 0) {
       return code.slice(m + 1);
@@ -377,23 +379,23 @@ var macros = {
       throw "parse error";
     }
   },
-  'doc(': function(asm, token, code) {
+  'doc(': function(token, code) {
     var m = code.indexOf(')');
     if(m >= 0) {
-      var label = genlabel('doc');
-      strings[label] = code.slice(1, m);
-      dictionary[last_dictionary].doc = label;
+      var label = this.genlabel('doc');
+      this.strings[label] = code.slice(1, m);
+      this.dictionary[this.last_dictionary].doc = label;
       return code.slice(m + 1);
     } else {
       return "parse error: unterminated doc comment";
     }
   },
-  'args(': function(asm, token, code) {
+  'args(': function(token, code) {
     var m = code.indexOf(')');
     if(m >= 0) {
-      var label = genlabel('args');
-      strings[label] = code.slice(1, m);
-      dictionary[last_dictionary].args = label;
+      var label = this.genlabel('args');
+      this.strings[label] = code.slice(1, m);
+      this.dictionary[this.last_dictionary].args = label;
       return code.slice(m + 1);
     } else {
       return "parse error: unterminated doc comment";
@@ -401,31 +403,31 @@ var macros = {
   }
 };
 
-function execute(asm, token, code)
+Forth.prototype.execute = function(token, code)
 {
-  var func = macros[token];
+  var func = Forth.macros[token];
   if(func) {
-    return func(asm, token, code);
+    return func.apply(this, [token, code]);
   } else if(token) {
-    compile(asm, token);
+    this.compile(token);
   }
 }
 
-function interp(asm, str)
+Forth.prototype.interp = function(str)
 {
   var s = str;
     
   try {
     for(s = str; s.length > 0;) {
-      var t = next_token(s);
+      var t = this.next_token(s);
       if(t == false) break;
       
       s = t[1];
-      var r = execute(asm, t[0], s);
+      var r = this.execute(t[0], s);
       if(r != null) s = r;
     }
     
-    return asm;
+    return this;
   } catch(e) {
     console.error("Caught " + e);
     if(s) console.error("processing: " + s.substr(0, 32) + "...");
@@ -433,190 +435,191 @@ function interp(asm, str)
   }
 }
 
-Forth.assembler = function(stage, platform, opts) {
-  var ds = platform.data_segment;
-  var cs = platform.code_segment;
-  var asm = platform.assembler;
+Forth.prototype.eval = function(str) {
+  var asm = this.emitter;
+  var f = new Function('platform', 'asm', 'require', 'TERMINATOR', str);
+  return f.apply(this, [ this.platform, this.emitter, require, TERMINATOR ]);
+}
+
+Forth.prototype.defop = function(name, fn, doc, args) {
+  var entry = this.dictionary_add(name, name + "-code", null);
+  if(doc) {
+    this.strings[name + '-doc'] = doc;
+    entry.doc = name + '-doc';
+  }
+  if(args) {
+    this.strings[name + '-args'] = args;
+    entry.args = name + '-args';
+  }
+  return fn(this.emitter.label(name + "-code"));
+}
+
+Forth.prototype.defalias = function(name, calls) {
+  var entry = this.dictionary[calls];
+  this.dictionary_add(name, entry.code, entry.data);
+}
+
+Forth.prototype.constant = function(name, value)
+{
+  if(typeof(value) == 'string') {
+    var label = name + '-str';
+    this.strings[label] = value;
+    value = label;
+  }
+  this.dictionary_add(name, 'value-peeker-code', value);
+}
+
+Forth.prototype.add_source = function(path, data, binary)
+{
+  var name = path.match(/(\w+[\\\/]\w+)\.\w+$/);
+  if(name) name = name[1];
+  else name = path;
   
-  function defop(name, fn, doc, args) {
-    var entry = dictionary_add(name, name + "-code", null);
-    if(doc) {
-      strings[name + '-doc'] = doc;
-      entry.doc = name + '-doc';
-    }
-    if(args) {
-      strings[name + '-args'] = args;
-      entry.args = name + '-args';
-    }
-    return fn(asm.label(name + "-code"));
+  name = name.replace(/[\\\/]/g, '/');
+  if(!binary) {
+    data = this.cellpad(data);
   }
+  var label = 'sources-' + name + '-src';
+  this.sources[label] = data;
+  this.dictionary_add('src/' + name, 'value-peeker-code', label);
+}
 
-  function defalias(name, calls) {
-    var entry = dictionary[calls];
-    dictionary_add(name, entry.code, entry.data);
-  }
-
-  function constant(name, value)
-  {
-    if(typeof(value) == 'string') {
-      var label = name + '-str';
-      strings[label] = value;
-      value = label;
-    }
-    dictionary_add(name, 'value-peeker-code', value);
-  }
+Forth.prototype.raw_dict_entry = function(label, name, code, data, last_label, doc, args) {
+  this.emitter.label(label).
+      uint32(name).
+      uint32(code).
+      uint32(data).
+      uint32(doc || 0).
+      uint32(args || 0).
+      uint32(last_label);
   
-  constant("version-string", fs.readFileSync(__dirname + '/version.txt', 'utf-8').trim());
-  constant("stage-string", stage);
-  constant("platform-string", platform.name);
-  constant("cell-size", CELL_SIZE);
+  return label;
+}
 
-  function add_source(path, data, binary)
-  {
-    var name = path.match(/(\w+[\\\/]\w+)\.\w+$/);
-    if(name) name = name[1];
-    else name = path;
-    
-    name = name.replace(/[\\\/]/g, '/');
-    if(!binary) {
-      data = cellpad(data);
-    }
-    var label = 'sources-' + name + '-src';
-    forth_sources[label] = data;
-    dictionary_add('src/' + name, 'value-peeker-code', label);
+Forth.prototype.write_dict_entry = function(n, entry, last_label, prefix)
+{
+  if(entry == null) return last_label;
+  if(prefix == null || entry.only == true) prefix = '';
+  var data = entry.data;
+  if(entry.data == null) data = 0;
+  if(entry.segment == 'data') data += this.platform.data_segment;
+  return this.raw_dict_entry(prefix + n, n + '-sym', entry.code, data, last_label, entry.doc, entry.args);
+}
+
+Forth.prototype.emit_sources = function() {
+  this.emitter.label('sources').uint32('sources-end', true);
+  for(var n in this.sources) {
+    var data = this.sources[n];
+    this.emitter.label(n).bytes(data);
   }
+  this.emitter.label('sources-end');
+}
+
+Forth.prototype.emit_strings = function() {
+  this.emitter.label('symbols-begin');
+  
+  for(var n in this.strings) {
+    this.emitter.label(n).bytes(this.cellpad(this.unslash(this.strings[n])));
+  }
+
+  for(var n in this.dictionary) {
+    if(this.dictionary[n] == null) continue;
+    this.emitter.label(n + '-sym').bytes(this.cellpad(n));
+  }
+  for(var n in this.immediates) {
+    if(this.immediates[n] == null) continue;
+    try {
+      this.emitter.resolve(n + '-sym');
+    } catch(e) {
+      this.emitter.label(n + '-sym').bytes(this.cellpad(n));
+    }
+  }
+
+  this.emitter.label('symbols-end');
+  this.emitter.label('symbols-size').uint32(this.emitter.resolve('symbols-end') - this.emitter.resolve('symbols-begin'));
+}
+
+Forth.prototype.emit_dictionary = function(label, dict, prefix) {
+  this.emitter.label(label + '-begin');
+
+  function sort(arr, key)
+  {
+    return arr.slice(0).sort(function(a, b) {
+      if(a[1] && b[1])
+        return a[1][key] - b[1][key];
+      else if(!b[1]) return -1;
+      else if(!a[1]) return 1;
+    });
+  }
+
+  var last_label = TERMINATOR;
+  for(var n of sort(Object.entries(dict), 'op')) {
+    last_label = this.write_dict_entry(n[0], n[1], last_label, prefix);
+  }
+  //for(var n in this.dictionary) {
+  //   last_label = write_dict_entry(n, this.dictionary[n], last_label);
+  // }
+
+  this.emitter.label(label + '-end');
+  this.emitter.label(label, this.emitter.resolve(last_label));
+  this.emitter.label(label + '-size', this.emitter.resolve(label + '-end') - this.emitter.resolve(label + '-begin'));
+}
+
+Forth.prototype.compile_files = function(paths, min_stage) {
+  for(var input of paths) {
+    var data = fs.readFileSync(input, 'utf-8');
+    var pm = input.match(/([.].+)?$/);
+    var ext = pm && pm[1];
+    console.log("Src:", input, data.length, ext);
+    if(ext == '.js') {
+      this.eval(data);
+    } else if(ext == '.4th') {
+      this.interp(data);
+      if(!min_stage) this.add_source(input, data);
+    } else {
+      throw "Unknown file type: " + input;
+    }
+  }
+}
+
+Forth.prototype.assemble = function(stage, opts) {
+  this.constant("version-string", fs.readFileSync(__dirname + '/version.txt', 'utf-8').trim());
+  this.constant("stage-string", stage);
+  this.constant("platform-string", this.platform.name);
+  this.constant("cell-size", this.cell_size);
 
   // Load the sources
 
   function min_stage() {
     return (stage.indexOf('min') == -1);
   }
-  
-  for(var input of opts.sources) {
-    var data = fs.readFileSync(input, 'utf-8');
-    console.log("Src:", input, data.length);
-    if(input.match(/\.js$/)) {
-      eval(data);
-    } else if(input.match(/\.4th$/)) {
-      interp(asm, data);
-      if(!min_stage()) add_source(input, data);
-    }
-  }
+
+  this.compile_files(opts.sources, min_stage());
 
   for(var path of opts.texts) {
     console.log("Text: " + path);
-    add_source(path, fs.readFileSync(path, 'utf-8'));
+    this.add_source(path, fs.readFileSync(path, 'utf-8'));
   }
   
   for(var path of opts.binaries) {
     console.log("Binary: " + path);
-    add_source(path, fs.readFileSync(path, 'ASCII'), true);
+    this.add_source(path, fs.readFileSync(path, 'ASCII'), true);
   }
   
-  // trampolines
-  if(platform.name == 'bacaw') {
-    for(var n in dictionary) {
-      var entry = dictionary[n];
-      if(entry == null) continue;
-      if(entry.code == 'call-data-seq-code' && entry.data != null) {
-        asm.label(n + "-code").
-            load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.CS).uint32(n + '-entry-data').
-            load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('call-data-seq-code');
-      }
-    }
-  }
+  this.emitter.label('*program-size*');
+
+  this.emit_strings();
+  this.emit_dictionary('builtin-dictionary', this.dictionary);
+  this.emit_dictionary('immediate-dictionary', this.immediates, 'immed-');
+  this.emit_sources();
   
-  asm.label('*program-size*');
-
-  asm.label('symbols-begin');
-  
-  for(var n in strings) {
-    asm.label(n).bytes(cellpad(unslash(strings[n])));
-  }
-
-  for(var n in dictionary) {
-    if(dictionary[n] == null) continue;
-    asm.label(n + '-sym').bytes(cellpad(n));
-  }
-  for(var n in immediates) {
-    if(immediates[n] == null) continue;
-    try {
-      asm.resolve(n + '-sym');
-    } catch(e) {
-      asm.label(n + '-sym').bytes(cellpad(n));
-    }
-  }
-
-  asm.label('symbols-end');
-  asm.label('symbols-size').uint32(asm.resolve('symbols-end') - asm.resolve('symbols-begin'));
-  
-  asm.label('dictionary-begin');
-
-  function raw_dict_entry(label, name, code, data, last_label, doc, args) {
-    asm.label(label).
-        uint32(name).
-        uint32(code).
-        uint32(data).
-        uint32(doc || 0).
-        uint32(args || 0).
-        uint32(last_label);
-    
-    return label;
-  }
-
-  function write_dict_entry(n, entry, last_label, prefix)
-  {
-    if(entry == null) return last_label;
-    if(prefix == null || entry.only == true) prefix = '';
-    var data = entry.data;
-    if(entry.data == null) data = 0;
-    if(entry.segment == 'data') data += ds;
-    return raw_dict_entry(prefix + n, n + '-sym', entry.code, data, last_label, entry.doc, entry.args);
-  }
-  
-  var last_label = TERMINATOR;
-
-  //for(var n of Object.keys(dictionary).sort()) {
-  for(var n in dictionary) {
-    last_label = write_dict_entry(n, dictionary[n], last_label);
-  }
-
-  asm.label('dictionary-end');
-  asm.label('dictionary').uint32(last_label);
-  asm.label('dictionary-size').uint32(asm.resolve('dictionary-end') - asm.resolve('dictionary-begin'));
-
-  last_label = TERMINATOR;
-  //for(var n of Object.keys(immediates).sort()) {
-  for(var n in immediates) {
-    last_label = write_dict_entry(n, immediates[n], last_label, 'immed-');
-  }
-  
-  asm.label('immediate-dictionary').uint32(last_label);
-
-  //if(!min_stage()) {
-    asm.label('sources').uint32('sources-end', true);
-    for(var n in forth_sources) {
-      var data = forth_sources[n];
-      asm.label(n).bytes(data);
-    }
-    asm.label('sources-end');
-//}
-  
-  return asm;
+  return this;
 }
 
-Forth.assemble = function(stage, platform, opts) {
-  return Forth.assembler(stage, platform, opts).assemble();
+Forth.prototype.finish = function()
+{
+  return this.emitter.assemble();
 }
-
-Forth.longify = longify;
-Forth.cellpad = cellpad;
-Forth.cell_align = cell_align;
-Forth.sources = forth_sources;
-Forth.interp = interp;
-Forth.execute = execute;
-Forth.next_token = next_token;
-Forth.unslash = unslash;
 
 if(typeof(module) != 'undefined') {
   module.exports = Forth;

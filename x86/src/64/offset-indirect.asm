@@ -1,6 +1,14 @@
 bits 64
   
 constant indirect_offset,dictionary_start
+
+defop offset->pointer,offset_to_pointer
+  pop rbx
+  pop rax
+  add rax, [d_indirect_offset+dict_entry_data]
+  push rax
+  push rbx
+  ret
   
 defop indexed_offset_a
 	add rax, [d_indirect_offset+dict_entry_data]

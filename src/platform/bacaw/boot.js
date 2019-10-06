@@ -6,11 +6,17 @@ const asm_input = require('vm/asm/input-device');
 const asm_output = require('vm/asm/output-device');
 const asm_isr = require('vm/asm/isr');
 
-var DS_SIZE = 1024*2;
-var HEAP_REG = VM.CPU.REGISTERS.DS - 1;
-var EVAL_IP_REG = HEAP_REG - 1;
-var DICT_REG = HEAP_REG - 4;
-var FP_REG = HEAP_REG - 5;
+const CELL_SIZE = this.cell_size;
+const HEAP_REG = platform.registers.heap;
+const EVAL_IP_REG = platform.registers.eval_ip;
+const DICT_REG = platform.registers.dict;
+const FP_REG = platform.registers.fp;
+
+const ds = platform.data_segment;
+const cs = platform.code_segment;
+const DS_SIZE = platform.data_segment_size;
+
+const BYE = this.longify("\nBYE");
 
 asm_isr(asm, VM.CPU.INTERRUPTS.user * 3);
 asm_memcpy(asm);
@@ -35,7 +41,7 @@ asm.label('goodbye').
     call(0, VM.CPU.REGISTERS.CS).uint32('output_write_word').
     ret();
 
-var offset = data_segment_offset;
+var offset = this.data_segment_offset;
 asm.label('input_data_position', offset).
     label('output_data_position', offset + CELL_SIZE * 1).
     label('waiting_for_input', offset + CELL_SIZE * 2).
@@ -43,7 +49,7 @@ asm.label('input_data_position', offset).
     label('heap_top', offset + CELL_SIZE * 4).
     label('stack_top', offset + CELL_SIZE * 5).
     label('data_segment_end', offset + CELL_SIZE * 6);
-data_segment_offset = CELL_SIZE + asm.resolve('data_segment_end');
+this.data_segment_offset = CELL_SIZE + asm.resolve('data_segment_end');
 
 asm.label('data_init').
     load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).

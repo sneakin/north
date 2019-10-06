@@ -1,12 +1,17 @@
 // -*- mode: JavaScript; coding: utf-8-unix; javascript-indent-level: 2 -*-
 
-defop('reboot', function(asm) {
+const CELL_SIZE = this.cell_size;
+const HEAP_REG = platform.registers.heap;
+const EVAL_IP_REG = platform.registers.eval_ip;
+const DICT_REG = platform.registers.dict;
+const FP_REG = platform.registers.fp;
+
+this.defop('reboot', function(asm) {
   asm.reset();
 }, "Reboot the CPU.");
 
-defop('reset', function(asm) {
-  asm.load(DICT_REG, 0, VM.CPU.REGISTERS.CS).uint32('dictionary').
-      load(DICT_REG, 0, DICT_REG).uint32(0).
+this.defop('reset', function(asm) {
+  asm.load(DICT_REG, 0, VM.CPU.REGISTERS.CS).uint32('builtin-dictionary').
       load(HEAP_REG, 0, VM.CPU.REGISTERS.DS).uint32('heap_top').
       load(VM.CPU.REGISTERS.SP, 0, VM.CPU.REGISTERS.DS).uint32('stack_top').
       mov(FP_REG, VM.CPU.REGISTERS.SP).
@@ -16,22 +21,22 @@ defop('reset', function(asm) {
       call(0, VM.CPU.REGISTERS.CS).uint32('outer-start-thread');
 }, "Set all the interpreter's state back to the initial state.");
 
-defop('jump', function(asm) {
+this.defop('jump', function(asm) {
   asm.pop(EVAL_IP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
       ret();
 });
 
-defop('exec', function(asm) {
+this.defop('exec', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-word-code');
 });
 
-defop('exec-word', function(asm) {
+this.defop('exec-word', function(asm) {
   asm.load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE);
 });
 
-defop('call-data', function(asm) {
+this.defop('call-data', function(asm) {
   // Given an entry in R0, load eval IP with the data value.
   asm.push(EVAL_IP_REG). // save return
   load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load data value
@@ -39,7 +44,7 @@ defop('call-data', function(asm) {
       ret();
 });
 
-defop('call-data-seq', function(asm) {
+this.defop('call-data-seq', function(asm) {
   // Given an entry in R0, jump to it's data sequence's first value.
   asm.push(EVAL_IP_REG). // save return
   load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load entry data
@@ -48,7 +53,7 @@ defop('call-data-seq', function(asm) {
       ret();
 });
 
-defop('jump-entry-data', function(asm) {
+this.defop('jump-entry-data', function(asm) {
   // Load the eval IP with the entry at the ToS's data value.
   asm.pop(VM.CPU.REGISTERS.R0). // entry
   load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load data value
@@ -68,7 +73,7 @@ defop('jump-entry-data', function(asm) {
 var FRAME_RETURN_ADDRESS_OFFSET = CELL_SIZE;
 var FRAME_SIZE = CELL_SIZE * 2;
 
-defop('begin', function(asm) {
+this.defop('begin', function(asm) {
   asm.push(FP_REG).
       mov(FP_REG, VM.CPU.REGISTERS.SP).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
@@ -78,7 +83,7 @@ defop('begin', function(asm) {
 // todo need an abort to eval-loop: catch/throw?
 
 // actually return from interpreter
-defop('bye', function(asm) {
+this.defop('bye', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
       // get the top most stack frame
@@ -99,7 +104,7 @@ defop('bye', function(asm) {
       ret();
 }, "Exit and return from the interpreter.");
 
-defop('quit', function(asm) {
+this.defop('quit', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
       // get the top most stack frame
@@ -118,20 +123,20 @@ defop('quit', function(asm) {
 }, "Return to the function started with outer-start-thread, but not the outer-start-thread's caller.");
 
 // Return to the calling function.
-defop('exit', function(asm) {
+this.defop('exit', function(asm) {
   asm.load(EVAL_IP_REG, 0, FP_REG).int32(CELL_SIZE).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('end-code');
 });
 
 // Ends the current frame.
-defop('end', function(asm) {
+this.defop('end', function(asm) {
   asm.load(FP_REG, 0, FP_REG).uint32(0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
       ret();
 });
 
 // Load the next word, increment eval IP, and execute the word's code cell.
-defop('next', function(asm) {
+this.defop('next', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, EVAL_IP_REG).int32(0).
       inc(EVAL_IP_REG).uint32(CELL_SIZE).
@@ -139,13 +144,13 @@ defop('next', function(asm) {
       ret();
 });
 
-defop('drop-call-frame', function(asm) {
+this.defop('drop-call-frame', function(asm) {
   asm.load(FP_REG, 0, FP_REG).uint32(0).
       inc(VM.CPU.REGISTERS.SP).uint32(FRAME_SIZE).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('return1', function(asm) {
+this.defop('return1', function(asm) {
   asm.// save a return value
   pop(VM.CPU.REGISTERS.R0).
       // pop frame
@@ -157,7 +162,7 @@ defop('return1', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('return2', function(asm) {
+this.defop('return2', function(asm) {
   asm.// save a return value
   pop(VM.CPU.REGISTERS.R0).
       pop(VM.CPU.REGISTERS.R1).
@@ -171,7 +176,7 @@ defop('return2', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('return-1', function(asm) {
+this.defop('return-1', function(asm) {
   asm.// exit frame
   mov(VM.CPU.REGISTERS.SP, FP_REG).
       pop(FP_REG).
@@ -180,8 +185,9 @@ defop('return-1', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+// todo try not adjusting SP on return: it onlf changes IP & FP like a call.
 // todo jump to bye if there's no parent frame
-defop('return0', function(asm) {
+this.defop('return0', function(asm) {
   asm.// exit frame
   mov(VM.CPU.REGISTERS.SP, FP_REG).
       pop(FP_REG).
@@ -189,7 +195,7 @@ defop('return0', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('returnN', function(asm) {
+this.defop('returnN', function(asm) {
   asm.// copy values between FP and SP up over the frame
   // exit frame
   // save the number of words
@@ -202,7 +208,7 @@ defop('returnN', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('shift-stack-code');
 });
 
-defop('return0-n', function(asm) {
+this.defop('return0-n', function(asm) {
   asm.
       // save number cells to pop
       pop(VM.CPU.REGISTERS.R0).
@@ -221,7 +227,7 @@ defop('return0-n', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('shift-stack', function(asm) {
+this.defop('shift-stack', function(asm) {
   asm.// R1: old SP
   // R0: number of words
   load(VM.CPU.REGISTERS.R2, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
@@ -238,7 +244,7 @@ defop('shift-stack', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('shift-stack-loop');
 });
 
-defop('return1-n', function(asm) {
+this.defop('return1-n', function(asm) {
   asm.// save number cells to pop
   pop(VM.CPU.REGISTERS.R0).
       // save a return value
@@ -259,7 +265,7 @@ defop('return1-n', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('return2-n', function(asm) {
+this.defop('return2-n', function(asm) {
   asm.// save number cells to pop
   pop(VM.CPU.REGISTERS.R0).
       // save a return value
@@ -282,7 +288,7 @@ defop('return2-n', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('literal', function(asm) {
+this.defop('literal', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, EVAL_IP_REG).uint32(0).
       push(VM.CPU.REGISTERS.R0).
@@ -291,13 +297,13 @@ defop('literal', function(asm) {
       ret();
 });
 
-defalias('pointer', 'literal');
-defalias('string', 'literal');
-defalias('int32', 'literal');
-defalias('uint32', 'literal');
-defalias('float32', 'literal');
+this.defalias('pointer', 'literal');
+this.defalias('string', 'literal');
+this.defalias('int32', 'literal');
+this.defalias('uint32', 'literal');
+this.defalias('float32', 'literal');
 
-defop('read-byte', function(asm) {
+this.defop('read-byte', function(asm) {
   asm.
       call(0, VM.CPU.REGISTERS.CS).uint32('read_byte').
       push(VM.CPU.REGISTERS.R0).
@@ -305,7 +311,7 @@ defop('read-byte', function(asm) {
       ret();
 });
 
-defop('write-byte', function(asm) {
+this.defop('write-byte', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
       call(0, VM.CPU.REGISTERS.CS).uint32('output_write_byte').
@@ -313,7 +319,7 @@ defop('write-byte', function(asm) {
       ret();
 });
 
-defop('write-word', function(asm) {
+this.defop('write-word', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
       call(0, VM.CPU.REGISTERS.CS).uint32('output_write_word').
@@ -321,18 +327,18 @@ defop('write-word', function(asm) {
       ret();
 });
 
-defop('eval-ip', function(asm) {
+this.defop('eval-ip', function(asm) {
   asm.push(EVAL_IP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('here', function(asm) {
+this.defop('here', function(asm) {
   asm.
       push(VM.CPU.REGISTERS.SP).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('swap', function(asm) {
+this.defop('swap', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
       pop(VM.CPU.REGISTERS.R1).
@@ -341,22 +347,22 @@ defop('swap', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('drop', function(asm) {
+this.defop('drop', function(asm) {
   asm.inc(VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('drop2', function(asm) {
+this.defop('drop2', function(asm) {
   asm.inc(VM.CPU.REGISTERS.SP).uint32(CELL_SIZE*2).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('drop3', function(asm) {
+this.defop('drop3', function(asm) {
   asm.inc(VM.CPU.REGISTERS.SP).uint32(4 * 3).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('over', function(asm) {
+this.defop('over', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
       push(VM.CPU.REGISTERS.R0).
@@ -364,7 +370,7 @@ defop('over', function(asm) {
       ret();
 });
 
-defop('dup', function(asm) {
+this.defop('dup', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
       push(VM.CPU.REGISTERS.R0).
@@ -372,7 +378,7 @@ defop('dup', function(asm) {
       ret();
 });
 
-defop('2dup', function(asm) {
+this.defop('2dup', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
       push(VM.CPU.REGISTERS.R0).
@@ -381,7 +387,7 @@ defop('2dup', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('peek', function(asm) {
+this.defop('peek', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
@@ -389,7 +395,7 @@ defop('peek', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('poke', function(asm) {
+this.defop('poke', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0). // addr
       pop(VM.CPU.REGISTERS.R1). // value
@@ -397,7 +403,7 @@ defop('poke', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('equals', function(asm) {
+this.defop('equals', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
       pop(VM.CPU.REGISTERS.R1).
@@ -429,7 +435,7 @@ for(var k in math_ops) {
   var op = k;
   var label = math_ops[k];
 
-  defop(label, function(asm) {
+  this.defop(label, function(asm) {
     asm.
         pop(VM.CPU.REGISTERS.R1).
         pop(VM.CPU.REGISTERS.R0).
@@ -450,7 +456,7 @@ for(var f in conv_ops) {
   var op = conv_ops[f][0];
   var type_out = conv_ops[f][1];
   
-  defop(f, function(asm) {
+  this.defop(f, function(asm) {
     asm.pop(VM.CPU.REGISTERS.R0);
     asm[op](VM.CPU.REGISTERS.R0, type_out);
     asm.push(VM.CPU.REGISTERS.R0).
@@ -458,14 +464,14 @@ for(var f in conv_ops) {
   });
 }
 
-defop('logi', function(asm) {
+this.defop('logi', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       logi(VM.CPU.REGISTERS.R0).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('bsl', function(asm) {
+this.defop('bsl', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
@@ -474,7 +480,7 @@ defop('bsl', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('bsr', function(asm) {
+this.defop('bsr', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
@@ -483,7 +489,7 @@ defop('bsr', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('not', function(asm) {
+this.defop('not', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(0).
       cmpi(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
@@ -492,7 +498,7 @@ defop('not', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('lognot', function(asm) {
+this.defop('lognot', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
       not(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R0).
@@ -500,7 +506,7 @@ defop('lognot', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('logand', function(asm) {
+this.defop('logand', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
@@ -509,7 +515,7 @@ defop('logand', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('logior', function(asm) {
+this.defop('logior', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
@@ -518,7 +524,7 @@ defop('logior', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('logxor', function(asm) {
+this.defop('logxor', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
@@ -535,7 +541,7 @@ var comparisons = {
 for(var kind in comparisons) {
   var op = comparisons[kind];
 
-  defop(kind + '<', function(asm) {
+  this.defop(kind + '<', function(asm) {
     asm.pop(VM.CPU.REGISTERS.R1).
         pop(VM.CPU.REGISTERS.R0);
     asm[op](VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
@@ -545,7 +551,7 @@ for(var kind in comparisons) {
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
 
-  defop(kind + '<=', function(asm) {
+  this.defop(kind + '<=', function(asm) {
     asm.pop(VM.CPU.REGISTERS.R1).
         pop(VM.CPU.REGISTERS.R0);
     asm[op](VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R1).
@@ -556,7 +562,7 @@ for(var kind in comparisons) {
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
 
-  defop(kind + '>', function(asm) {
+  this.defop(kind + '>', function(asm) {
     asm.
         pop(VM.CPU.REGISTERS.R1).
         pop(VM.CPU.REGISTERS.R0).
@@ -567,7 +573,7 @@ for(var kind in comparisons) {
         load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   });
 
-  defop(kind + '>=', function(asm) {
+  this.defop(kind + '>=', function(asm) {
     asm.pop(VM.CPU.REGISTERS.R1).
         pop(VM.CPU.REGISTERS.R0);
     asm[op](VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
@@ -579,12 +585,12 @@ for(var kind in comparisons) {
   });
 }
 
-defalias('<', 'int<');
-defalias('<=', 'int<=');
-defalias('>', 'int>');
-defalias('>=', 'int>=');
+this.defalias('<', 'int<');
+this.defalias('<=', 'int<=');
+this.defalias('>', 'int>');
+this.defalias('>=', 'int>=');
 
-defop('jumprel', function(asm) {
+this.defop('jumprel', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
       addi(EVAL_IP_REG, VM.CPU.REGISTERS.STATUS).
@@ -592,7 +598,7 @@ defop('jumprel', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('ifthenjump', function(asm) { // condition addr
+this.defop('ifthenjump', function(asm) { // condition addr
   asm.
       // compare arg1 w/ 0
       pop(VM.CPU.REGISTERS.R2).
@@ -606,7 +612,7 @@ defop('ifthenjump', function(asm) { // condition addr
       ret();
 });
 
-defop('ifthenreljump', function(asm) { // condition addr
+this.defop('ifthenreljump', function(asm) { // condition addr
   asm.
       // compare arg1 w/ 0
       pop(VM.CPU.REGISTERS.R0).
@@ -622,7 +628,7 @@ defop('ifthenreljump', function(asm) { // condition addr
       ret();
 });
 
-defop('unlessjump', function(asm) { // condition addr
+this.defop('unlessjump', function(asm) { // condition addr
   asm.
       // compare arg1 w/ 0
       pop(VM.CPU.REGISTERS.R2).
@@ -637,7 +643,7 @@ defop('unlessjump', function(asm) { // condition addr
       ret();
 });
 
-defop('unlessreljump', function(asm) { // condition addr
+this.defop('unlessreljump', function(asm) { // condition addr
   asm.
       // compare arg1 w/ 0
       pop(VM.CPU.REGISTERS.R0).
@@ -654,7 +660,7 @@ defop('unlessreljump', function(asm) { // condition addr
       ret();
 });
 
-defop('pause', function(asm) {
+this.defop('pause', function(asm) {
   asm.
       cie().
       halt().
@@ -662,42 +668,42 @@ defop('pause', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('arg0', function(asm) {
+this.defop('arg0', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_SIZE).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('arg1', function(asm) {
+this.defop('arg1', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_SIZE + 4).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('arg2', function(asm) {
+this.defop('arg2', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_SIZE + 8).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('arg3', function(asm) {
+this.defop('arg3', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_SIZE + 12).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('arg4', function(asm) {
+this.defop('arg4', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_SIZE + 16).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('next-param', function(asm) {
+this.defop('next-param', function(asm) {
   asm.
       // get the return address
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_RETURN_ADDRESS_OFFSET).
@@ -713,78 +719,78 @@ defop('next-param', function(asm) {
       ret();
 });
 
-defop('return-address', function(asm) {
+this.defop('return-address', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(FRAME_RETURN_ADDRESS_OFFSET).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('locals', function(asm) {
+this.defop('locals', function(asm) {
   asm.mov(VM.CPU.REGISTERS.R0, FP_REG).
       dec(VM.CPU.REGISTERS.R0).uint32(CELL_SIZE).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('local0', function(asm) {
+this.defop('local0', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(-CELL_SIZE).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('store-local0', function(asm) {
+this.defop('store-local0', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(-CELL_SIZE).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('local1', function(asm) {
+this.defop('local1', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(-8).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('store-local1', function(asm) {
+this.defop('store-local1', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(-8).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('local2', function(asm) {
+this.defop('local2', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(-12).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('store-local2', function(asm) {
+this.defop('store-local2', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       store(VM.CPU.REGISTERS.R0, 0, FP_REG).uint32(-12).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('args', function(asm) {
+this.defop('args', function(asm) {
   asm.mov(VM.CPU.REGISTERS.R0, FP_REG).
       inc(VM.CPU.REGISTERS.R0).uint32(FRAME_SIZE).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('current-frame', function(asm) {
+this.defop('current-frame', function(asm) {
   asm.
       push(FP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('set-current-frame', function(asm) {
+this.defop('set-current-frame', function(asm) {
   asm.pop(FP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 })
 
-defop('cont', function(asm) {
+this.defop('cont', function(asm) {
   asm.// the called
   pop(VM.CPU.REGISTERS.R0).
       // return to the caller's caller
@@ -799,7 +805,7 @@ defop('cont', function(asm) {
  *  Data stack ops
  */
 
-defop('dpush', function(asm) {
+this.defop('dpush', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
       inc(HEAP_REG).uint32(CELL_SIZE).
@@ -807,7 +813,7 @@ defop('dpush', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('dpop', function(asm) {
+this.defop('dpop', function(asm) {
   asm.
       load(VM.CPU.REGISTERS.R0, 0, HEAP_REG).uint32(0).
       dec(HEAP_REG).uint32(CELL_SIZE).
@@ -815,18 +821,18 @@ defop('dpop', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('ddrop', function(asm) {
+this.defop('ddrop', function(asm) {
   asm.
       dec(HEAP_REG).uint32(CELL_SIZE).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('dmove', function(asm) {
+this.defop('dmove', function(asm) {
   asm.pop(HEAP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('dallot', function(asm) {
+this.defop('dallot', function(asm) {
   asm.inc(HEAP_REG).uint32(CELL_SIZE).
       pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
@@ -836,7 +842,7 @@ defop('dallot', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 }, "Allocate a number of bytes on the data stack.");
 
-defop('dallot-seq', function(asm) {
+this.defop('dallot-seq', function(asm) {
   asm.// store buffer's length
   inc(HEAP_REG).uint32(CELL_SIZE).
       pop(VM.CPU.REGISTERS.R0).
@@ -857,13 +863,13 @@ defop('dallot-seq', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 }, "Allocate a terminated sequence of cells on the data stack.");
 
-defop('dhere', function(asm) {
+this.defop('dhere', function(asm) {
   asm.
       push(HEAP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('data-segment', function(asm) {
+this.defop('data-segment', function(asm) {
   asm.push(VM.CPU.REGISTERS.DS).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
@@ -872,13 +878,13 @@ defop('data-segment', function(asm) {
  * Dictionary ops
  */
 
-defop('dict', function(asm) {
+this.defop('dict', function(asm) {
   asm.
       push(DICT_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('set-dict', function(asm) {
+this.defop('set-dict', function(asm) {
   asm.
       pop(DICT_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
@@ -888,7 +894,7 @@ defop('set-dict', function(asm) {
  * Stack ops
  */
 
-defop('rot', function(asm) {
+this.defop('rot', function(asm) {
   // a b c -> c b a
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
       load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE*2).
@@ -897,14 +903,14 @@ defop('rot', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('rotdrop', function(asm) {
+this.defop('rotdrop', function(asm) {
   // a b c -> c b
   asm.pop(VM.CPU.REGISTERS.R0).
       store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('rotdrop2', function(asm) {
+this.defop('rotdrop2', function(asm) {
   // a b c -> c
   asm.pop(VM.CPU.REGISTERS.R0).
       store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
@@ -913,7 +919,7 @@ defop('rotdrop2', function(asm) {
 });
 
 // todo how to swapdrop with a frame in the way?
-defop('swapdrop', function(asm) {
+this.defop('swapdrop', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       store(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
@@ -924,7 +930,7 @@ defop('swapdrop', function(asm) {
  */
 
 /*
-  defop('indirect-param', function(asm) {
+  this.defop('indirect-param', function(asm) {
     asm.mov(VM.CPU.REGISTERS.R0, EVAL_IP_REG).
         load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE).
         push(VM.CPU.REGISTERS.R0).
@@ -932,26 +938,26 @@ defop('swapdrop', function(asm) {
   });
   */
 
-defop('value-peeker', function(asm) {
+this.defop('value-peeker', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('variable-peeker', function(asm) {
+this.defop('variable-peeker', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('pointer-peeker', function(asm) {
+this.defop('pointer-peeker', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('do-accessor', function(asm) {
+this.defop('do-accessor', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       pop(VM.CPU.REGISTERS.R1).
       cls(VM.CPU.REGISTERS.STATUS).
@@ -964,17 +970,17 @@ defop('do-accessor', function(asm) {
  * Input ops
  */
 
-defop('input-flush', function(asm) {
+this.defop('input-flush', function(asm) {
   asm.call(0, VM.CPU.REGISTERS.CS).uint32('input_flush').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('input-reset', function(asm) {
+this.defop('input-reset', function(asm) {
   asm.call(0, VM.CPU.REGISTERS.CS).uint32('reset_input').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('wait-for-input', function(asm) {
+this.defop('wait-for-input', function(asm) {
   asm.call(0, VM.CPU.REGISTERS.CS).uint32('wait_for_input').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });

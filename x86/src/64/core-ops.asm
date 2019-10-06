@@ -6,6 +6,12 @@ variable immediate_dict, 0
 ;; variable *status*, 0
 ;; variable *tokenizer*, 0
 
+defop peek_byte
+  mov rax, [rsp+ptrsize]
+  mov al, [rax]
+  mov [rsp+ptrsize], rax
+  ret
+  
 ;;;
 ;;; Dictionary
 ;;;
@@ -182,10 +188,12 @@ defop jump_entry_data
 
 defop call_data_seq
   pop rbx
-  pop rax
-  add rax, ptrsize
+  push eval_ip
   push rbx
-  jmp [d_doop_ptr_offset_indirect+dict_entry_code]
+  add rax, ptrsize*2
+  mov eval_ip, rax
+  call [d_begin_frame+dict_entry_code]
+  jmp [d_next_offset_indirect+dict_entry_code]
 
 ;;;
 ;;; Aliases

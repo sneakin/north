@@ -14,6 +14,7 @@ program.option('-p, --platform <name>', 'Platform to target', 'bacaw')
     .option('--binary-file <path>', 'Include a file in the output without processing.', (v, prev) => prev.concat([v]), [])
     .option('--text-file <path>', 'Include a file in the output with minimal processing.', (v, prev) => prev.concat([v]), [])
     .option('--debug-args', 'Print the parsed arguments andbexit.')
+    .option('--debug-output', 'Print an intermediate output.')
     .option('-v, --verbose', 'Log more');
 
 program.parse(process.argv);
@@ -28,17 +29,29 @@ if(program.debugArgs) {
 
 var Platform = require('platform/' + program.platform);
 var platform = new Platform(program.machine, program.dataSegment, 0);
-var bin = Forth.assemble(program.stage, platform, {
-  sources: program.args,
-  binaries: program.binaryFile,
-  texts: program.textFile
-});
-var buf = Buffer.from(bin.buffer);
+var compiler = new Forth(platform);
 
-if(program.output != null && program.output != '-') {
-  fs.writeFile(program.output, buf, (err) => {
-    if(err) throw err;
+if(program.debugOutput) {
+  var asm = compiler.assemble(program.stage, {
+    sources: program.args,
+    binaries: program.binaryFile,
+    texts: program.textFile
   });
+  var bin = platform.assembler.dbg_assemble();
+  process.stdout.write(JSON.stringify(bin, null, 2));
 } else {
-  process.stdout.write(buf);
+  var bin = compiler.assemble(program.stage, {
+    sources: program.args,
+    binaries: program.binaryFile,
+    texts: program.textFile
+  }).finish();
+  var buf = Buffer.from(bin.buffer);
+
+  if(program.output != null && program.output != '-') {
+    fs.writeFile(program.output, buf, (err) => {
+      if(err) throw err;
+    });
+  } else {
+    process.stdout.write(buf);
+  }
 }

@@ -1,40 +1,46 @@
-defop('push-status', (asm) => {
+const CELL_SIZE = this.cell_size;
+const HEAP_REG = platform.registers.heap;
+const EVAL_IP_REG = platform.registers.eval_ip;
+const DICT_REG = platform.registers.dict;
+const FP_REG = platform.registers.fp;
+
+this.defop('push-status', (asm) => {
   asm.push(VM.CPU.REGISTERS.STATUS).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('pop-status', (asm) => {
+this.defop('pop-status', (asm) => {
   asm.pop(VM.CPU.REGISTERS.STATUS).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('enable-interrupts', (asm) => {
+this.defop('enable-interrupts', (asm) => {
   asm.sie().
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('disable-interrupts', (asm) => {
+this.defop('disable-interrupts', (asm) => {
   asm.cie().
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('interrupt', (asm) => {
+this.defop('interrupt', (asm) => {
   asm.pop(VM.CPU.REGISTERS.R0).
       intr(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('isr-table', (asm) => {
+this.defop('isr-table', (asm) => {
   asm.push(VM.CPU.REGISTERS.ISR).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('sleep', (asm) => {
+this.defop('sleep', (asm) => {
   asm.sleep().
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('wake', (asm) => {
+this.defop('wake', (asm) => {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(VM.CPU.STATUS.SLEEP).
       not(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.R0).
       and(VM.CPU.REGISTERS.R0, VM.CPU.REGISTERS.STATUS).
@@ -42,7 +48,7 @@ defop('wake', (asm) => {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('isr-trampoline', (asm) => {
+this.defop('isr-trampoline', (asm) => {
   // save registers: FP, TOS, PARAM, EVAL_IP, DICT?
   asm.push(FP_REG).
       push(EVAL_IP_REG).

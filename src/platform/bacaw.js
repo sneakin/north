@@ -1,3 +1,4 @@
+require('vm');
 const Assembler = require('assembler');
 const util = require('more_util');
 
@@ -25,11 +26,20 @@ const Machines = {
 
 class Platform
 {
+  registers = {
+    heap: VM.CPU.REGISTERS.DS - 1,
+    eval_ip: VM.CPU.REGISTERS.DS - 2,
+    dict: VM.CPU.REGISTERS.DS - 5,
+    fp: VM.CPU.REGISTERS.DS - 6,
+  };
+
   constructor(machine, ds, cs) {
     this.name = 'bacaw';
     this.machine = util.merge_options(Machines.default, Machines[machine]);
-    this.data_segment = ds | 1024*1024;
-    this.code_segment = cs | 0;
+    this.cell_size = 4;
+    this.data_segment_size = 1024*2;
+    this.data_segment = ds || 1024*1024;
+    this.code_segment = cs || 0;
     this.assembler = new Assembler();
   }
 

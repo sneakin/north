@@ -23,8 +23,8 @@ class Opper
     var ops = more_util.map_each_n(ops, (o, n) => {
       if(typeof(o) == 'object') {
         if(o.kind == 'relative-label') {
-        var v = this.resolve(o.label);
-        if(o.relative) v = v - n;
+          var v = this.resolve(o.label);
+          if(o.relative) v = v - o.offset;
           if(o.fn) v = o.fn(v);
           if(o.relative && o.label.match(/-end$/)) v = v * 4;
           return v;
@@ -85,9 +85,9 @@ class Opper
     }
     return {
       undefined_labels: labels[1],
-      bin: bin,
       indexes: labels[0],
       ops: this.ops,
+      bin: bin,
       labels: this.labels
     };
   }
@@ -106,6 +106,7 @@ class Opper
       this.ops.push({ kind: 'relative-label',
                       label: v,
                       relative: relative,
+                      offset: this.byte_size,
                       fn: fn
                     });
     } else {
@@ -115,8 +116,8 @@ class Opper
     return this;
   }
 
-  label(name) {
-    this.labels[name] = this.ops.length;
+  label(name, value) {
+    this.labels[name] = value || this.byte_size;
     return this;
   }
 

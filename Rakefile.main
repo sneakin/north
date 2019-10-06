@@ -185,9 +185,19 @@ end
 
 META_SRC = src 'forth.js', 'version.txt'             
 PLATFORM_SRC = {
-  bacaw: src('platform/bacaw/boot.js', 'platform/bacaw/forth_00.js'),
-  x86: src('platform/x86/boot.js', 'platform/x86/ops.js')
+  bacaw: {
+    prolog: src('platform/bacaw/boot.js', 'platform/bacaw/forth_00.js'),
+    epilog: src('platform/bacaw/epilog.js')
+  },
+  x86: {
+    prolog: src('platform/x86/boot.js', 'platform/x86/ops.js', 'platform/x86/boot_offset.4th'),
+  }
 }
+
+def with_platform(plat, src)
+  p = PLATFORM_SRC[plat]
+  p.fetch(:prolog, []) + src + p.fetch(:epilog, [])
+end
 
 STAGE0_SRC = src('00/core.4th',
                  '00/compiler.4th',
@@ -199,11 +209,11 @@ STAGE0_SRC = src('00/core.4th',
                  '00/ui.4th')
 
 stage(:stage0,
-      sources: PLATFORM_SRC[:bacaw] + STAGE0_SRC,
+      sources: with_platform(:bacaw, STAGE0_SRC),
       minimal: true)
 
 stage('stage0-x86',
-      sources: PLATFORM_SRC[:x86] + STAGE0_SRC,
+      sources: with_platform(:x86, STAGE0_SRC),
       minimal: true,
       platform: :x86)
 
@@ -253,7 +263,7 @@ STAGE1_SRC = STAGE0_SRC +
       '04/unicode.4th')
 
 stage(:stage1,
-      sources: PLATFORM_SRC[:bacaw] + STAGE1_SRC,
+      sources: with_platform(:bacaw, STAGE1_SRC),
       texts: src('01/atoi.4th'),
       minimal: true)
 
@@ -265,7 +275,7 @@ STAGE2_SRC = STAGE1_SRC +
       '02/sound.4th')
 
 stage(:stage2,
-      sources: PLATFORM_SRC[:bacaw] + STAGE2_SRC,
+      sources: with_platform(:bacaw, STAGE2_SRC),
       minimal: true)
 
 STAGE3_SRC = src('build-stage3.4th',
@@ -273,7 +283,7 @@ STAGE3_SRC = src('build-stage3.4th',
                  '02/ops.4th')
 
 stage(:stage3,
-      sources: PLATFORM_SRC[:bacaw] + STAGE3_SRC,
+      sources: with_platform(:bacaw, STAGE3_SRC),
       minimal: true)
 
 STAGE4_SRC = STAGE1_SRC +
@@ -284,7 +294,7 @@ STAGE4_SRC = STAGE1_SRC +
       '02/dict.4th')
 
 stage(:stage4,
-      sources: PLATFORM_SRC[:bacaw] + STAGE4_SRC,
+      sources: with_platform(:bacaw, STAGE4_SRC),
       texts: src('04/tiler.4th'),
       minimal: true)
 

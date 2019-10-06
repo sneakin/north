@@ -953,12 +953,12 @@ global-var immediate-dict
 ;
 
 : immediate-dict-init
-  literal immediate-dictionary peek
+  literal immediate-dictionary
   immediate-dict poke
 ;
 
 : dict-init
-  literal dictionary peek
+  literal builtin-dictionary
   set-dict
   immediate-dict-init
   mark

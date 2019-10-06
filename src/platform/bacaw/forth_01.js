@@ -1,4 +1,10 @@
-defop('ifthencall', function(asm) {
+const CELL_SIZE = this.cell_size;
+const HEAP_REG = platform.registers.heap;
+const EVAL_IP_REG = platform.registers.eval_ip;
+const DICT_REG = platform.registers.dict;
+const FP_REG = platform.registers.fp;
+
+this.defop('ifthencall', function(asm) {
   asm.
       // condition addr
       pop(VM.CPU.REGISTERS.R2).
@@ -11,7 +17,7 @@ defop('ifthencall', function(asm) {
       ret();
 });
 
-defop('return-2', function(asm) {
+this.defop('return-2', function(asm) {
   asm.
       // exit frame
       mov(VM.CPU.REGISTERS.SP, FP_REG).
@@ -21,7 +27,7 @@ defop('return-2', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('return-to', function(asm) {
+this.defop('return-to', function(asm) {
   asm.
       // save where to pop
       pop(VM.CPU.REGISTERS.R0).
@@ -35,14 +41,14 @@ defop('return-to', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('stack-top', function(asm) {
+this.defop('stack-top', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.DS).uint32('stack_top').
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
   //asm.uint32('literal').uint32('stack_top').uint32('return1');
 });
 
-defop('tailcall1', function(asm) {
+this.defop('tailcall1', function(asm) {
   asm.
       // save where to call
       pop(VM.CPU.REGISTERS.R0).
@@ -58,25 +64,25 @@ defop('tailcall1', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-code');
 });
 
-defop('end-frame', function(asm) {
+this.defop('end-frame', function(asm) {
   asm.load(FP_REG, 0, FP_REG).uint32(0).
       mov(VM.CPU.REGISTERS.SP, FP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('exit-frame', function(asm) {
+this.defop('exit-frame', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, FP_REG).int32(CELL_SIZE).
       load(FP_REG, 0, FP_REG).uint32(0).
       mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');;
 });
 
-defop('drop-locals', function(asm) {
+this.defop('drop-locals', function(asm) {
   asm.mov(VM.CPU.REGISTERS.SP, FP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');   
 });
 
-defop('move', function(asm) {
+this.defop('move', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
       addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
@@ -84,7 +90,7 @@ defop('move', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('dropn', function(asm) {
+this.defop('dropn', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
       cls(VM.CPU.STATUS.NUMERICS).
@@ -95,7 +101,7 @@ defop('dropn', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('overn', function(asm) {
+this.defop('overn', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
       cls(VM.CPU.STATUS.NUMERICS).
@@ -107,7 +113,7 @@ defop('overn', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-defop('roll', function(asm) {
+this.defop('roll', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.SP).uint32(0).
       load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
       store(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.SP).uint32(0).
@@ -117,7 +123,7 @@ defop('roll', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 }, "Moves the ToS to the third element and moves up the first and second: A B C -- C A B");
 
-defop('shift', function(asm) {
+this.defop('shift', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R0). // C
       pop(VM.CPU.REGISTERS.R1). // B
       pop(VM.CPU.REGISTERS.R2). // A
@@ -127,7 +133,7 @@ defop('shift', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 }, "Moves the third element to the ToS and moves the first and second back: A B C -- B C A");
 
-defop('bslc', function(asm) {
+this.defop('bslc', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
@@ -137,7 +143,7 @@ defop('bslc', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 }, "`bsl` but also pushes the shifted out bits.");
 
-defop('bsrc', function(asm) {
+this.defop('bsrc', function(asm) {
   asm.pop(VM.CPU.REGISTERS.R1).
       pop(VM.CPU.REGISTERS.R0).
       cls(VM.CPU.STATUS.NUMERICS).
