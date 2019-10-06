@@ -28,11 +28,12 @@
 ( Colorful error output: )
 :: error
   ( error-msg2 error-msg1 )
-  bold red arg0 write-line color-reset
-  arg1 write-line
+  bold red arg0 write-line color-reset drop
+  arg1 write-line drop
   arg0 *status* poke
   int32 0 *state* poke
-  eval-loop ( let's poxe around )
+  ( todo preserve the line for continuing )
+  ' eval-start cont ( let's poke around )
 ;
 
 ( Pretty eval-loop. )

@@ -856,6 +856,12 @@ global-var base doc( The input and output number conversion base. )
   ( literal eval-loop tailcall )
 ;
 
+: eval-start
+    input-reset
+    eval-read-line eval-string drop
+    ' eval-loop cont
+;
+
 : load
   literal eval-string jump-entry-data
 ;
