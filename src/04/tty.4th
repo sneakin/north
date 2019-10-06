@@ -1,5 +1,10 @@
 ( VT100+ TTY control: )
 
+( References:
+    http://www.xfree86.org/current/ctlseqs.html
+    https://www.gnu.org/software/screen/manual/html_node/Control-Sequences.html
+)
+
 : write-bell int32 char-code \b write-byte ;
 
 : tty-reset
@@ -23,6 +28,18 @@
 ;
 
 ( Helper functions: )
+
+: tty-basic-escape3
+    base peek dec
+    " \e[" write-string
+    arg3 write-int
+    " ;" write-string
+    arg2 write-int
+    " ;" write-string
+    arg1 write-int
+    arg0 write-string
+    local0 base poke
+;
 
 : tty-basic-escape2
     base peek dec
@@ -136,8 +153,11 @@
     " \e[6n" write-string
 ;
 
-: tty-scroll-screen " \e[r" write-string ;
-: tty-scroll-screen/2 arg1 arg0 " r" tty-basic-escape2 ;
+: tty-scroll-region-off " \e[r" write-string ;
+: tty-scroll-region
+    args( top bottom )
+    arg1 arg0 " r" tty-basic-escape2
+;
 
 : tty-scroll-up
     " \eM" write-string
@@ -233,6 +253,44 @@
 
 : tty-box-drawing-on TTY-FONT-BOX tty-set-g1 tty-font-g1 ;
 : tty-box-drawing-off tty-font-g0 ;
+
+( Window codes: )
+
+: tty-window-deiconify int32 1 " t" tty-basic-escape1 ;
+: tty-window-iconify int32 2 " t" tty-basic-escape1 ;
+
+: tty-window-move int32 3 arg1 arg0 " t" tty-basic-escape3 ;
+: tty-window-pixel-resize int32 4 arg1 arg0 " t" tty-basic-escape3 ;
+: tty-window-char-resize int32 8 arg1 arg0 " t" tty-basic-escape3 ;
+
+: tty-window-raise int32 5 " t" tty-basic-escape1 ;
+: tty-window-lower int32 6 " t" tty-basic-escape1 ;
+: tty-window-refresh int32 7 " t" tty-basic-escape1 ;
+
+: tty-window-restore-maximized int32 9 int32 0 " t" tty-basic-escape2 ;
+: tty-window-maximize int32 9 int32 1 " t" tty-basic-escape2 ;
+
+: tty-window-state int32 11 " t" tty-basic-escape1 ;
+: tty-window-position int32 13 " t" tty-basic-escape1 ;
+: tty-window-pixel-size int32 14 " t" tty-basic-escape1 ;
+: tty-window-text-size int32 18 " t" tty-basic-escape1 ;
+: tty-window-screen-size int32 19 " t" tty-basic-escape1 ;
+: tty-window-icon-label int32 20 " t" tty-basic-escape1 ;
+: tty-window-title int32 21 " t" tty-basic-escape1 ;
+: tty-window-resize-lines arg0 " t" tty-basic-escape1 ;
+
+: tty-osc-command
+    " \e]" write-string
+    arg1 write-unsigned-int
+    " ;" write-string
+    arg0 write-string
+    " \a" write-string
+;
+
+: tty-set-window-icon-and-title int32 0 arg0 tty-osc-command ;
+: tty-set-window-title int32 2 arg0 tty-osc-command ;
+: tty-set-window-icon-name int32 1 arg0 tty-osc-command ;
+
 
 ( Bad codes? )
 
@@ -367,17 +425,38 @@ constant TTY-READ-MOUSE 4
     TTY-READ-BYTE return2
 ;
 
-: tty-read-cursor
-    doc( Query the terminal for the cursor position. )
-    args( ++ row col )
+: tty-query2
     tty-enter-raw-mode
-    tty-get-cursor tty-read
+    arg0 exec
+    tty-read
+    local0 tty-exit-raw-mode drop
     TTY-READ-CSI equals IF
-      local0 tty-exit-raw-mode drop
       drop3 return2
     ELSE
       int32 0 int32 0 return2
     THEN
+;
+
+: tty-read-cursor
+    doc( Query the terminal for the cursor position. )
+    args( ++ row col )
+    ' tty-get-cursor tty-query2 return2
+;
+
+: tty-read-window-position
+    ' tty-window-position tty-query2 return2
+;
+
+: tty-read-window-pixel-size
+    ' tty-window-pixel-size tty-query2 return2
+;
+
+: tty-read-window-text-size
+    ' tty-window-text-size tty-query2 return2
+;
+
+: tty-read-window-screen-size
+    ' tty-window-screen-size tty-query2 return2
 ;
 
 ( TTY ReadEval: reader + dictionary word execution by key name: )
