@@ -177,6 +177,21 @@ constant UNICODE-MAX $10FFFF
     return1
 ;
 
+: char-map
+    args( offset number )
+    arg1
+    arg0 int32 8 int-div DOTIMES[
+        arg2 arg0 int32 8 int-mul int-add
+        write-crnl write-int write-tab
+        int32 8 DOTIMES[
+            arg2 arg0 int-add
+            write-utf32-char write-space
+            drop
+        ]DOTIMES
+    ]DOTIMES
+    write-crnl
+;
+
 ( Fun with the left over bits: )
 
 : color-char-color
