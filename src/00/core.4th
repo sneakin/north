@@ -832,7 +832,7 @@ global-var base doc( The input and output number conversion base. )
 
 : next-word
     next-token UNLESS eos error THEN
-    return1
+    seq-length intern-seq return1
 ;
 
 : eval-read-line

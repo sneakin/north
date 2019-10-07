@@ -99,7 +99,7 @@ field: fields
 
 : field/3
     args( type byte-size name )
-    dict does-structure? UNLESS " Not defining a structure." error THEN
+    dict does-structure? UNLESS " Not defining a structure." " structure-error" error THEN
     arg2 arg1 arg0
     dict dict-entry-data swapdrop
     structure-add-field
@@ -107,7 +107,7 @@ field: fields
     structure-gen-accessor
 ;
 
-: field/3:
+: field[]
     next-word next-int next-int rot field/3
 ;
 
@@ -129,7 +129,7 @@ field: fields
 
 : test-struct
     " structure point
-    field/3: x 4 1
+    field[] x 1 4
     field: y
     field: z
     cells: angles 3
