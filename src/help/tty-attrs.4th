@@ -1,10 +1,10 @@
 : help-tty-color-table
     doc( View the 16 TTY colors in a table with color numbers. )
     arg0
-    int32 10 DOTIMES[
+    int32 8 DOTIMES[
         arg2
         arg0
-        int32 10 DOTIMES[
+        int32 8 DOTIMES[
             arg2 arg0 color/2
             swap .d .d
             arg3 write-string
@@ -17,11 +17,11 @@
 
 : help-tty-attr-table
     doc( View a table of TTY character attributes. )
-    bold " Bold" write-string tty-normal
+    bold " bold" write-string tty-normal
     write-tab
-    italic " Italic" write-string italic-off
+    italic " italic" write-string italic-off
     write-tab
-    underline " Underline" write-string underline-off
+    underline " underline" write-string underline-off
     write-crnl
     blink-fast " blink-fast" write-string blink-off
     write-tab
