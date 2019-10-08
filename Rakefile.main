@@ -12,6 +12,9 @@ $: << $root.join('vendor/rake-node/lib')
 $:.unshift($root.join('vendor/webrick/lib'))
 
 require 'rake/browserify'
+require 'rake-node/tasks'
+
+include RakeNode::Tasks
 
 BCROOT = Pathname.new(ENV.fetch('BACAW', $root.join('vendor', 'bacaw')))
 BCBIN = BCROOT.join('bin', 'bccon.js')
@@ -20,6 +23,8 @@ BCLIB = BCROOT.join('js', 'lib')
 BCCON = "node #{Shellwords.escape(BCBIN)}"
 NODE_PATH << [ $root.join('src'), BCLIB ]
 # ENV['NODE_PATH'] = NODE_PATH.flatten.join(':')
+
+ENV['PATH'] = $root.join('node_modules/.bin').to_s + ':' + ENV['PATH']
 
 $stage_targets = []
 
@@ -37,62 +42,13 @@ outputs = [ 'north-stage0.bin',
             'sounds/startup.mp3',
             'index.css',
             'index.js',
-            'index.html'
+            'index.html',
+            'credits.html'
           ].collect { |s| $buildroot.join(s) }
 
 directory $buildroot
 
-namespace :version do
-  def read_version(path = $root.join('version.txt'))
-    v = File.read(path)
-    p = v.match(/(\d+)\.(\d+)\.(\d+)/)
-    if p
-      v = [ p[1], p[2], p[3] ].collect(&:to_i)
-    else
-      v = [ 0, 0, 0 ]
-    end
-  end
-
-  def version_string(v)
-    v.collect(&:to_s).join('.')
-  end
-
-  def write_version_io(v, io)
-    io.puts(version_string(v))
-  end
-
-  def write_version(v, path = $root.join('version.txt'))
-    File.open(path, 'w') do |f|
-      write_version_io(v, f)
-    end
-  end
-
-  task :echo do
-    write_version_io(read_version, $stdout)
-  end
-
-  task :commit do
-    commit_version
-  end
-
-  def commit_version
-    v = version_string(read_version)
-    sh("git commit -m 'Bumped version to #{v}.' version.txt")
-  end
-
-  namespace :bump do
-    { major: 0, minor: 1, release: 2 }.each do |name, index|
-      desc "Bump the #{name} version number in version.txt."
-      task name do
-        v = read_version
-        v[index] += 1
-        write_version(v)
-        write_version_io(v, $stdout)
-        commit_version
-      end
-    end
-  end
-end
+generate_versioning($root.join('version.txt'))
 
 file $root.join('src', 'version.txt') => [ $root.join('version.txt'), $root.join('.git/HEAD') ] do |t|
   head = `git rev-parse HEAD`
@@ -156,7 +112,6 @@ def stage(name, options)
   namespace name do
     desc "Build #{name}"
     task :build => [ target ]
-    task :build => [ min_target ] if min_target
     
     desc "Run #{name}"
     task :run => target do
@@ -312,10 +267,8 @@ stage(:stage4,
   src = $root.join('www', name)
 
   directory File.dirname(output)
-  
-  file output => [ src, $buildroot, File.dirname(output) ] do |t|
-    FileUtils.copy(t.sources[0], t.name)
-  end
+
+  copy_task output => [ src, $buildroot ]
 end
 
 BrowserifyRunner.bundle $buildroot.join('service_worker.js') => [ $root.join('www/service_worker.js') ]
@@ -323,8 +276,14 @@ BrowserifyRunner.bundle $buildroot.join('ipfs.js') => [ $root.join('www/ipfs.js'
 BrowserifyRunner.bundle $buildroot.join('index.js') => [ $root.join('www/index.js'), *$stage_targets ]
 html_file $buildroot.join('index.html') => [ $root.join('www/index.src.html'), $buildroot.join('index.js'), $buildroot.join('xterm.css') ]
 
-file $buildroot.join('xterm.css') => $root.join('node_modules', 'xterm', 'dist', 'xterm.css') do |t|
-  FileUtils.copy(t.sources[0], t.name)
+copy_task $buildroot.join('xterm.css') => $root.join('node_modules', 'xterm', 'dist', 'xterm.css')
+
+CREDITS_JSON = $root.join('tmp/credits.json')
+
+license_json_file CREDITS_JSON
+
+erb_file $buildroot.join('credits.html') => [ $root.join('www/credits.src.html'), $buildroot.join('index.css'), CREDITS_JSON ] do
+  @deps = RakeNode::Licenses.load(CREDITS_JSON, ['North'])
 end
 
 desc 'Start a webserver on port 9090 to serve the build directory. Values are taken from the DOMAIN, IP, CA, and CANAME enviroment variables.'
@@ -398,9 +357,10 @@ end
 namespace :release do
   task :deps => [ release_root ]
 
-  task :sync => [ 'release:deps' ] do
+  task :sync => [ 'release:deps', $root.join('version.txt') ] do
+    version = RakeNode::Versioning.read_version($root.join('version.txt'))
     sh("cd #{release_root} && git pull && rake init && rake pages")
-    sh("cd #{release_root} && git push origin gh-pages")
+    sh("cd #{release_root} && git tag v#{version} && git push origin gh-pages")
   end
 
   task :clean do

@@ -10,6 +10,7 @@ begin
   load(root.join("Rakefile.main"))
 rescue LoadError => e
   $stderr.puts "Try running `rake init`"
+  raise e
 end
 
 desc "Initialize project dependencies."

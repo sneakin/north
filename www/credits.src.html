@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<html>
+  <head>
+    <title>North - Credits</title>
+    <meta charset="UTF-8" /> 
+    <meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=4, user-scalable=1"/> <!--320-->
+    <style type="text/css">
+      @import "index.css";
+    </style>
+    <link rel="manifest" href="manifest.webmanifest" />
+	</head>
+  <body class="credits">
+    <div>
+      <h1>Credits</h1>
+      <h2>North</h2>
+      <p>
+        Copyright &copy; 2019 Nolan Eakins, <a href="https://semanticgap.com/">SemanticGap</a>&trade; All rights reserved.
+      </p>
+      <h2>Dependencies</h2>
+      <p>
+        To run on the web North makes use of over <%= @deps.size %> components and libraries.
+      </p>
+      <p>
+        These are:
+      </p>
+      <dl>
+        <dt>Unscii</dt>
+        <dd>
+          See <a href="http://pelulamu.net/unscii/">http://pelulamu.net/unscii/</a>
+        </dd>
+      </dl>
+      <h3>By license:</h3>
+      <% by_license = @deps.group_by { |n, i| i.licenses }.sort_by(&:first) %>
+      <dl>
+        <% by_license.each do |license, deps| %>
+        <% next if deps.empty? %>
+        <dt><%= license.join(', ') %></dt>
+        <dd>
+          <ul>
+            <% deps.each do |name, info| %>
+            <% next if name == 'North' %>
+            <li><a href="#<%= name %>"><%= name %></a> <%= info.version %></li>
+            <% end %>
+          </ul>
+        </dd>
+        <% end %>
+      </dl>
+
+      <h3>By Name:</h3>
+      
+      <dl>
+        <% @deps.each do |name, info| %>
+      <% next if name == 'North' %>
+      <dt><a name="<%= name %>"><%= name %></a> <%= info.version %></dt>
+      <dd>
+        <% if info.url %>
+        <p>
+          <a href="<%= info.url %>"><%= info.url %></a>
+        </p>
+        <% end %>
+        <% if info.repository %>
+        <p>
+          <a href="<%= info.repository %>"><%= info.repository %></a>
+        </p>
+        <% end %>
+        <% if info.license_standalone? %>
+        <pre class="license">
+          <%= info.license_text %>
+        </pre>
+        <% else %>
+        <p>
+          <% unless info.licenses.empty? %>
+          Licensed under the "<%= info.licenses.join(', ') %>" license(s).
+          <% end %>
+          See <a href="<%= info.repository %>"><%= info.repository %></a> for licensing details.
+        </p>
+        <% end %>
+      </dd>
+      <% end %>
+      </dl>
+    </div>
+  </body>
+</html>
