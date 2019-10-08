@@ -30,10 +30,14 @@
 
 ( Stack information )
 
+: stack-depth/1
+  stack-top arg0 uint-sub cell/ return1
+;
+
 : stack-depth
-  stack-top args uint-sub cell/ return1
+    args stack-depth/1 return1
 ;
 
 : write-depth
-  stack-depth write-unsigned-int
+  arg0 stack-depth/1 write-unsigned-int
 ;

@@ -31,6 +31,6 @@
 ;
 
 :: eval-read-line
-  write-status arg0 write-int drop write-tab
+  write-status eval-tos peek peek write-int drop write-tab
   prompt read-line return1
 ;

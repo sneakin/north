@@ -245,6 +245,12 @@
   arg0 terminate-seq drop return1
 ;
 
+( Lists: )
+
+: dcons arg0 dpush dhere arg1 dpush return1 ;
+: tail arg0 cell+ peek return1 ;
+: head arg0 peek return1 ;
+
 ( Dictionary )
 
 : make-dict/4
@@ -461,7 +467,7 @@ global-var *status* doc( The last error value. )
 : token-max-byte-size token-max-cell-size cell* return1 ;
 
 : tokenizer-str-offset
-  arg0 cell+ peek
+  arg0 cell+
   return1
 ;
 
@@ -477,38 +483,60 @@ global-var *status* doc( The last error value. )
   return1
 ;
 
+: set-tokenizer-str
+    arg1 arg0 tokenizer-str swapdrop !
+    int32 0 arg0 tokenizer-str-offset swapdrop !
+;
+
 : tokenizer-inc-str-offset
-  arg0 cell+ ( ptr ptr+ )
-  dup peek ( ptr ptr+ offset )
-  cell+ swapdrop ( ptr ptr+ offset+ )
-  swap
-  poke
+    arg0 tokenizer-str-offset
+    dup peek cell+ swapdrop
+    swap poke
 ;
 
 : tokenizer-exhausted?
-  arg0 peek
+  arg0 tokenizer-str peek dup UNLESS int32 1 return1 THEN
   seq-length cell*
-  arg0 tokenizer-str-offset swapdrop
-  < return1
+  arg0 tokenizer-str-offset peek swapdrop
+  <= return1
 ;
   
+: tokenizer-reader
+    arg0 int32 4 cell+n return1-1
+;
+
+: tokenizer-reader-state
+    arg0 int32 5 cell+n return1-1
+;
+
+: tokenizer-read-more
+    arg0 tokenizer-reader @ dup IF
+        arg0 tokenizer-reader-state @
+        swap exec
+        dup IF arg0 set-tokenizer-str int32 1 return1 THEN
+    THEN
+    int32 0 return1
+;
+    
 : tokenizer-peek-word
-  arg0
-  tokenizer-exhausted? IF int32 0 return1 THEN
-  tokenizer-str-ptr peek
-  return1
+    arg0
+    tokenizer-exhausted? IF
+        tokenizer-read-more UNLESS int32 0 return1 THEN
+    THEN
+    tokenizer-str-ptr peek
+    return1
 ;
 
 : tokenizer-next-word
-  arg0 tokenizer-peek-word dup UNLESS return1 THEN
-  swap tokenizer-inc-str-offset
-  drop return1 ( tokenizer cell )
+    arg0 tokenizer-peek-word dup UNLESS return1 THEN
+    swap tokenizer-inc-str-offset
+    drop return1 ( tokenizer cell )
 ;
 
-( todo use a function and refactor eat-spaces )
+( todo use a function to test characters and refactor eat-spaces )
 
 : tokenizer-skip-until
-  ( tokenizer needle )
+  args( tokenizer needle )
   arg1 tokenizer-next-word null? IF return0 THEN
   dup arg0 equals IF return0 THEN
   drop RECURSE
@@ -561,7 +589,7 @@ global-var *status* doc( The last error value. )
 ;
 
 : tokenizer-push
-  ( tokenizer character )
+  args( tokenizer character )
   arg1 tokenizer-buffer-ptr
   arg0 swap poke
   tokenizer-inc-buffer-offset
@@ -574,7 +602,7 @@ global-var *status* doc( The last error value. )
   return2
 ;
 
-: fill-loop ( ptr number-bytes counter )
+: fill-loop args( ptr number-bytes counter )
   arg0 dup arg2 int-add
   int32 0 swap poke
   cell+ swapdrop
@@ -582,7 +610,7 @@ global-var *status* doc( The last error value. )
   arg1 <= IF RECURSE THEN
 ;
 
-: fill ( ptr number-bytes )
+: fill args( ptr number-bytes )
   arg1 arg0 int32 0 fill-loop
 ;
 
@@ -596,7 +624,7 @@ global-var *status* doc( The last error value. )
 ( fixme limit length read to buffer size )
 
 : tokenizer-read-until-loop
-  ( tokenizer needle ++ output-seq length )
+  args( tokenizer needle ++ output-seq length )
   arg1 tokenizer-next-word null? UNLESS
     dup arg0 equals UNLESS
       tokenizer-push drop2
@@ -608,28 +636,55 @@ global-var *status* doc( The last error value. )
 ;
 
 : tokenizer-read-until
-  ( tokenizer needle ++ output-seq length )
+  args( tokenizer needle ++ output-seq length )
   arg1 tokenizer-buffer-reset
   arg0 tokenizer-read-until-loop return2
 ;
 
-( token-buffer string ++ tokenizer )
-( tokenizer structure: str-ptr str-offset token-seq token-seq-offset )
 : make-tokenizer
+  args( reader-fn token-buffer string ++ tokenizer )
+  doc( Creates a new tokenizer on the data stack. Tokenizers have the structure:
+    str-ptr
+    str-offset
+    token-seq
+    token-seq-offset
+    reader-fn
+    reader-state )
   arg0 dpush
   dhere
   int32 0 dpush
   arg1 dpush
-  int32 0 dpush
+    int32 0 dpush
+    arg2 dpush
+    arg3 dpush
   return1
 ;
 
+global-var *tokenizer-stack* doc( Tokenizers are pushed here when evaluating strings. )
 global-var *tokenizer* doc( The interpreter's tokenizer. )
 
+: pop-tokenizer
+    *tokenizer-stack* @ null? IF int32 0 return1 THEN
+    tail *tokenizer-stack* !
+    head return1
+;
+
+: pop-tokenizer!
+    pop-tokenizer dup IF *tokenizer* ! return0 THEN
+    " no tokenizer" " tokenizer-error" error
+;
+
+: push-tokenizer
+    *tokenizer-stack* @ arg0 dcons
+    *tokenizer-stack* !
+;
+
 : make-the-tokenizer
-  *tokenizer* peek dup IF tokenizer-buffer THEN
+    *tokenizer* peek
+    push-tokenizer
+    dup IF tokenizer-buffer THEN
   dup UNLESS token-max-cell-size dallot-seq THEN
-  arg0 make-tokenizer ( tokenizer )
+  arg0 arg2 roll arg1 roll make-tokenizer ( tokenizer )
   *tokenizer* poke
 ;
 
@@ -705,6 +760,16 @@ global-var *tokenizer* doc( The interpreter's tokenizer. )
     arg0 call-frame-size int-add return1-1
 ;
 
+: frame-argn
+    doc( Return the Nth argument of a frame. )
+    args( n frame ++ value )
+    arg0 frame-args arg1 cell+n peek return1
+;
+
+: frame-byte-size
+    arg0 dup peek swap int-sub return1-1
+;
+
 : frame-arg-byte-size
     arg0 parent-frame peek
     arg0 frame-args
@@ -713,6 +778,10 @@ global-var *tokenizer* doc( The interpreter's tokenizer. )
 
 : frame-num-args
     arg0 frame-arg-byte-size cell/ return1-1
+;
+
+: frame-return-addr
+    arg0 cell+ return1-1
 ;
 
 ( Some signed math: )
@@ -735,8 +804,8 @@ global-var *tokenizer* doc( The interpreter's tokenizer. )
 
 global-var base doc( The input and output number conversion base. )
 
-( Convert an ASCII character to a digit. )
 : digit-char
+  doc( Convert an ASCII character to a digit. )
   arg0 upper-alpha? IF
     int32 65 int-sub
     int32 10 int-add
@@ -754,8 +823,8 @@ global-var base doc( The input and output number conversion base. )
   int32 -1 return1
 ;
 
-( Convert a single digit to an ASCII digit or letter. )
 : char-digit
+  doc( Convert a single digit to an ASCII digit or letter. )
   arg0 abs-int
   local0 int32 10 >= IF
     local0 int32 10 int-sub
@@ -779,6 +848,7 @@ global-var base doc( The input and output number conversion base. )
 
 ( Does not handle base prefixes. )
 : unsigned-number
+  doc( Convert a sequence into anmunsigned number in `base`. )
   int32 0
   arg0 seq-length swap
   cell+ swapdrop
@@ -806,6 +876,7 @@ global-var base doc( The input and output number conversion base. )
 ;
 
 : number
+  doc( Convert a sequence into an integer. )
   arg0 cell+ swapdrop peek negative-sign equals UNLESS
     arg0 unsigned-number return2
   THEN
@@ -814,8 +885,11 @@ global-var base doc( The input and output number conversion base. )
 
 ( Evaluation )
 
-( Look a token up or try converting to a number. )
-: interp ( token ++ value executable? )
+global-var eval-tos
+
+: interp
+  args( token ++ value executable? )
+  doc( Look a token up or try converting to a number. )
   arg0 number IF int32 0 return2 THEN
   drop dict dict-lookup dup IF *state* peek not return2 THEN
 
@@ -839,27 +913,35 @@ global-var base doc( The input and output number conversion base. )
    read-line return1
 ;
 
-: eval-string
-     ( todo change the tokenizer's string instead )
-  arg0 make-the-tokenizer drop
-;
-
 : eval-loop
-  ( ++ str )
-  next-token UNLESS drop eval-read-line eval-string drop RECURSE THEN
+  ( ++ results... )
+  here eval-tos !
+  next-token UNLESS drop return-locals THEN
   ( compile lookup )
   *state* peek UNLESS interp THEN
   *state* peek IF *state* peek exec THEN
   ( exec? )
   IF swapdrop exec RECURSE THEN
   swapdrop RECURSE
-  ( literal eval-loop tailcall )
+;
+
+: eval-input
+    int32 0 ' eval-read-line int32 0 make-the-tokenizer drop3
+    eval-loop
+    pop-tokenizer!
+    return-locals
 ;
 
 : eval-start
     input-reset
-    eval-read-line eval-string drop
-    ' eval-loop cont
+    ' eval-input jump-entry-data
+;
+
+: eval-string
+    int32 0 int32 0 arg0 make-the-tokenizer drop3
+    eval-loop
+    pop-tokenizer!
+    return-locals
 ;
 
 : load
@@ -881,8 +963,8 @@ global-var base doc( The input and output number conversion base. )
 
 ( Constants )
 
-( Returns a colon sequence that returns the argument. )
 : constant-capturer
+  doc( Returns a colon sequence that returns the argument. )
   start-seq
   literal literal dpush
   arg0 dpush
@@ -892,39 +974,39 @@ global-var base doc( The input and output number conversion base. )
 ;
   
 : does-constant
-  ( entry init-value )
+  args( entry init-value )
   literal value-peeker dict-entry-code swapdrop
   arg1 set-dict-entry-code
   arg0 arg1 set-dict-entry-data
 ;
 
 : [constant]
-  ( value name )
+  args( value name )
   arg0 seq-length [create] arg1 does-constant
   drop return1
 ;
 
 : constant'
-  ( value : name )
+  args( value : name )
   arg0 next-param [constant]
 ;
 
 : constant
-  ( value : name )
+  args( value : name )
   create arg0 does-constant
 ;
 
 ( Variables )
 
 : does-var
-  ( entry init-value )
+  args( entry init-value )
   literal variable-peeker dict-entry-code swapdrop
   arg1 set-dict-entry-code
   arg0 dpush dhere arg1 set-dict-entry-data
 ;
 
 : [variable]
-  ( value name )
+  args( value name )
   arg0 [create] arg1 does-var
   drop return1
 ;

@@ -32,13 +32,16 @@
   arg1 write-line drop
   arg0 *status* poke
   int32 0 *state* poke
-  ( todo preserve the line for continuing )
+  ( todo preserve the input line for continuing )
   ' eval-start cont ( let's poke around )
 ;
 
 ( Pretty eval-loop. )
 :: eval-read-line
-  write-status arg0 write-int drop write-tab dim write-depth
+  write-status
+  eval-tos @
+  dup @ write-int drop
+  write-tab dim write-depth drop
   color-reset prompt
   read-line
   blue write-string color-reset

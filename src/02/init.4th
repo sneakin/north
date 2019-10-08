@@ -3,6 +3,6 @@
 :: boot
   init-00
   sound-init
-  eval-loop
+  eval-input
   RECURSE
 ;

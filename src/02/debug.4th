@@ -10,22 +10,44 @@
 
 : write-frame
     args( frame )
+    doc( Report on and dump the frame. )
     " Parent:" .s arg0 .h
-    .\n " Return address:" .s arg0 cell+ peek .h
+    .\n " Return address:" .s arg0 frame-return-addr .h
     .\n " Arguments:" .s
-    arg0 cell+2 swapdrop
-    arg0 peek
-    over
-    int-sub cell/ .i .\n
+    arg0 frame-num-args .i .\n
+    arg0
+    arg0 frame-byte-size
     memdump
 ;
 
 : write-current-frame
+    doc( Write out the current and parent frame dumping their memory. )
     .\n " Current:" write-heading
     current-frame parent-frame @ write-frame
     .\n " Locals:" write-heading
     current-frame write-frame
     .\n
+;
+
+: stack-trace/1
+    args( frame counter )
+    .\n arg0 .i ,tab
+    arg1 .h ,tab
+    arg1 frame-return-addr peek .h ,tab
+    arg1 frame-num-args dup int32 0 >= IF
+        .i ,tab
+        arg1 parent-frame peek set-arg1
+        arg0 int32 1 int-add set-arg0
+        RECURSE
+    ELSE
+        .\n
+    THEN
+;
+
+: stack-trace
+    doc( Print a brief table of call frames. )
+    " id\tFrame\tReturn\t# Args" .s
+    current-frame int32 0 stack-trace/1
 ;
 
 ( Call tracing: )

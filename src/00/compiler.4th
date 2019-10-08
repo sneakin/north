@@ -209,6 +209,17 @@
   docol> return-locals
 ;
 
+: test-double-colon-1
+    int32 200 return1
+;
+
+: test-double-colon
+    test-double-colon-1 int32 200 " starts right" assert-equal
+    " :: test-double-colon-1 int32 100 return1 ;" load
+    test-double-colon-1 int32 100 " redefined a definition." assert-equal
+;
+
+
 ( Terminator on stack search and replace: )
 
 : bytes-to-terminator

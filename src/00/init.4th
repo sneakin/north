@@ -3,7 +3,8 @@
 global-var *debug*
 
 : init-00
-  int32 0 *tokenizer* poke
+    int32 0 *tokenizer* poke
+    int32 0 *tokenizer-stack* poke
   int32 0 *status* poke
   int32 0 *debug* poke
   int32 0 *state* poke
@@ -16,6 +17,6 @@ global-var *debug*
 
 : boot
   init-00
-  eval-loop
+  eval-input
   RECURSE
 ;

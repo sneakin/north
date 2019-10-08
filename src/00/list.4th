@@ -1,7 +1,4 @@
 : cons args return1 ;
-: dcons arg0 dpush dhere arg1 dpush return1 ;
-: tail arg0 cell+ peek return1 ;
-: head arg0 peek return1 ;
 : nil literal 0 return1 ;
 
 : map-list! ( cons! fn ++ )

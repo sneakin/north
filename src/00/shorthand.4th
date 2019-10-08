@@ -15,6 +15,7 @@ alias . drop
 
 : ,sp write-space ;
 : .\n write-crnl ;
+: ,tab write-tab ;
 : ,s arg0 write-string  ;
 : .s arg0 ,s return-1 ;
 : ,S ,sp arg0 ,s ;
