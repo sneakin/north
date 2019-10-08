@@ -3,7 +3,7 @@
     src: url('unscii-8.ttf') format('truetype');
 }
 
-html, body, h1, h2, h3, .xterm {
+html, body, h1, h2, h3, pre, .xterm {
     font-family: "Unscii 8", Inconsolata, Unifont, "GNU Unifont", courier-new, courier, monospace;
     background: black;
     color: white;
@@ -51,4 +51,13 @@ DIV {
 
 .xterm-viewport {
     overflow: hidden !important;
+}
+
+.credits > DIV {
+    width: 140ex;
+}
+
+.credits PRE.license {
+    white-space: pre-wrap;
+    font-size: 0.5ex;
 }
