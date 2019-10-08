@@ -357,12 +357,16 @@ end
 namespace :release do
   task :deps => [ release_root ]
 
-  task :sync => [ 'release:deps', $root.join('version.txt') ] do
-    version = RakeNode::Versioning.read_version($root.join('version.txt')).join('.')
+  task :sync => [ 'release:deps', 'release:tag' ] do
     sh("cd #{release_root} && git pull && rake init && rake pages")
-    sh("cd #{release_root} && git tag 'v#{version}' && git push origin gh-pages")
+    sh("cd #{release_root} && git push origin gh-pages")
   end
 
+  task :tag => $root.join('version.txt') do
+    version = RakeNode::Versioning.read_version($root.join('version.txt')).join('.')
+    sh("git tag 'v#{version}'")
+  end
+  
   task :clean do
     sh("rm -rf #{release_root}")
   end
