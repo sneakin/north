@@ -330,7 +330,7 @@ namespace :pages do
 
   task :sync => [ 'pages:deps' ] do
     sh("cp -rav #{$buildroot}/* #{pages_root}")
-    sh("cd #{pages_root} && git add -A #{pages_root} && git commit && git push origin gh-pages")
+    sh("cd #{pages_root} && git add -A . && git commit && git push origin gh-pages")
   end
 
   task :clean do
