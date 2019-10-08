@@ -9,8 +9,8 @@ $: << root.join('lib')
 begin
   load(root.join("Rakefile.main"))
 rescue LoadError => e
-  $stderr.puts "Try running `rake init`"
-  raise e
+  $stderr.puts("Try running `rake init`")
+  $stderr.puts("Or fixing #{e}")
 end
 
 desc "Initialize project dependencies."
