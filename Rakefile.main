@@ -358,9 +358,9 @@ namespace :release do
   task :deps => [ release_root ]
 
   task :sync => [ 'release:deps', $root.join('version.txt') ] do
-    version = RakeNode::Versioning.read_version($root.join('version.txt'))
+    version = RakeNode::Versioning.read_version($root.join('version.txt')).join('.')
     sh("cd #{release_root} && git pull && rake init && rake pages")
-    sh("cd #{release_root} && git tag v#{version} && git push origin gh-pages")
+    sh("cd #{release_root} && git tag 'v#{version}' && git push origin gh-pages")
   end
 
   task :clean do
