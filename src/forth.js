@@ -357,7 +357,7 @@ Forth.macros = {
     var tok = this.next_token(code);
     var label = this.genlabel('data');
     this.strings[label] = tok[0];
-    this.emitter.uint32('literal').uint32(label);
+    this.interp(`string ${label}`);
     return tok[1];
   },
   "'": function(token, code) {

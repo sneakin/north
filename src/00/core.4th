@@ -259,8 +259,8 @@
   dhere 
   arg1 dpush ( code ) 
   arg0 dpush ( data )
-  literal 0 dpush ( doc )
-  literal 0 dpush ( args )
+  int32 0 dpush ( doc )
+  int32 0 dpush ( args )
   arg3 dpush ( link )
   return1    ( dhere )
 ;
@@ -299,29 +299,29 @@
 
 : dict-entry-doc
   arg0 UNLESS int32 0 return1 THEN
-  arg0 literal 3 cell+n peek return1
+  arg0 int32 3 cell+n peek return1
 ;
 
 : set-dict-entry-doc
-  arg1 arg0 literal 3 cell+n rotdrop2 poke return0
+  arg1 arg0 int32 3 cell+n rotdrop2 poke return0
 ;
   
 : dict-entry-args
   arg0 UNLESS int32 0 return1 THEN
-  arg0 literal 4 cell+n peek return1
+  arg0 int32 4 cell+n peek return1
 ;
 
 : set-dict-entry-args
-  arg1 arg0 literal 4 cell+n rotdrop2 poke return0
+  arg1 arg0 int32 4 cell+n rotdrop2 poke return0
 ;
 
 : dict-entry-next
   arg0 UNLESS int32 0 return1 THEN
-  arg0 literal 5 cell+n peek return1
+  arg0 int32 5 cell+n peek return1
 ;
 
 : set-dict-entry-next
-    arg1 arg0 literal 5 cell+n
+    arg1 arg0 int32 5 cell+n
     rotdrop2 poke return0
 ;
   
@@ -966,16 +966,16 @@ global-var eval-tos
 : constant-capturer
   doc( Returns a colon sequence that returns the argument. )
   start-seq
-  literal literal dpush
+  ' literal dpush
   arg0 dpush
-  literal return1 dpush
+  ' return1 dpush
   end-seq
   cell+ return1
 ;
   
 : does-constant
   args( entry init-value )
-  literal value-peeker dict-entry-code swapdrop
+  ' value-peeker dict-entry-code swapdrop
   arg1 set-dict-entry-code
   arg0 arg1 set-dict-entry-data
 ;
@@ -1000,7 +1000,7 @@ global-var eval-tos
 
 : does-var
   args( entry init-value )
-  literal variable-peeker dict-entry-code swapdrop
+  ' variable-peeker dict-entry-code swapdrop
   arg1 set-dict-entry-code
   arg0 dpush dhere arg1 set-dict-entry-data
 ;
@@ -1035,12 +1035,12 @@ global-var immediate-dict
 ;
 
 : immediate-dict-init
-  literal immediate-dictionary
+  pointer immediate-dictionary
   immediate-dict poke
 ;
 
 : dict-init
-  literal builtin-dictionary
+  pointer builtin-dictionary
   set-dict
   immediate-dict-init
   mark
