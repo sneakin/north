@@ -2,7 +2,7 @@
 
 include "data_stack.pop"
 include "pseudo-ops.pop"
-include "libc.pop"
+include "libc/all.pop"
 
 ; import libc printf/n
 

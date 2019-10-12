@@ -1,0 +1,9 @@
+%include "north.h"
+include "libc/stdio.pop"
+include "libc/basic-io.pop"
+
+def init
+  int32 $50 write_byte
+  int32 $504f5453 write_word
+  int32 $504f5453 write_word
+  int32 0 roll fexit

@@ -1,6 +1,6 @@
 %include "north.h"
 
-include "libc.pop"
+include "libc/all.pop"
 
 ; import libc printf/n puts/1
 import libc atoi/1/1 exit/1

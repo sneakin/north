@@ -7,7 +7,7 @@ for(var line of opcodes_h.split("\n")) {
   var m = line.match(/((\w+)\s+equ\s+(\w+)\s+;*\s*"?(.+)"?)/)
   if(m) {
     var name = m[4].replace(/_/g, '-');
-    var code = parseInt(m[3], 16);
+    var code = parseInt(m[3], 10);
     builtins[m[2]] = m[3];
     this.emitter.label('op-' + name, code);
     this.dictionary_add(name, -1, code);

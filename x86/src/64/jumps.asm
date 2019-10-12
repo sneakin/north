@@ -44,7 +44,7 @@ defop ifthenjump
 	pop rax
 	push rbx
 	test rax, rax
-	jnz .done
+	jz .done
 	mov eval_ip, rcx
 .done:
   ret
@@ -55,7 +55,7 @@ defop unlessjump
 	pop rax
 	push rbx
 	test rax, rax
-	jz .done
+	jnz .done
 	mov eval_ip, rcx
 .done:
 	ret
@@ -66,7 +66,7 @@ defop ifthenreljump
 	pop rax
 	push rbx
 	test rax, rax
-	jnz .done
+	jz .done
 	add eval_ip, rcx
 .done:
   ret
@@ -77,7 +77,7 @@ defop unlessreljump
 	pop rax
 	push rbx
 	test rax, rax
-	jz .done
+	jnz .done
 	add eval_ip, rcx
 .done:
 	ret

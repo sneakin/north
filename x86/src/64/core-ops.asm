@@ -134,7 +134,7 @@ defop 2dup,twodup
   
 defop drop2
 	pop rax
-	add rsp, [ptrsize*2]
+	add rsp, ptrsize*2
 	push rax
 	ret
 
@@ -144,7 +144,7 @@ defop drop2
   
 defop drop3
 	pop rax
-	add rsp, [ptrsize*3]
+	add rsp, ptrsize*3
 	push rax
 	ret
 
@@ -186,25 +186,36 @@ defop jump_entry_data
   push rax
   ret
 
-defop call_data_seq
-  pop rbx
+defop call_data_seq             ; word is in rax
   push eval_ip
-  push rbx
-  add rax, ptrsize*2
-  mov eval_ip, rax
+  mov eval_ip, [rax+ptrsize*2]
+  add eval_ip, [d_offset_indirect_size+dict_entry_data]
   call [d_begin_frame+dict_entry_code]
   jmp [d_next_offset_indirect+dict_entry_code]
+
+defop value_peeker
+	pop rbx
+	mov rax, [rax+ptrsize*2]
+	push rax
+	push rbx
+	ret
+
+defop variable_peeker
+	pop rbx
+	mov rax, [rax+ptrsize*2]
+	push rax
+	push rbx
+	ret
 
 ;;;
 ;;; Aliases
 ;;;
   
-defalias lit,literal
+;;; defalias lit,literal
 defalias next_param,literal
 
-defalias value_peeker,doconstant
-defalias variable_peeker,dovar
-
+  ;; defalias value_peeker,doconstant
+  ;; defalias variable_peeker,dovar
 defalias equals,eq
 
 defalias drop_call_frame,drop2

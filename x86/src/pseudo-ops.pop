@@ -1,6 +1,6 @@
-const terminator 1347376211
-const call_frame_size 2
-const call_frame_byte_size ptrsize*2
+const terminator $504f5453
+const call_frame_size 3
+const call_frame_byte_size ptrsize*call_frame_size
 
 def cell_add_1
   shift_call_frame
@@ -9,30 +9,32 @@ def cell_add_1
   fexit
 
 def cell_add_n
-  call_frame_size overn
-  cell_size int_mul
-  call_frame_size literal 1 int_add overn
+  begin_frame
+  arg0 cell_size int_mul
+  arg1
   int_add
-  unshift_call_frame
-  fexit
+  return1
 
 def shift_call_frame
+  break
+  begin_frame
   arg0 ; next addr
   arg1 ; return address
   arg2 ; arg0
   set_arg0
   set_arg2
   set_arg1
-  fexit
+  return0
 
 def unshift_call_frame
+  begin_frame
   arg0 ; new arg0
   arg1 ; next addr
   arg2 ; return address
   set_arg1
   set_arg0
   set_arg2
-  fexit
+  return0
 
 def parent_frame
   ; first field
@@ -92,7 +94,7 @@ def dallot_seq
   shift_call_frame cell_size int_mul
   dup cell_size literal 2 int_mul int_add
   dup dallot
-  over over int_add terminator swap poke
+  over over int_add literal terminator swap poke
   swap drop
   over swap poke
   unshift_call_frame fexit

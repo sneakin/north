@@ -1,9 +1,9 @@
-import libc printf/n puts/1
+; import libc printf/n puts/1
 import libc atoi/1/1 exit/1
-import libc malloc/1/1 free/1
+; import libc malloc/1/1 free/1
 import libc open/3/1 close/1/1 read/3/1 perror/0
 
-import libc fopen/2/1 fread/4/1 fclose/1/1
+; import libc fopen/2/1 fread/4/1 fclose/1/1
 
 %ifidni PLATFORM,windows
 
@@ -12,7 +12,7 @@ import libc _fstati64/2/1 _stati64/2/1
 create cfstat,fficall_op_2_1_asm,_fstati64
 create cstat,fficall_op_2_1_asm,_stati64
 %else
-import libc fstat/2/1 stat/2/1
+; import libc fstat/2/1 stat/2/1
 %endif
 
 %else

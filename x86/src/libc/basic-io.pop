@@ -4,22 +4,26 @@ def input_reset
   fexit
 
 def read_byte
-  cstdin cfgetc
+  cstdin peek cfgetc
   swap drop unshift_call_frame
   fexit
 
+def flush_output
+  cstdout peek cfflush
+  drop2 fexit
+
 def write_byte
   shift_call_frame
-  cstdout cfputc
+  cstdout peek swap cfputc
   drop3
   fexit
 
 def write_word
-  shift_call_frame
-  cstdout swap
-  literal 4 swap
-  literal 1 swap
+  begin_frame
+  cstdout peek
+  literal 4
+  literal 1
+  args
   cfwrite
-  literal 5 dropn
-  fexit
-
+  flush_output
+  return_1
