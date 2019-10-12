@@ -101,13 +101,20 @@ Forth.prototype.lookup = function(word)
   return word;
 }
 
+Forth.prototype.apply_namespace = function(word)
+{
+  if(word.match(/^::/)) word = word.slice(2);
+  else if(this.word_prefix) word = this.word_prefix + ':' + word;
+  return word;
+}
+
 Forth.prototype.compile = function(word, quote_numbers)
 {
   if(word.length == 0) return;
   
   var m = word.match(/^(.+):$/);
   if(m) {
-    this.emitter.label(m[1]);
+    this.emitter.label(this.apply_namespace(m[1]));
   } else {
     var n = this.parse_number(word);
     if(n != null) {
@@ -117,7 +124,7 @@ Forth.prototype.compile = function(word, quote_numbers)
 
       this.emitter.uint32(n);
     } else {
-      this.emitter.uint32(this.lookup(word));
+      this.emitter.uint32(this.lookup(this.apply_namespace(word)));
     }
   }
 }
@@ -186,7 +193,7 @@ Forth.prototype.genlabel = function(prefix)
 function colon_def(token, code)
 {
   var tok = this.next_token(code);
-  var name = tok[0];
+  var name = this.apply_namespace(tok[0]);
 
   this.dictionary_add(name, 'call-data-seq-code', name + '-entry-data');
 
@@ -208,6 +215,15 @@ Forth.prototype.literal_immediate = function(token, code)
 }
 
 Forth.macros = {
+  "namespace:": function(token, code) {
+    var tok = this.next_token(code);
+    this.stack.push(this.word_prefix);
+    this.word_prefix = tok[0];
+    return tok[1];
+  },
+  "end-namespace": function(token, code) {
+    this.word_prefix = this.stack.pop();
+  },
   ":": colon_def,
   "::": colon_def,
   ";": function(token, code) {
@@ -298,17 +314,17 @@ Forth.macros = {
   IF: function(token, code) {
     var jump_label = this.genlabel('if-' + this.last_dictionary);
     this.stack.push(jump_label);
-    this.interp(`literal ${jump_label} unlessjump`);  },
+    this.interp(`off32 ::${jump_label} unlessjump`);  },
   UNLESS: function(token, code) {
     var jump_label = this.genlabel('unless-' + this.last_dictionary);
     this.stack.push(jump_label);
-    this.interp(`literal ${jump_label} ifthenjump`);
+    this.interp(`off32 ::${jump_label} ifthenjump`);
   },
   ELSE: function(token, code) {
     var if_label = this.stack.pop();
     var then_label = this.genlabel('else-' + this.last_dictionary);
     this.stack.push(then_label);
-    this.interp(`literal ${then_label} jump`);
+    this.interp(`off32 ::${then_label} jump`);
     this.emitter.label(if_label);
   },
   THEN: function(token, code) {
@@ -317,7 +333,7 @@ Forth.macros = {
     this.emitter.label(label);
   },
   RECURSE: function(token, code) {
-    this.interp(`literal ${this.last_dictionary} jump-entry-data`);
+    this.interp(`off32 ${this.last_dictionary} jump-entry-data`);
   },
   "DOTIMES[": function(token, code) {
     var start_label = this.genlabel('dotimes');

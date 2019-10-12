@@ -302,6 +302,7 @@ this.defalias('string', 'literal');
 this.defalias('int32', 'literal');
 this.defalias('uint32', 'literal');
 this.defalias('float32', 'literal');
+this.defalias('off32', 'literal');
 
 this.defop('read-byte', function(asm) {
   asm.
