@@ -26,13 +26,13 @@ def print_dict_entry
 	literal 2 overn
 	dup dup
 	; entry code
-	dup peek swap
+	dup int32 dict_entry_code int_add peek swap
 	; entry data
-	cell_size int_add dup peek swap
+	dup int32 dict_entry_data int_add peek swap
 	; entry name
-	cell_size int_add peek cell_size int_add
+	dup int32 dict_entry_name int_add peek seq_data swap
 	; entry index number
-	literal 7 overn dict_entry_index dup
+	dict_entry_index dup
 	; print
 	literal dict_entry_fmt literal 8 cprintf
 	literal 9 dropn
@@ -61,7 +61,7 @@ def print_dict_entry_offset
   dup int32 dict_entry_name int_add peek seq_data
 	; entry offset
 	swap dup dictionary int_sub swap
-	; entry name
+	; entry label
 	int32 dict_entry_label int_add peek seq_data
 	; print
 	literal short_dict_entry_fmt literal 4 cprintf
