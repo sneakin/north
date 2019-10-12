@@ -6,8 +6,8 @@ class Platform
   constructor(machine, ds, cs) {
     this.name = 'x86';
     this.cell_size = 8;
-    this.data_segment = ds || 1024*1024;
-    this.code_segment = cs || 0;
+    this.data_segment = ds == null ? 0 : ds;
+  this.code_segment = cs == null ? 0 : cs;
     this.assembler = new Opper();
   }
 

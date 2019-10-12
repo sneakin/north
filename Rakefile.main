@@ -60,15 +60,18 @@ file $root.join('src', 'version.txt') => [ $root.join('version.txt'), $root.join
 end
 
 def meta_north(opts)
-  sh(["node",
-      $root.join('bin', 'meta-north.js'),
-      '-s', opts.fetch(:stage, 'stage0'),
-      '-p', opts.fetch(:platform, 'bacaw'),
-      *(opts[:texts] || []).collect { |t| [ '--text-file', t ] },
-      *(opts[:binaries] || []).collect { |t| [ '--binary-file', t ] },
-      '-o', opts.fetch(:output),
-      opts.fetch(:sources).collect(&:to_s)
-     ].flatten.shelljoin)
+  cmd = ["node",
+         $root.join('bin', 'meta-north.js'),
+         '-s', opts.fetch(:stage, 'stage0'),
+         '-p', opts.fetch(:platform, 'bacaw'),
+         '-o', opts.fetch(:output)
+        ]
+  cmd += [ '--data-segment', opts[:data_segment] ] if opts[:data_segment]
+  cmd += [ *(opts[:texts] || []).collect { |t| [ '--text-file', t ] },
+           *(opts[:binaries] || []).collect { |t| [ '--binary-file', t ] },
+           *opts.fetch(:sources).collect(&:to_s)
+         ]
+  sh(cmd.flatten.shelljoin)
 end
 
 def stage(name, options)
@@ -83,6 +86,7 @@ def stage(name, options)
 
   file target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
     meta_north(stage: name.to_s,
+               data_segment: options[:data_segment],
                output: t.name,
                sources: options[:sources],
                platform: options[:platform],
@@ -98,6 +102,7 @@ def stage(name, options)
 
     file min_target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
       meta_north(stage: "#{name}-min",
+                 data_segment: options[:data_segment],
                  output: t.name,
                  sources: options[:sources],
                  platform: options[:platform],
@@ -170,7 +175,8 @@ stage(:stage0,
 stage('stage0-x86',
       sources: with_platform(:x86, STAGE0_SRC),
       minimal: true,
-      platform: :x86)
+      platform: :x86,
+      data_segment: 0)
 
 STAGE1_SRC = STAGE0_SRC +
   src('platform/bacaw/forth_01.js',

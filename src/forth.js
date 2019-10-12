@@ -168,7 +168,7 @@ Forth.prototype.dictionary_add = function(name, code, data, doc, args)
 
 Forth.prototype.dictionary_variable = function(name)
 {
-  this.data_segment_offset += VM.TYPES.ULONG.byte_size;
+  this.data_segment_offset += this.cell_size;
   var e = this.dictionary_add(name, 'variable-peeker-code', this.data_segment_offset);
   e.segment = 'data';
   return e;
