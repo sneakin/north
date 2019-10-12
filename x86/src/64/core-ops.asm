@@ -1,11 +1,17 @@
-variable base, 10
-variable immediate_dict, 0
+;; variable base, 10
+;; variable immediate_dict, 0
 ;; variable dict, 0
 ;; variable *mark*, 0
 ;; variable *state*, 0
 ;; variable *status*, 0
 ;; variable *tokenizer*, 0
 
+defop eip
+  pop rax
+  push eval_ip
+  push rax
+  ret
+  
 defop peek_byte
   mov rax, [rsp+ptrsize]
   mov al, [rax]
@@ -167,6 +173,12 @@ defop rotdrop2
 ;;;
 ;;; Control flow
 ;;;
+
+defop exec_core_word
+  pop rbx
+  pop rax
+  push rbx
+  jmp [rax+ptrsize]
   
 defop exec                      ; assembly word
   pop rax

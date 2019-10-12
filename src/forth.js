@@ -501,14 +501,31 @@ Forth.prototype.add_source = function(path, data, binary)
 }
 
 Forth.prototype.raw_dict_entry = function(label, name, code, data, last_label, doc, args) {
-  this.emitter.label(label).
-      uint32(name).
-      uint32(code).
-      uint32(data).
-      uint32(doc || 0).
-      uint32(args || 0).
-      uint32(last_label);
-  
+  if(this.cell_size == 4) {
+    this.emitter.label(label).
+        uint32(name).
+        uint32(code).
+        uint32(data).
+        uint32(doc || 0).
+        uint32(args || 0).
+        uint32(last_label);
+  } else if(this.cell_size == 8) {
+    this.emitter.label(label).
+        uint32(name).
+        uint32(0).
+        uint32(code).
+        uint32(0).
+        uint32(data).
+        uint32(0).
+        uint32(doc || 0).
+        uint32(0).
+        uint32(args || 0).
+        uint32(0).
+        uint32(last_label).
+        uint32(0);
+  } else {
+    throw 'cell-size must be 4 to 8';
+  }
   return label;
 }
 
@@ -621,7 +638,9 @@ Forth.prototype.assemble = function(stage, opts) {
     console.log("Binary: " + path);
     this.add_source(path, fs.readFileSync(path, 'ASCII'), true);
   }
-  
+
+  this.emitter.label("builtin-data-size", this.data_segment_offset);
+
   this.emitter.label('*program-size*');
 
   this.emit_strings();

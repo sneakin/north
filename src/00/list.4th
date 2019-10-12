@@ -22,7 +22,7 @@
   arg1 return1
 ;
 
-: count literal 0 arg0 count-inner return1 ;
+: count-recurse literal 0 arg0 count-inner return1 ;
 
 : reduce-list
     args( list initial fn )

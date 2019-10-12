@@ -1,23 +1,31 @@
 bits 64
   
-constant indirect_offset,dictionary_start
+variable indirect_offset,dictionary_start
 
-defop offset->pointer,offset_to_pointer
+defop set_indirect_offset
   pop rbx
   pop rax
-  add rax, [d_indirect_offset+dict_entry_data]
-  push rax
+  mov rcx, [d_indirect_offset+dict_entry_data]
+  mov [rcx], rax
   push rbx
   ret
   
 defop indexed_offset_a
-	add rax, [d_indirect_offset+dict_entry_data]
+  and rax, [d_offset_indirect_mask+dict_entry_data]
+  mov rcx, [d_indirect_offset+dict_entry_data]
+	add rax, [rcx]
   ret
 
-defop index
+defop offset->pointer,offset_to_pointer
+	mov rax, [rsp+ptrsize]
+  call [d_indexed_offset_a+dict_entry_code]
+  mov [rsp+ptrsize], rax
+  ret
+
+defop off32
 	mov rax, [eval_ip]
-  add rax, [d_indirect_offset+dict_entry_data]
-	add eval_ip, ptrsize
+  call [d_indexed_offset_a+dict_entry_code]
+	add eval_ip, [d_offset_indirect_size+dict_entry_data]
 	pop rbx
 	push rax
 	push rbx
@@ -47,10 +55,9 @@ defop doop_offset_indirect ; the entry in rax
 
 defop next_offset_indirect
 	mov rax, [eval_ip]
-  and rax, [d_offset_indirect_mask+dict_entry_data]
 	add eval_ip, [d_offset_indirect_size+dict_entry_data]
   call [d_indexed_offset_a+dict_entry_code]
-	call [rax+dict_entry_code]
+  call [rax+dict_entry_code]
 	jmp [d_next_offset_indirect+dict_entry_code]
 
 %macro defoi 1

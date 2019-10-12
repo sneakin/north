@@ -2,9 +2,13 @@ import libc mmap/6/1 munmap/2/1
 
 const MAP_PRIVATE 2
 const PROT_READ 1
+const PROT_WRITE 2
 
 def map_fd
-	literal 0 literal 3 overn literal MAP_PRIVATE literal PROT_READ
+	literal 0
+  literal 3 overn
+  literal MAP_PRIVATE
+  literal PROT_READ literal PROT_WRITE logior
 	literal 7 overn page_align swap drop ( the size )
 	literal 0 cmmap
 	rot drop drop rot drop drop rot drop drop

@@ -2,7 +2,6 @@
 
 alias ! poke
 alias @ peek
-alias . drop
 
 : q quit ; immediate
 

@@ -1,4 +1,21 @@
 bits 64
+
+defop index->pointer,index_to_pointer
+	mov rax, [rsp+ptrsize]
+  and rax, [d_index_mask+dict_entry_data]
+  call [d_dict_offset_a+dict_entry_code]
+  mov [rsp+ptrsize], rax
+	ret
+  
+defop literal_indexed
+	mov rax, [eval_ip]
+  and rax, [d_index_mask+dict_entry_data]
+  call [d_dict_offset_a+dict_entry_code]
+	add eval_ip, [d_index_size+dict_entry_data]
+	pop rbx
+	push rax
+	push rbx
+	ret
   
 defop eval_index ; the ToS
 	pop rbx

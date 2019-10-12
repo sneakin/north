@@ -1,6 +1,12 @@
 ;;;
 ;;; Signed integer math
 ;;; 
+
+defop negate
+  mov rax, [rsp+ptrsize]
+  neg rax
+  mov [rsp+ptrsize], rax
+  ret
   
 defop int_add
 	pop rbx
