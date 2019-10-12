@@ -8,6 +8,7 @@ node_modules/*
 *.dll
 *.o
 *.so
+www/binaries.json
 src/version.txt
 ssl_ca.crt
 ssl_ca.key

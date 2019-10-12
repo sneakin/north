@@ -1,5 +1,12 @@
 const fs = require('fs');
-const NORTH_X86_HEADER = 'x86/build/posix-64/include/north/posix-64/opcodes.h';
+var NORTH_X86_HEADER;
+switch(platform.bits) {
+case 32: NORTH_X86_HEADER = 'x86/build/posix-32/include/north/posix-32/opcodes.h';
+  break;
+case 64: NORTH_X86_HEADER = 'x86/build/posix-64/include/north/posix-64/opcodes.h';
+  break;
+default: throw "Unsupported bit size: " + platform.bits;
+}
 const opcodes_h = fs.readFileSync(NORTH_X86_HEADER, 'utf-8');
 const namespace = 'op';
 const builtins = {};

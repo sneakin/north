@@ -21,30 +21,34 @@ BCBIN = BCROOT.join('bin', 'bccon.js')
 BCLIB = BCROOT.join('js', 'lib')
 
 BCCON = "node #{Shellwords.escape(BCBIN)}"
-NODE_PATH << [ $root.join('src'), BCLIB ]
+NODE_PATH << [ $root.join('www'), $root.join('src'), BCLIB ]
 # ENV['NODE_PATH'] = NODE_PATH.flatten.join(':')
 
 ENV['PATH'] = $root.join('node_modules/.bin').to_s + ':' + ENV['PATH']
 
 $stage_targets = []
 
-outputs = [ 'north-stage0.bin',
-            'north-stage0-min.bin',
-            'north-stage1.bin',
-            'north-stage1-min.bin',
-            'north-stage2.bin',
-            'north-stage2-min.bin',
-            #'north-stage3.bin',
-            'service_worker.js',
-            'ipfs.js',
-            'manifest.webmanifest',
-      	    'unscii-8.ttf',
-            'sounds/startup.mp3',
-            'index.css',
-            'index.js',
-            'index.html',
-            'credits.html'
-          ].collect { |s| $buildroot.join(s) }
+Binaries = [ 'north-stage0-bacaw.bin',
+             'north-stage1-bacaw.bin',
+             'north-stage2-bacaw.bin',
+             'north-stage0-bacaw-min.bin',
+             'north-stage1-bacaw-min.bin',
+             'north-stage2-bacaw-min.bin'
+           ]
+BuiltBinaries = Binaries.collect { |p| $buildroot.join(p) }
+
+outputs = BuiltBinaries +
+  [ #'north-stage3-bacaw.bin',
+   'service_worker.js',
+   'ipfs.js',
+   'manifest.webmanifest',
+   'unscii-8.ttf',
+   'sounds/startup.mp3',
+   'index.css',
+   'index.js',
+   'index.html',
+   'credits.html'
+  ].collect { |s| $buildroot.join(s) }
 
 directory $buildroot
 
@@ -66,6 +70,7 @@ def meta_north(opts)
          '-p', opts.fetch(:platform, 'bacaw'),
          '-o', opts.fetch(:output)
         ]
+  cmd += [ '-m', opts[:machine] ] if opts[:machine]
   cmd += [ '--data-segment', opts[:data_segment] ] if opts[:data_segment]
   cmd += [ *(opts[:texts] || []).collect { |t| [ '--text-file', t ] },
            *(opts[:binaries] || []).collect { |t| [ '--binary-file', t ] },
@@ -81,33 +86,27 @@ def stage(name, options)
     platform:  :bacaw
   }.merge(options)
 
-  target = $buildroot.join("north-#{name}.bin")
+  full_name = name
+  full_name = "#{full_name}-#{options[:platform]}" if options[:platform]
+  full_name = "#{full_name}-#{options[:machine]}" if options[:machine]
+
+  target = $buildroot.join("north-#{full_name}.bin")
   $stage_targets << target
 
   file target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
-    meta_north(stage: name.to_s,
-               data_segment: options[:data_segment],
-               output: t.name,
-               sources: options[:sources],
-               platform: options[:platform],
-               texts: options[:texts],
-               binaries: options[:binaries])
-  end
+    meta_north(options.merge(stage: name.to_s,
+                             output: t.name))
+   end
 
   min_target = nil
   
   if options[:minimal]
-    min_target = $buildroot.join("north-#{name}-min.bin")
+    min_target = $buildroot.join("north-#{full_name}-min.bin")
     $stage_targets << min_target
 
     file min_target => [ $buildroot, *META_SRC, *options[:sources] ] do |t|
-      meta_north(stage: "#{name}-min",
-                 data_segment: options[:data_segment],
-                 output: t.name,
-                 sources: options[:sources],
-                 platform: options[:platform],
-                 texts: options[:texts],
-                 binaries: options[:binaries])
+      meta_north(options.merge(stage: "#{name}-min",
+                               output: t.name))
     end
   end
 
@@ -172,11 +171,23 @@ stage(:stage0,
       sources: with_platform(:bacaw, STAGE0_SRC),
       minimal: true)
 
-stage('stage0-x86',
-      sources: with_platform(:x86, STAGE0_SRC),
-      minimal: true,
-      platform: :x86,
-      data_segment: 0)
+namespace :i32 do
+  stage('stage0',
+        machine: 'i32',
+        sources: with_platform(:x86, STAGE0_SRC),
+        minimal: true,
+        platform: :x86,
+        data_segment: 0)
+end
+
+namespace 'i64' do
+  stage('stage0',
+        machine: 'i64',
+        sources: with_platform(:x86, STAGE0_SRC),
+        minimal: true,
+        platform: :x86,
+        data_segment: 0)
+end
 
 STAGE1_SRC = STAGE0_SRC +
   src('platform/bacaw/forth_01.js',
@@ -279,10 +290,16 @@ end
 
 BrowserifyRunner.bundle $buildroot.join('service_worker.js') => [ $root.join('www/service_worker.js') ]
 BrowserifyRunner.bundle $buildroot.join('ipfs.js') => [ $root.join('www/ipfs.js') ]
-BrowserifyRunner.bundle $buildroot.join('index.js') => [ $root.join('www/index.js'), *$stage_targets ]
+BrowserifyRunner.bundle $buildroot.join('index.js') => [ $root.join('www/index.js'), *BuiltBinaries, $root.join('www/binaries.json') ]
 html_file $buildroot.join('index.html') => [ $root.join('www/index.src.html'), $buildroot.join('index.js'), $buildroot.join('xterm.css') ]
 
 copy_task $buildroot.join('xterm.css') => $root.join('node_modules', 'xterm', 'dist', 'xterm.css')
+
+file $root.join('www/binaries.json') => __FILE__ do |t|
+  File.open(t.name, 'w') do |f|
+    f.puts(Binaries.to_json)
+  end
+end
 
 CREDITS_JSON = $root.join('tmp/credits.json')
 

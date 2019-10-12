@@ -13,19 +13,9 @@ const VMWorker = require('vm/service_worker');
 
 const FS = require('fs');
 
-const Binaries = {
-};
-
-const BinaryURLs = [
-  'north-stage0.bin',
-  'north-stage1.bin',
-  'north-stage2.bin',
-  'north-stage0-min.bin',
-  'north-stage1-min.bin',
-  'north-stage2-min.bin'
-];
-
-const DefaultStage = 'north-stage2.bin';
+const Binaries = {};
+const BinaryURLs = require('binaries.json');
+const DefaultStage = 'north-stage2-bacaw.bin';
 
 function basename(path)
 {
