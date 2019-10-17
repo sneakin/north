@@ -145,16 +145,22 @@ end
 META_SRC = src 'forth.js', 'version.txt'             
 PLATFORM_SRC = {
   bacaw: {
-    prolog: src('platform/bacaw/boot.js', 'platform/bacaw/forth_00.js'),
-    epilog: src('platform/bacaw/epilog.js')
+    prolog: src('platform/bacaw/boot.js', 'platform/bacaw/forth_00.js', 'platform/bacaw/words.4th'),
+    epilog: src('platform/bacaw/epilog.js'),
+    stage1: src('platform/bacaw/forth_01.js',
+                'platform/bacaw/forth_02.js',
+                'platform/bacaw/forth_interrupts.js',
+                '03/interrupts.4th',
+                '03/input-device.4th')                
   },
   x86: {
-    prolog: src('platform/x86/boot.js', 'platform/x86/ops.js', 'platform/x86/boot_offset.4th'),
+    prolog: src('platform/x86/boot.js', 'platform/x86/ops.js', 'platform/x86/boot_offset.4th', 'platform/x86/words.4th'),
   }
 }
 
-def with_platform(plat, src)
+def with_platform(plat, src, stage = nil)
   p = PLATFORM_SRC[plat]
+  src = p.fetch(stage) + src if stage
   p.fetch(:prolog, []) + src + p.fetch(:epilog, [])
 end
 
@@ -171,28 +177,8 @@ stage(:stage0,
       sources: with_platform(:bacaw, STAGE0_SRC),
       minimal: true)
 
-namespace :i32 do
-  stage('stage0',
-        machine: 'i32',
-        sources: with_platform(:x86, STAGE0_SRC),
-        minimal: true,
-        platform: :x86,
-        data_segment: 0)
-end
-
-namespace 'i64' do
-  stage('stage0',
-        machine: 'i64',
-        sources: with_platform(:x86, STAGE0_SRC),
-        minimal: true,
-        platform: :x86,
-        data_segment: 0)
-end
-
 STAGE1_SRC = STAGE0_SRC +
-  src('platform/bacaw/forth_01.js',
-      'platform/bacaw/forth_02.js',
-      #'01/atoi.4th',
+  src(#'01/atoi.4th',
       '01/tty.4th',
       '01/char.4th',
       '01/output.4th',
@@ -219,9 +205,6 @@ STAGE1_SRC = STAGE0_SRC +
       '03/assembler.4th',
       '03/byte_string.4th',
       '03/sequence.4th',
-      'platform/bacaw/forth_interrupts.js',
-      '03/interrupts.4th',
-      '03/input-device.4th',
       #'forth_extra.4th',
       '04/core.4th',
       #'04/constants.4th',
@@ -235,9 +218,41 @@ STAGE1_SRC = STAGE0_SRC +
       '04/unicode.4th')
 
 stage(:stage1,
-      sources: with_platform(:bacaw, STAGE1_SRC),
+      sources: with_platform(:bacaw, STAGE1_SRC, :stage1),
       texts: src('01/atoi.4th'),
       minimal: true)
+
+namespace :i32 do
+  stage('stage0',
+        machine: 'i32',
+        sources: with_platform(:x86, STAGE0_SRC),
+        minimal: true,
+        platform: :x86,
+        data_segment: 0)
+
+  stage('stage1',
+        machine: 'i32',
+        sources: with_platform(:x86, STAGE1_SRC),
+        minimal: true,
+        platform: :x86,
+        data_segment: 0)
+end
+
+namespace 'i64' do
+  stage('stage0',
+        machine: 'i64',
+        sources: with_platform(:x86, STAGE0_SRC),
+        minimal: true,
+        platform: :x86,
+        data_segment: 0)
+
+  stage('stage1',
+        machine: 'i64',
+        sources: with_platform(:x86, STAGE1_SRC),
+        minimal: true,
+        platform: :x86,
+        data_segment: 0)
+end
 
 STAGE2_SRC = STAGE1_SRC +
   src('02/init.4th',
@@ -247,7 +262,7 @@ STAGE2_SRC = STAGE1_SRC +
       '02/sound.4th')
 
 stage(:stage2,
-      sources: with_platform(:bacaw, STAGE2_SRC),
+      sources: with_platform(:bacaw, STAGE2_SRC, :stage1),
       minimal: true)
 
 STAGE3_SRC = src('build-stage3.4th',
@@ -255,7 +270,7 @@ STAGE3_SRC = src('build-stage3.4th',
                  '02/ops.4th')
 
 stage(:stage3,
-      sources: with_platform(:bacaw, STAGE3_SRC),
+      sources: with_platform(:bacaw, STAGE3_SRC, :stage1),
       minimal: true)
 
 STAGE4_SRC = STAGE1_SRC +
@@ -266,7 +281,7 @@ STAGE4_SRC = STAGE1_SRC +
       '02/dict.4th')
 
 stage(:stage4,
-      sources: with_platform(:bacaw, STAGE4_SRC),
+      sources: with_platform(:bacaw, STAGE4_SRC, :stage1),
       texts: src('04/tiler.4th'),
       minimal: true)
 

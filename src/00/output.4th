@@ -66,7 +66,7 @@
 
 : unsigned-int-to-chars
   args( number ++ base negative? terminator chars... length )
-  doc( Convert an unsigned integer value to a sequencemof characters on the stack. )
+  doc( Convert an unsigned integer value to a sequence of characters on the stack. )
   base peek int32 0 arg0 ' unsigned-int-to-chars-inner cont
 ;
 

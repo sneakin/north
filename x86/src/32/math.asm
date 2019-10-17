@@ -1,3 +1,13 @@
+;;;
+;;; Signed integer math
+;;; 
+
+defop negate
+  mov eax, [esp+ptrsize]
+  neg eax
+  mov [esp+ptrsize], eax
+  ret
+  
 defop int_add
 	pop ebx
 	pop eax
@@ -51,5 +61,52 @@ defop int_divmod
 	idiv ecx
 	push eax
   push edx
+	push ebx
+	ret
+
+;;;
+;;; Unsigned
+;;;
+
+defalias uint_add,int_add
+defalias uint_sub,int_sub
+  
+defop uint_mul
+	pop ebx
+  pop ecx
+	pop eax
+	mul ecx
+  push eax
+	push ebx
+	ret
+
+defop uint_div
+	pop ebx
+	pop ecx
+  pop eax
+  mov edx, 0
+	div ecx
+	push eax
+	push ebx
+	ret
+
+defop uint_mod
+	pop ebx
+	pop ecx
+  pop eax
+  mov edx, 0
+	div ecx
+	push edx
+	push ebx
+	ret
+
+defop uint_divmod
+	pop ebx
+	pop ecx
+  pop eax
+  mov edx, 0
+	div ecx
+  push eax
+	push edx
 	push ebx
 	ret

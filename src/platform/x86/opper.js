@@ -13,7 +13,8 @@ class Opper
       'doop': -1,
       'call-data-seq-code': -2,
       'value-peeker-code': -3,
-      'variable-peeker-code': -4,
+      'data-peeker-code': -4,
+      'variable-peeker-code': -5,
       'terminator-entry-data': 1347376211
     };
   }

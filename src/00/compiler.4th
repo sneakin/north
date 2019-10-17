@@ -189,12 +189,6 @@
     int32 1 int-add return0-n
 ; immediate-as ;
 
-: return-locals
-  doc( Causes the caller to return all of its local data shifted over the frame and return pointers. )
-  drop-call-frame
-  locals here int-sub cell/ swapdrop returnN
-;
-
 : :
   doc( Start a new definition with the following name. Definition ends with a ";". )
   args( _ : name ++ entry old-state open-seq )

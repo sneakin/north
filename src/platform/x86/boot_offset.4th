@@ -68,8 +68,19 @@ dup uint32 $504f5453 eq UNLESS
     swap poke
     off32 boot-loop-code-done jump
   THEN
-  ( does-var = -4 )
+  ( does-constant, but to offset data = -4 )
   dup uint32 $FFFFFFFC eq IF
+    drop
+    ( set code )
+    literal-indexed value-peeker cell-size int-add peek
+    over poke
+    ( offset data )
+    cell-size int-add dup peek offset->pointer
+    swap poke
+    off32 boot-loop-code-done jump
+  THEN
+  ( does-var = -5 )
+  dup uint32 $FFFFFFFB eq IF
     drop
     literal-indexed variable-peeker cell-size int-add peek
     swap poke

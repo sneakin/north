@@ -32,6 +32,8 @@ this.defop('exec', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-word-code');
 });
 
+this.defalias('exec-core-word', 'exec');
+
 this.defop('exec-word', function(asm) {
   asm.load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE);
 });
@@ -196,7 +198,7 @@ this.defop('return0', function(asm) {
 });
 
 this.defop('returnN', function(asm) {
-  asm.// copy values between FP and SP up over the frame
+  asm.// copy N values from SP up over the frame
   // exit frame
   // save the number of words
   pop(VM.CPU.REGISTERS.R0).
@@ -956,6 +958,12 @@ this.defop('value-peeker', function(asm) {
 });
 
 this.defop('variable-peeker', function(asm) {
+  asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+this.defop('data-peeker', function(asm) { // an alias to variable-peeker would be nice
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');

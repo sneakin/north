@@ -1,7 +1,8 @@
 include "pseudo-ops.pop"
 
 def input_reset
-  fexit
+  cstdin peek cfflush
+  drop2 fexit
 
 def read_byte
   cstdin peek cfgetc

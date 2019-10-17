@@ -45,14 +45,14 @@ defalias begin,begin_frame
 defalias end,end_frame
   
 defop arg2
-  mov rax, [rbp+ptrsize*5]
+  mov rax, [fp+ptrsize*5]
   pop rbx
   push rax
   push rbx
   ret
 
 defop arg3
-  mov rax, [rbp+ptrsize*6]
+  mov rax, [fp+ptrsize*6]
   pop rbx
   push rax
   push rbx
@@ -61,35 +61,35 @@ defop arg3
 defop set_arg0
   pop rbx
   pop rax
-  mov [rbp+ptrsize*3], rax
+  mov [fp+ptrsize*3], rax
   push rbx
   ret
 
 defop set_arg1
   pop rbx
   pop rax
-  mov [rbp+ptrsize*4], rax
+  mov [fp+ptrsize*4], rax
   push rbx
   ret
 
 defop set_arg2
   pop rbx
   pop rax
-  mov [rbp+ptrsize*5], rax
+  mov [fp+ptrsize*5], rax
   push rbx
   ret
 
 defop set_arg3
   pop rbx
   pop rax
-  mov [rbp+ptrsize*6], rax
+  mov [fp+ptrsize*6], rax
   push rbx
   ret
 
 defop store_local0
   pop rbx
   pop rax
-  mov [rbp-ptrsize*0], rax
+  mov [fp-ptrsize*0], rax
   push rbx
   ret
 

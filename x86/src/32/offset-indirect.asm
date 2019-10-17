@@ -1,9 +1,34 @@
 bits 32
   
-constant indirect_offset,dictionary_start
+variable indirect_offset,dictionary_start
+  
+defop set_indirect_offset
+  pop ebx
+  pop eax
+  mov ecx, [d_indirect_offset+dict_entry_data]
+  mov [ecx], eax
+  push ebx
+  ret
   
 defop indexed_offset_a
-	add eax, [d_indirect_offset+dict_entry_data]
+  and eax, [d_offset_indirect_mask+dict_entry_data]
+  mov ecx, [d_indirect_offset+dict_entry_data]
+	add eax, [ecx]
+  ret
+
+defop offset->pointer,offset_to_pointer
+	mov eax, [esp+ptrsize]
+  call [d_indexed_offset_a+dict_entry_code]
+  mov [esp+ptrsize], eax
+  ret
+
+defop off32
+	mov eax, [eval_ip]
+  call [d_indexed_offset_a+dict_entry_code]
+	add eval_ip, [d_offset_indirect_size+dict_entry_data]
+	pop ebx
+	push eax
+	push ebx
   ret
 
 defop eval_offset_indirect ; the ToS
@@ -30,7 +55,6 @@ defop doop_offset_indirect ; the entry in eax
 
 defop next_offset_indirect
 	mov eax, [eval_ip]
-  and eax, [d_offset_indirect_mask+dict_entry_data]
 	add eval_ip, [d_offset_indirect_size+dict_entry_data]
   call [d_indexed_offset_a+dict_entry_code]
 	call [eax+dict_entry_code]

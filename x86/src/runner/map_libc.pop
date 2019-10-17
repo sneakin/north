@@ -21,7 +21,7 @@ def map_file ( path ++ size ptr )
   ( handle number 1 ptr )
   swap drop
   rot cfclose literal 2 dropn
-  return2
+  swap return2
 
 def unmap_file ( size ptr )
   literal 2 overn cfree literal 1 dropn

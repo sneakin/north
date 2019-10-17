@@ -1,3 +1,6 @@
+call_frame_size equ 3
+call_frame_byte_size equ ptrsize*3
+
 defop current_frame
   pop eax
   push fp
@@ -19,6 +22,10 @@ defop drop_frame
 defop end_frame
   mov fp, [fp]
   ret
+
+;;;
+;;; Returns
+;;;
 
 defop drop_locals
   pop eax
@@ -63,8 +70,8 @@ defop return2
   pop fp
 	pop eval_ip
   pop ecx
-  push eax
   push ebx
+  push eax
   push ecx
 	ret
   
@@ -83,15 +90,37 @@ defop quit
   push ebx                      ; return with the ToS
   jmp eax
 
+;;;
+;;; Call Arguments
+;;;
+  
+defop args
+  lea eax, [fp+call_frame_byte_size]
+  pop ebx
+  push eax
+  push ebx
+  ret
+  
 defop arg0
-  mov eax, [fp+ptrsize*3]
+  mov eax, [fp+call_frame_byte_size]
   pop ebx
   push eax
   push ebx
   ret
   
 defop arg1
-  mov eax, [fp+ptrsize*4]
+  mov eax, [fp+call_frame_byte_size+ptrsize*1]
+  pop ebx
+  push eax
+  push ebx
+  ret
+
+;;;
+;;; Local data
+;;;
+
+defop locals
+  lea eax, [fp-ptrsize*1]
   pop ebx
   push eax
   push ebx

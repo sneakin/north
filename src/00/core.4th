@@ -51,10 +51,6 @@
 
 ( Call frames: )
 
-: frame-size
-  int32 2 cell* return1
-;
-
 : parent-frame
     ( first element, so nop )
 ;
@@ -64,6 +60,12 @@
   frame-size int-add
   arg0 swap poke
   return-1
+;
+
+: return-locals
+  doc( Causes the caller to return all of its local data shifted over the frame and return pointers. )
+  drop-call-frame
+  locals here int-sub cell/ swapdrop returnN
 ;
 
 ( Sequences )
@@ -171,7 +173,7 @@
 ( Sequence copying )
 
 : copy-n ( src dest number counter )
-  ( dest )
+    ( dest )
   arg0 arg2 int-add
   ( src )
   arg0 arg3 int-add
@@ -224,8 +226,8 @@
   ( calc byte size & alloc )
   arg0 dallot-seq
   ( copy )
-  cell+ arg1
-  cell+ swapdrop swap
+  cell+
+  arg1 cell+ swapdrop swap
   arg0 cell* swapdrop
   copy
   drop3
@@ -355,14 +357,13 @@ global-var *status* doc( The last error value. )
 ( Input )
 
 : newline?
-    arg0 literal char-code \n equals return1
+    arg0 int32 char-code \n equals return1
 ;
 
 : read-line-inner
   read-byte
   newline? IF dpush return0 THEN
-  dpush
-  RECURSE
+  dpush RECURSE
 ;
 
 : read-line
@@ -403,11 +404,11 @@ global-var *status* doc( The last error value. )
 ;
 
 : whitespace?
-  arg0 space? swap literal char-code \r equals
-  arg0 literal char-code \n equals
-  arg0 literal char-code \t equals
-  arg0 literal char-code \v equals
-  arg0 literal char-code \f equals
+  arg0 space? swap int32 char-code \r equals
+  arg0 int32 char-code \n equals
+  arg0 int32 char-code \t equals
+  arg0 int32 char-code \v equals
+  arg0 int32 char-code \f equals
   or rotdrop2
   or rotdrop2
   or rotdrop2
@@ -434,22 +435,22 @@ global-var *status* doc( The last error value. )
 ;
 
 : digit?
-  literal char-code 9
-  literal char-code 0
+  int32 char-code 9
+  int32 char-code 0
   arg0 in-range?
   return1
 ;
 
 : lower-alpha?
-  literal char-code z
-  literal char-code a
+  int32 char-code z
+  int32 char-code a
   arg0 in-range?
   return1
 ;
 
 : upper-alpha?
-  literal char-code Z
-  literal char-code A
+  int32 char-code Z
+  int32 char-code A
   arg0 in-range?
   return1
 ;
@@ -512,7 +513,7 @@ global-var *status* doc( The last error value. )
 : tokenizer-read-more
     arg0 tokenizer-reader @ dup IF
         arg0 tokenizer-reader-state @
-        swap exec
+        swap exec-core-word
         dup IF arg0 set-tokenizer-str int32 1 return1 THEN
     THEN
     int32 0 return1
@@ -698,7 +699,8 @@ global-var *tokenizer* doc( The interpreter's tokenizer. )
   THEN
 
   drop ( tokenizer )
-  tokenizer-finish-output return2 ( next-token length )
+  tokenizer-finish-output
+  return2 ( next-token length )
 ;
 
 : tokenizer-next-token
@@ -738,10 +740,6 @@ global-var *tokenizer* doc( The interpreter's tokenizer. )
   int-add
   arg0 swap poke
   return-1
-;
-
-: call-frame-size
-    cell-size int32 2 int-mul return1
 ;
 
 : argn
@@ -919,9 +917,9 @@ global-var eval-tos
   next-token UNLESS drop return-locals THEN
   ( compile lookup )
   *state* peek UNLESS interp THEN
-  *state* peek IF *state* peek exec THEN
+  *state* peek IF *state* peek exec-core-word THEN
   ( exec? )
-  IF swapdrop exec RECURSE THEN
+  IF swapdrop exec-core-word RECURSE THEN
   swapdrop RECURSE
 ;
 

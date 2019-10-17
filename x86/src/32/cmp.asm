@@ -3,7 +3,7 @@ defop %1%2,%1_%3
   pop eax
   pop ebx
   pop ecx
-  cmp ebx, ecx
+  cmp ecx, ebx
   %4 .true
   push 0
   push eax
@@ -19,7 +19,7 @@ defop %1%2,%1_%3
   pop eax
   pop ebx
   pop ecx
-  cmp ebx, ecx
+  cmp ecx, ebx
   %4 .false
   push 1
   push eax
@@ -32,13 +32,13 @@ defop %1%2,%1_%3
 
 cmpop int,<,lt,jl
 cmpop int,<=,lte,jle
-invcmpop int,>,gt,jl
-invcmpop int,>=,gte,jle
+invcmpop int,>,gt,jle
+invcmpop int,>=,gte,jl
 
 cmpop uint,<,lt,jb
 cmpop uint,<=,lte,jbe
-invcmpop uint,>,gt,jb
-invcmpop uint,>=,gte,jbe
+invcmpop uint,>,gt,jbe
+invcmpop uint,>=,gte,jb
 
 defalias <,lt,int_lt
 defalias <=,lte,int_lte

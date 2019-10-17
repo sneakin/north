@@ -1,12 +1,18 @@
 const terminator $504f5453
-const call_frame_size 3
-const call_frame_byte_size ptrsize*call_frame_size
+
+;;def cell_add_1
+;;  shift_call_frame
+;;  cell_size int_add
+;;  unshift_call_frame
+;;  fexit
 
 def cell_add_1
-  shift_call_frame
-  cell_size int_add
-  unshift_call_frame
-  fexit
+  begin_frame
+  arg0 cell_size int_add return1
+
+def cell_sub_1
+  begin_frame
+  arg0 cell_size int_sub return1
 
 def cell_add_n
   begin_frame
@@ -16,7 +22,6 @@ def cell_add_n
   return1
 
 def shift_call_frame
-  break
   begin_frame
   arg0 ; next addr
   arg1 ; return address
@@ -44,7 +49,7 @@ def frame_return_address
   shift_call_frame literal 2 cell_add_n unshift_call_frame fexit
 
 def frame_args
-  shift_call_frame call_frame_size int_add unshift_call_frame fexit
+  shift_call_frame int32 call_frame_size int_add unshift_call_frame fexit
 
 def argn
   shift_call_frame args swap cell_add_n rotdrop2
@@ -60,41 +65,30 @@ def return_address
   fexit
 
 def local1
-  locals cell_add_1 peek
+  locals cell_sub_1 swapdrop peek
   unshift_call_frame fexit
 
 def store_local1
-  shift_call_frame locals cell_add_1 poke
+  shift_call_frame locals cell_sub_1 swapdrop poke
   fexit
 
 def copydown
   begin_frame
-  arg0 cell_size uint_gte ifzero exit
+  arg0 cell_size uint_gte ifzero return0
   arg0 arg2 int_add peek
   arg0 arg1 int_add poke
   arg0 cell_size int_sub set_arg0
   end_frame
   literal copydown jump
-    
-def returnN
-  shift_call_frame
-  cell_size int_mul
-  here
-  current_frame parent_frame peek
-  literal 2 overn
-  copydown
-  int_sub
-  here int_sub
-  dropn
-  exit ;_frame
 
 include "data_stack.pop"
 
 def dallot_seq
-  shift_call_frame cell_size int_mul
+  begin_frame
+  arg0 cell_size int_mul
   dup cell_size literal 2 int_mul int_add
   dup dallot
   over over int_add literal terminator swap poke
-  swap drop
-  over swap poke
-  unshift_call_frame fexit
+  arg0 over poke
+  set_arg0
+  return0

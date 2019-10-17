@@ -50,7 +50,7 @@ defop offset64
 
 defop pointer
 	mov eax, dword [eval_ip]
-	add eval_ip, 8
+	add eval_ip, ptrsize
 	pop ebx
 	push eax
 	push ebx
@@ -133,46 +133,6 @@ defop roll ; ( a b c -- c a b )
 	mov [esp+ptrsize*1], ebx
 	mov [esp+ptrsize*2], ecx
 	mov [esp+ptrsize*3], eax
-	ret
-
-defop ifzero
-	pop ebx
-	pop eax
-	push ebx
-	test eax, eax
-	jz .done
-	add eval_ip, ptrsize
-.done:
-	ret
-
-defop ifnotzero
-	pop ebx
-	pop eax
-	push ebx
-	test eax, eax
-	jnz .done
-	add eval_ip, ptrsize
-.done:
-	ret
-
-defop ifpositive
-	pop ebx
-	pop eax
-	push ebx
-	cmp eax, 0
-	jge .done
-	add eval_ip, ptrsize
-.done:
-	ret
-
-defop ifnegative
-	pop ebx
-	pop eax
-	push ebx
-	cmp eax, 0
-	jl .done
-	add eval_ip, ptrsize
-.done:
 	ret
 
 defop eq

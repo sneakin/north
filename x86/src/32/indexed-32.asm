@@ -1,5 +1,22 @@
 bits 32
   
+defop index->pointer,index_to_pointer
+	mov eax, [esp+ptrsize]
+  and eax, [d_index_mask+dict_entry_data]
+  call [d_dict_offset_a+dict_entry_code]
+  mov [esp+ptrsize], eax
+	ret
+  
+defop literal_indexed
+	mov eax, [eval_ip]
+  and eax, [d_index_mask+dict_entry_data]
+  call [d_dict_offset_a+dict_entry_code]
+	add eval_ip, [d_index_size+dict_entry_data]
+	pop ebx
+	push eax
+	push ebx
+	ret
+
 defop eval_index ; the ToS
 	pop ebx
 	pop eax

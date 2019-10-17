@@ -23,6 +23,7 @@ function Forth(platform)
   this.data_segment_offset = 0;
   this.indexed_ops = false;
   this.next_index = 0x80000000;
+  this.macros = Forth.macros;
 }
 
 Forth.longify = function(str)
@@ -314,17 +315,17 @@ Forth.macros = {
   IF: function(token, code) {
     var jump_label = this.genlabel('if-' + this.last_dictionary);
     this.stack.push(jump_label);
-    this.interp(`off32 ::${jump_label} unlessjump`);  },
+    this.interp(`literal ::${jump_label} unlessjump`);  },
   UNLESS: function(token, code) {
     var jump_label = this.genlabel('unless-' + this.last_dictionary);
     this.stack.push(jump_label);
-    this.interp(`off32 ::${jump_label} ifthenjump`);
+    this.interp(`literal ::${jump_label} ifthenjump`);
   },
   ELSE: function(token, code) {
     var if_label = this.stack.pop();
     var then_label = this.genlabel('else-' + this.last_dictionary);
     this.stack.push(then_label);
-    this.interp(`off32 ::${then_label} jump`);
+    this.interp(`literal ::${then_label} jump`);
     this.emitter.label(if_label);
   },
   THEN: function(token, code) {
@@ -333,7 +334,7 @@ Forth.macros = {
     this.emitter.label(label);
   },
   RECURSE: function(token, code) {
-    this.interp(`off32 ${this.last_dictionary} jump-entry-data`);
+    this.interp(`literal ${this.last_dictionary} jump-entry-data`);
   },
   "DOTIMES[": function(token, code) {
     var start_label = this.genlabel('dotimes');
@@ -481,8 +482,10 @@ Forth.prototype.constant = function(name, value)
     var label = name + '-str';
     this.strings[label] = value;
     value = label;
+    this.dictionary_add(name, 'data-peeker-code', value);
+  } else {
+    this.dictionary_add(name, 'value-peeker-code', value);
   }
-  this.dictionary_add(name, 'value-peeker-code', value);
 }
 
 Forth.prototype.add_source = function(path, data, binary)

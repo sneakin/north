@@ -50,15 +50,17 @@ def dallot
   
 def dpush
   begin_frame
-  literal 1 dallot arg0 swap poke
+  arg0
+  dhere cell_size int_add dmove
+  poke
   return_1
   
 def dpop
   begin_frame
-  literal -1 dallot
-  dhere peek
+  dhere dup peek
+  swap cell_size int_sub dmove drop
   return1
 
 def ddrop
-  literal -1 dallot drop drop
+  dhere cell_size int_sub dmove drop
   fexit

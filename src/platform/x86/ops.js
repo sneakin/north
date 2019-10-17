@@ -23,3 +23,20 @@ for(var line of opcodes_h.split("\n")) {
     console.warn("Bad op code in header: " + line);
   }
 }
+
+console.log(this);
+
+this.macros.string = function(token, code)
+{
+  this.interp('off32');
+}
+
+this.macros.pointer = function(token, code)
+{
+  this.interp('off32');
+}
+
+this.macros.literal = function(token, code)
+{
+  this.interp('off32');
+}

@@ -44,10 +44,17 @@ outer_eval:
 
 %include "ops.asm"
 %include "math.asm"
-%include "cmp.asm"
+%include "jumps.asm"
 %include "frames.asm"
+
 %include "direct.asm"
 %include "indirect.asm"
+%include "indexed-32.asm"
+%include "offset-indirect.asm"
+
+%include "cmp.asm"
+%include "bits.asm"
+%include "core-ops.asm"
 
 %ifidni PLATFORM,windows
 %include "windows.asm"
@@ -58,7 +65,6 @@ outer_eval:
 %include "../ffi.asm"
 %ifidni LIBC,1
 %include "dynlibs.asm"
-%include "../libc.asm"
 %endif
   
 constant cpu_bits,BITS

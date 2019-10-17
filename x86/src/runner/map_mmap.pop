@@ -17,7 +17,7 @@ def map_file ( path ++ size ptr )
   map_fd dup literal -1 eq ifnotzero failed
   ( close the file since it's mapped )
   swap cclose ifnegative failed
-  return2
+  swap return2
 
 def unmap_file ( size ptr )
   literal 3 overn literal 3 overn
