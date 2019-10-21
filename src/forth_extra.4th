@@ -11,7 +11,7 @@
 : not-number  " Not Number" return1 ;
 
 : test-return-locals
-  literal 1 literal 2 literal 3 return-locals
+  int32 1 int32 2 int32 3 return-locals
 ;
 
 ( Return all the locals except the number from the top. )
@@ -24,7 +24,7 @@
 ;
 
 : test-return-locals-less
-  literal 1 literal 2 literal 3 literal 4 literal 5 arg0 return-locals-less
+  int32 1 int32 2 int32 3 int32 4 int32 5 arg0 return-locals-less
 ;
 
 ( Return the greater argument. )
@@ -49,11 +49,11 @@
     swapdrop ( token )
     backtick? IF drop LEAVE THEN
     compile drop ( token addr )
-    literal literal ( token addr lit )
+    ' literal ( token addr lit )
     rot ( lit addr token )
   backtick? swapdrop UNTIL
 
-  literal 3 return-locals-less
+  int32 3 return-locals-less
 ; immediate
 
 : test-backtick-1
@@ -66,7 +66,7 @@
 ;
 
 : test-DOTIMES
-  literal 5 DOTIMES[ arg1 write-int write-crnl drop ]DOTIMES write-helo
+  int32 5 DOTIMES[ arg1 write-int write-crnl drop ]DOTIMES write-helo
 ;
   
 : seq1 ( max min )
@@ -78,11 +78,11 @@
   do
     arg2 write-int arg1 arg0 seq-poke drop3
     write-ok write-crnl
-    arg2 literal 10 equals IF again THEN
-    arg2 literal 1 int-add set-arg2
+    arg2 int32 10 equals IF again THEN
+    arg2 int32 1 int-add set-arg2
     arg3 arg2 > while
 
-  write-ok literal 1146048327 write-word drop
+  write-ok int32 1146048327 write-word drop
   local2 return1
 ;
 
@@ -94,32 +94,32 @@
   DO
     arg2 write-int arg1 arg2 seq-poke drop3 ( fixme min != 0 is a problem )
     write-ok write-crnl
-    arg2 literal 10 equals IF AGAIN THEN
-    arg2 literal -10 equals IF LEAVE THEN
-    arg2 literal 1 int-add set-arg2
+    arg2 int32 10 equals IF AGAIN THEN
+    arg2 int32 -10 equals IF LEAVE THEN
+    arg2 int32 1 int-add set-arg2
     arg3 arg2 > WHILE
 
-  write-ok literal 1146048327 write-word drop
+  write-ok int32 1146048327 write-word drop
   local2 return1
 ;
 
 : test-argn-inner
-  literal 3 argn return1
+  int32 3 argn return1
 ;
 
 : test-argn
-  literal 6 literal 7 literal 8 literal 9 test-argn-inner
-  literal 6 equals return1
+  int32 6 int32 7 int32 8 int32 9 test-argn-inner
+  int32 6 equals return1
 ;
 
 : test-unsigned-number
-  " 123" unsigned-number drop literal 123 equals UNLESS false return1 THEN
-  " &123" unsigned-number drop literal 123 equals UNLESS false return1 THEN
-  " #98" unsigned-number drop literal 98 equals UNLESS false return1 THEN
-  " x10" unsigned-number drop literal 16 equals UNLESS false return1 THEN
-  " $100" unsigned-number drop literal 256 equals UNLESS false return1 THEN
-  " %1000" unsigned-number drop literal 8 equals UNLESS false return1 THEN
-  " %1111" unsigned-number drop literal 15 equals UNLESS false return1 THEN
+  " 123" unsigned-number drop int32 123 equals UNLESS false return1 THEN
+  " &123" unsigned-number drop int32 123 equals UNLESS false return1 THEN
+  " #98" unsigned-number drop int32 98 equals UNLESS false return1 THEN
+  " x10" unsigned-number drop int32 16 equals UNLESS false return1 THEN
+  " $100" unsigned-number drop int32 256 equals UNLESS false return1 THEN
+  " %1000" unsigned-number drop int32 8 equals UNLESS false return1 THEN
+  " %1111" unsigned-number drop int32 15 equals UNLESS false return1 THEN
   true return1
 ;
 
@@ -132,7 +132,7 @@
     arg2 base poke uint-mod char-digit swapdrop
     arg2 base poke uint-div dup set-arg2
   WHILE
-  here dup local1 swap uint-sub cell/ swapdrop literal 4 uint-sub intern return1
+  here dup local1 swap uint-sub cell/ swapdrop int32 4 uint-sub intern return1
 ;
 
 ( Patch the bootstrap functions. )

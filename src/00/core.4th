@@ -269,7 +269,7 @@
 
 : add-dict
   ( name code data )
-    dict arg2 arg1 arg0 make-dict/4 
+  dict arg2 arg1 arg0 make-dict/4
   dup set-dict 
   return1
 ;

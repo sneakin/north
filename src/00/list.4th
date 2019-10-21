@@ -1,9 +1,9 @@
 : cons args return1 ;
-: nil literal 0 return1 ;
+: nil int32 0 return1 ;
 
 : map-list! ( cons! fn ++ )
   arg1 UNLESS return0 THEN
-  arg1 head swapdrop arg0 exec ( todo only dictionary entries can be passed, bracketed definitions, :noname maybe, should work too. )
+  arg1 head swapdrop arg0 exec-core-word ( todo only dictionary entries can be passed, bracketed definitions, :noname maybe, should work too. )
   arg1 tail swapdrop set-arg1
   RECURSE
 ;
@@ -15,14 +15,14 @@
 : count-inner
   arg0 IF
     arg0 tail set-arg0
-    arg1 literal 1 int-add set-arg1
+    arg1 int32 1 int-add set-arg1
     ( literal count tailcall )
     RECURSE
   THEN
   arg1 return1
 ;
 
-: count-recurse literal 0 arg0 count-inner return1 ;
+: count-recurse int32 0 arg0 count-inner return1 ;
 
 : reduce-list
     args( list initial fn )
@@ -41,7 +41,7 @@
 ;
 
 : list-index-of/3
-    arg2 head arg1 equals IF arg0 literal 1 return2 THEN
+    arg2 head arg1 equals IF arg0 int32 1 return2 THEN
     arg2 tail dup IF
         set-arg2
         arg0 int32 1 int-add set-arg0

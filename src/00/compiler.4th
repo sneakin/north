@@ -139,14 +139,14 @@
 ;
 
 : '[
-    literal literal
+    ' literal
     [
     int32 3 returnN
 ; immediate-as [
 
 : exit-compiler
     doc( Exits the compiling state and stores all the words in reverse order on the data stack in a proper sequence leaving a pointer on the stack. )
-  args( stack-ptr -- sequence cells-to-drop )
+  args( stack-ptr ++ sequence cells-to-drop )
     arg0 internrev-to-terminator
     seq-length
     int32 1 int-add
@@ -240,7 +240,7 @@
 
 : UNLESS
   doc( Jump to the word after UNLESS and evaluate until THEN if the top of stack is zero. )
-  literal literal terminator literal ifthenreljump
+  ' literal terminator literal ifthenreljump
   int32 3 returnN
 ; immediate-only
 
@@ -254,14 +254,14 @@
   next-token UNLESS literal eos eos error return0 THEN
   compile not UNLESS swapdrop return1 THEN
   swapdrop
-  literal literal swap
+  ' literal swap
   return2
 ; immediate
 
 : ELSE
     doc( Evaluate the calls until THEN when an IF or UNLESS's condition fails. )
     ( Add a new terminator for THEN to patch that ends IF / UNLESS )
-    literal literal terminator literal jumprel
+    ' literal terminator literal jumprel
     ( find and replace IF or UNLESS's terminator to offset past jumprel )
     args cell-size cell-size int-add patch-terminator/2 drop2
     int32 3 returnN
@@ -270,13 +270,13 @@
 : IF
   doc( Jump to the word after IF and evaluate until THEN if the top of stack is not zero. )
     ( literal not POSTPONE UNLESS return-locals )
-  literal literal terminator literal unlessreljump
+  ' literal terminator literal unlessreljump
   int32 3 returnN
 ; immediate-only
 
 : RECURSE
   doc( Tail call the dictionary definition currently being defined. )
-  literal literal
+  ' literal
   dict
   literal jump-entry-data
   return-locals
@@ -297,9 +297,9 @@
 : DO
   doc( Starts a new frame with the start and hopefully end of loop pointers as arguments. )
 ( Loop pointer )
-  literal literal int32 6 literal next-op+ literal swapdrop
+  ' literal int32 6 literal next-op+ literal swapdrop
   ( Abort pointer and return address when looping. )
-  literal dup literal literal terminator literal int-add
+  literal dup ' literal terminator literal int-add
   literal begin
   return-locals
 ; immediate-only
@@ -367,7 +367,7 @@
 : ]DOTIMES
     doc( Close `DOTIMES[`. )
     ( inc the counter )
-    literal arg0 literal literal int32 1 literal int-add literal set-arg0
+    literal arg0 ' literal int32 1 literal int-add literal set-arg0
     ( calculate jump offset )
     literal int32
     call-frame-size int32 4 cell+n rotdrop2
@@ -391,7 +391,7 @@
 
 : 'lit
   doc( A postponed LIT. )
-  literal literal POSTPONE lit return2
+  ' literal POSTPONE lit return2
 ; immediate-as lit
 
 : '
@@ -413,7 +413,7 @@
 
 : [']
   doc( No need to perform a double lookup since compilation does that. )
-  literal literal return1
+  ' literal return1
 ; immediate-as '
 
 : forward-slash?
@@ -548,7 +548,7 @@
 
 : '"
   doc( Emit a type specifier and capture input into a sequence until " is read. )
-  literal string POSTPONE " return2
+  ' string POSTPONE " return2
 ; immediate-as "
 
 ( Immediates needed to self compile the core words. )
@@ -560,7 +560,7 @@
 ;
 
 : 'char-code
-      literal literal POSTPONE char-code return2
+      ' literal POSTPONE char-code return2
 ; immediate-as char-code
 
 : make-long-msb
@@ -600,7 +600,7 @@
 ;
 
 : 'longify
-    literal literal POSTPONE longify return2
+    ' literal POSTPONE longify return2
 ; immediate-as longify
 
 : longify"
@@ -611,5 +611,5 @@
 ;
 
 : 'longify"
-    literal literal POSTPONE longify" return2
+    ' literal POSTPONE longify" return2
 ; immediate-as longify"

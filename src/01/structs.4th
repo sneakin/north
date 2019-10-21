@@ -28,24 +28,24 @@ field: fields
 ;
 
 : structure-field-type
-    arg0 literal 2 cell+n return1-1
+    arg0 int32 2 cell+n return1-1
 ;
 
 : structure-field-offset
-    arg0 literal 3 cell+n return1-1
+    arg0 int32 3 cell+n return1-1
 ;
 
 : structure-field-doc
-    arg0 literal 4 cell+n return1-1
+    arg0 int32 4 cell+n return1-1
 ;
 
 : make-structure-field
-    literal 5 dallot-cells
+    int32 5 dallot-cells
     arg0 over structure-field-name poke
     arg1 over structure-field-size poke
     arg2 over structure-field-type poke
     arg3 over structure-field-offset poke
-    literal 0 over structure-field-doc poke
+    int32 0 over structure-field-doc poke
     return1
 ;
 
@@ -61,13 +61,13 @@ field: fields
     swap dcons
     arg0 structure-fields poke
     arg2 arg0 structure-byte-size-inc
-    literal 2 dropn return1
+    int32 2 dropn return1
 ;
 
 : make-structure
-    literal 2 dallot-cells
-    literal 0 over structure-byte-size poke
-    literal 0 over structure-fields poke
+    int32 2 dallot-cells
+    int32 0 over structure-byte-size poke
+    int32 0 over structure-fields poke
     return1
 ;
 
@@ -83,7 +83,7 @@ field: fields
 : structure-gen-accessor
     args( field name )
     arg1 structure-field-name peek
-    " -" arg0 literal 3 n-seqs-append
+    " -" arg0 int32 3 n-seqs-append
     ' do-accessor dict-entry-code swapdrop
     arg1 structure-field-offset peek
     dict add-dict-after

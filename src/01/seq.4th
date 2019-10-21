@@ -49,8 +49,8 @@ alias swap-return-address swap
 
 : reduce-seq/4 ( ptr count fn accumulator counter )
   arg0 arg3 >= IF arg1 return1 THEN
-  literal 4 argn arg0 cell* swapdrop int-add peek
-  arg1 arg2 exec set-arg1
+  int32 4 argn arg0 cell* swapdrop int-add peek
+  arg1 arg2 exec-core-word set-arg1
   arg0 int32 1 int-add set-arg0
   RECURSE
 ;
@@ -106,7 +106,7 @@ alias swap-return-address swap
     args( sequence ++ sequence )
     arg0 seqs-total-size swapdrop
     dallot-seq seq-data
-    arg0 ' seqs-append-reducer literal 2 overn reduce-seq
+    arg0 ' seqs-append-reducer int32 2 overn reduce-seq
     local0 return1
 ;
 
@@ -116,7 +116,7 @@ alias swap-return-address swap
 ;
 
 : seq-append
-    arg0 arg1 literal 2 n-seqs-append return1
+    arg0 arg1 int32 2 n-seqs-append return1
 ;
 
 ( Zero filling convenience: )
