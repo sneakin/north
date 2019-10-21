@@ -101,3 +101,6 @@ def dallot_seq
   arg0 over poke
   set_arg0
   return0
+
+def code_segment
+  indirect_offset peek unshift_call_frame fexit

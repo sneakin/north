@@ -237,10 +237,10 @@ defop variable_peeker
   
 ;;; defalias lit,literal
 defalias next_param,off32
-defalias code_segment,indirect_offset
   
   ;; defalias value_peeker,doconstant
   ;; defalias variable_peeker,dovar
+
 defalias equals,eq
 
 defop set_current_frame
