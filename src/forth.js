@@ -630,7 +630,7 @@ Forth.prototype.assemble = function(stage, opts) {
   // Load the sources
 
   function min_stage() {
-    return (stage.indexOf('min') == -1);
+    return (stage.indexOf('min') >= 0);
   }
 
   this.compile_files(opts.sources, min_stage());
