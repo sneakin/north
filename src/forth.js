@@ -653,6 +653,8 @@ Forth.prototype.assemble = function(stage, opts) {
   this.emit_dictionary('builtin-dictionary', this.dictionary);
   this.emit_dictionary('immediate-dictionary', this.immediates, 'immed-');
   this.emit_sources();
+
+  this.emitter.label('binary-size');
   
   return this;
 }

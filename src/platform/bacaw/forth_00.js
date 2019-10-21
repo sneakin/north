@@ -869,6 +869,11 @@ this.defop('data-segment', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+this.defop('code-segment', function(asm) {
+  asm.push(VM.CPU.REGISTERS.CS).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 /*
  * Dictionary ops
  */
@@ -947,26 +952,26 @@ this.defop('value-peeker', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Entry code word that returns the data field value.");
 
 this.defop('variable-peeker', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Entry code word that returns the data field's address.");
 
 this.defop('data-peeker', function(asm) { // an alias to variable-peeker would be nice
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Entry code word that returns the data field, or an address offset from the data segment.");
 
 this.defop('pointer-peeker', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Entry code word that returns the value pointed by the data field.");
 
 this.defop('do-accessor', function(asm) {
   asm.load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2).
@@ -975,7 +980,7 @@ this.defop('do-accessor', function(asm) {
       addi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
+}, "Entry code word that returns the address of a structure's field offset, in the data field, from the ToS.");
 
 /*
  * Input ops

@@ -24,8 +24,27 @@ eip index-size int-sub set-indirect-offset
 int32 ::builtin-data-size stack-allot
 
 ( resolve dictionary code fields and convert fields to pointers )
-int32 0
 off32 ::builtin-dictionary
+off32 patch-dictionary call-op
+
+int32 3 overn
+off32 ::immediate-dictionary
+off32 patch-dictionary call-op
+
+swapdrop rot drop
+
+( start the binary )
+uint32 $504f5453 set-dict
+data-init
+off32 ::boot
+break exec-core-word
+( drop osexit )
+
+( function to patch entries in a dictionary. )
+patch-dictionary:
+begin
+  int32 0
+  arg0
 break
 boot-loop:
 ( done if the entry is terminated )
@@ -53,7 +72,7 @@ dup uint32 $504f5453 eq UNLESS
   ( call-data-seq = -2 )
   dup uint32 $FFFFFFFE eq IF
     drop
-    literal-indexed call-data-seq cell-size int-add peek
+    literal-indexed call-offset-data-seq cell-size int-add peek
     swap poke
     ( offset the call's data )
     dup int32 2 cell-size int-mul int-add
@@ -87,7 +106,7 @@ dup uint32 $504f5453 eq UNLESS
     ( offset the data from the alloted space )
     dup int32 2 cell-size int-mul int-add
     dup peek
-    int32 4 overn int-add
+    arg1 int-add
     ( zero alloted space )
     int32 0 over poke
     swap poke
@@ -97,10 +116,10 @@ dup uint32 $504f5453 eq UNLESS
   boot-loop-code-done:
   ( doc )
   dup int32 3 cell-size int-mul int-add
-  dup peek offset->pointer swap poke
+  dup peek dup IF offset->pointer swap poke ELSE drop2 THEN
   ( args )
   dup int32 4 cell-size int-mul int-add
-  dup peek offset->pointer swap poke
+  dup peek dup IF offset->pointer swap poke ELSE drop2 THEN
   ( link )
   dup int32 5 cell-size int-mul int-add
   dup peek
@@ -117,13 +136,6 @@ dup uint32 $504f5453 eq UNLESS
   ( loop )
   off32 boot-loop jump
 THEN
-
-( start the binary )
-uint32 $504f5453 set-dict
-data-init
-off32 ::write-ok exec-core-word
-off32 ::boot
-break exec-core-word
-( drop osexit )
+break drop return1
 
 end-namespace

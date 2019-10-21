@@ -47,11 +47,11 @@
 : write-dict-entry-kind
   ( functions )
   arg0 dict-entry-code
-  literal call-data dict-entry-code swapdrop
-  equals IF longify FUN write-word return0 THEN
-  ( also have sequences )
-  dict-entry-code 
   literal call-data-seq dict-entry-code swapdrop
+  equals IF longify FUNC write-word return0 THEN
+  ( functions with offset words )
+  dict-entry-code
+  literal call-offset-data-seq dict-entry-code swapdrop
   equals IF longify FUNC write-word return0 THEN
   ( constants )
   dict-entry-code 
@@ -105,17 +105,34 @@
   arg0 dict-entry-code swapdrop
   literal call-data-seq dict-entry-code swapdrop
   over equals UNLESS
-    literal call-data dict-entry-code swapdrop
-    equals UNLESS
-      false return1
-    THEN
+    false return1
   THEN
 
   true return1
 ;
 
+: in-range-unsigned?
+    doc( Inclusively test if VALUE is between MAX and MIN. )
+    args( Max min value ++ result )
+  arg0 dup arg1 uint>= IF
+    arg2 uint<= IF int32 1 return1 THEN
+    int32 0 return1
+  THEN
+  
+  drop int32 0 return1
+;
+
+: pointer?
+    stack-top here arg0 in-range-unsigned? IF true return1 THEN
+    dhere data-segment arg0 in-range-unsigned? IF true return1 THEN
+    code-segment int32 binary-size int-add code-segment arg0 in-range-unsigned? IF true return1 THEN
+    false return1
+;
+
 : dict-entry?
-  arg0 dict-entry-name seq-length cell* swapdrop
+  arg0 null? IF int32 1 return1 THEN
+  pointer? UNLESS int32 0 return1 THEN
+  dict-entry-name seq-length cell* swapdrop
   int-add cell+ peek
   terminator?
   return1

@@ -18,32 +18,17 @@ defop peek_byte
   mov [esp+ptrsize], eax
   ret
   
-;;;
-;;; Dictionary
-;;;
-  
-%define r_dict esi
-  
-defop dict
-  pop eax
-  push r_dict
-  push eax
-  ret
-  
-defop set_dict
-  pop eax
-  pop r_dict
-  push eax
-  ret
-  
 ;;; 
 ;;; Frames
 ;;; 
 
-defalias exit,fexit
 defalias begin,begin_frame
 defalias end,end_frame
 
+defop exit
+  mov eval_ip, [fp+ptrsize]
+  jmp end_frame_asm
+  
 defop arg2
   mov eax, [fp+call_frame_byte_size+ptrsize*2]
   pop ebx
@@ -150,7 +135,14 @@ defop drop2
 ;;;
 ;;; Stack manipulations
 ;;;
-  
+
+defop move
+  pop ebx
+  pop eax
+  add esp, eax
+  push ebx
+  ret
+
 defop drop3
 	pop eax
 	add esp, ptrsize*3
@@ -194,6 +186,15 @@ defop jump                      ; evaluated code
   push eax
   ret
 
+defop call_op                      ; evaluated code
+  pop eax
+  pop ebx
+  push eax
+  push eval_ip
+  push eax
+  mov eval_ip, ebx
+  ret
+
 defop jump_entry_data
   pop eax
   pop eval_ip
@@ -202,12 +203,19 @@ defop jump_entry_data
   push eax
   ret
 
-defop call_data_seq             ; word is in eax
+defop call_offset_data_seq             ; word is in eax
   push eval_ip
   mov eval_ip, [eax+dict_entry_data]
   add eval_ip, [d_offset_indirect_size+dict_entry_data]
   call [d_begin_frame+dict_entry_code]
   jmp [d_next_offset_indirect+dict_entry_code]
+
+defop call_data_seq             ; word is in eax
+  push eval_ip
+  mov eval_ip, [eax+dict_entry_data]
+  add eval_ip, [d_offset_indirect_size+dict_entry_data]
+  call [d_begin_frame+dict_entry_code]
+  jmp [d_next+dict_entry_code]
 
 defop value_peeker
 	pop ebx
@@ -228,8 +236,9 @@ defop variable_peeker
 ;;;
   
 ;;; defalias lit,literal
-defalias next_param,literal
-
+defalias next_param,off32
+defalias code_segment,indirect_offset
+  
   ;; defalias value_peeker,doconstant
   ;; defalias variable_peeker,dovar
 defalias equals,eq
@@ -274,4 +283,41 @@ defop shift_stack
   jmp .loop
   .done:
   push ecx
+  ret
+
+defop reboot
+  ret
+
+defop bye
+  ret
+
+defop do_accessor
+  pop ecx
+  pop ebx
+  mov eax, [eax+dict_entry_data]
+  add eax, ebx
+  push eax
+  push ecx
+  ret
+
+defop do_trace
+  ret
+
+defop do_op_trace
+  ret
+
+defop shift
+  pop eax
+  pop ebx
+  pop ecx
+  pop edx
+  push ecx
+  push ebx
+  push edx
+  push eax
+  ret
+
+defop jump_return
+  pop eax
+  pop eval_ip
   ret

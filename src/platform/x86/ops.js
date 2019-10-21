@@ -24,8 +24,6 @@ for(var line of opcodes_h.split("\n")) {
   }
 }
 
-console.log(this);
-
 this.macros.string = function(token, code)
 {
   this.interp('off32');

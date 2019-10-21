@@ -8,6 +8,16 @@ def dhere
   begin_frame
   _dhere peek return1
 
+def dstat ( ++ bytes-used bytes-free )
+  begin_frame
+  _dhere peek
+  dup _dptr peek int_sub
+  data_size over int_sub
+  return2
+
+def data_segment
+  _dptr peek unshift_call_frame fexit
+
 %ifidni LIBC,1
 import libc malloc/1/1 free/1/0 atexit/1
 
@@ -36,7 +46,7 @@ def data_init
   fexit
 
 %endif
-  
+
 def dmove
   begin_frame
   arg0 _dhere poke

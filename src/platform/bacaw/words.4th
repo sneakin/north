@@ -5,3 +5,9 @@
 : call-frame-size
     cell-size int32 2 int-mul return1
 ;
+
+: unshift-call-frame
+    arg0
+    arg1 set-arg0
+    set-arg1
+;

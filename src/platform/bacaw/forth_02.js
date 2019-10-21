@@ -119,8 +119,3 @@ this.defop('do-trace', function(asm) {
       load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32('on-trace').
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-word-code');
 });
-
-this.defop('jump-return', function(asm) {
-  asm.pop(EVAL_IP_REG).
-      pop(VM.CPU.REGISTERS.IP);
-}, "Pops values into eval IP and the CPU's IP.");

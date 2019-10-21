@@ -64,6 +64,12 @@ defop int_divmod
 	push ebx
 	ret
 
+defop logi
+  mov ebx, [esp+ptrsize]
+  bsr eax, ebx
+  mov [esp+ptrsize], eax
+  ret
+
 ;;;
 ;;; Unsigned
 ;;;
@@ -110,3 +116,30 @@ defop uint_divmod
 	push edx
 	push ebx
 	ret
+
+;;;
+;;; Floats
+;;;
+
+defop float_div
+	pop ebx
+  fld dword [esp]
+	fld dword [esp+ptrsize]
+	fdiv st0, st1
+  fstp dword [esp+ptrsize]
+	mov [esp], ebx
+  ret
+
+;;;
+;;; Conversions
+;;;
+
+defop "u->f",uint_to_float
+  fild dword [esp+ptrsize]
+  fstp dword [esp+ptrsize]
+  ret
+
+defop "f->u",float_to_uint
+  fld dword [esp+ptrsize]
+  fistp dword [esp+ptrsize]
+  ret

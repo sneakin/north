@@ -1,13 +1,13 @@
 string ok "OK"
 string error "ERROR"
-string bye "BYE"
+string s_bye "BYE"
 
 def write_ok
 	literal ok cputs drop
 	fexit
 
 def write_bye
-	literal bye cputs drop
+	literal s_bye cputs drop
 	fexit
 
 def failed

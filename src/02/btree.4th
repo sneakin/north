@@ -19,7 +19,9 @@ field right
 : btree-branch-right arg0 int32 3 cell+n return1-1 ;
 
 : btree-branch?
-    arg0 btree-branch-type @
+    arg0 null? IF false return1 THEN
+    pointer? UNLESS false return1 THEN
+    btree-branch-type @
     ' btree-branch equals
     return1
 ;
@@ -452,8 +454,9 @@ field span
     zero
     dhere
     int32 2 ' <=> ' identity make-btree store-local0
+    local1 cell-size int-add local0 " last thing on the data stack" assert-equal drop3
     local1 int32 13 cell+n rotdrop2
-    dhere " alloted 4+9 cells" assert-equal
+    dhere " alloted 2+11 cells" assert-equal
 
     int32 10 local0 btree-add
     int32 1 local0 btree-tip @ ordered-seq-count @ " increased tip's count" assert-equal

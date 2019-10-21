@@ -339,7 +339,7 @@
   ( check dict's head )
   arg0 dict-entry-name arg1 string-equal IF arg0 return1 THEN
   ( search the list )
-  arg1 arg0 dict-lookup-parent dict-entry-next return1
+  arg1 arg0 dict-lookup-parent dup IF dict-entry-next THEN return1
 ;
 
 ( Basic error quiting )

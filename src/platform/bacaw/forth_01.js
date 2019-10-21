@@ -142,3 +142,8 @@ this.defop('bsrc', function(asm) {
       push(VM.CPU.REGISTERS.ACCUM).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 }, "`bsr` but also pushes the shifted bits.");
+
+this.defop('jump-return', function(asm) {
+  asm.pop(EVAL_IP_REG).
+      pop(VM.CPU.REGISTERS.IP);
+}, "Pops values into eval IP and the CPU's IP.");

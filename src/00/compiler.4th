@@ -178,13 +178,14 @@
     end drop
     literal return0
     ( swap the return address and last word before making a new frame)
-    swap begin
+    unshift-call-frame begin
     ( now exit the compiler )
     args exit-compiler
-    ( update last dict ent, left on stack )
-    over over
-    args swap cell+n rotdrop2 peek
-    set-dict-entry-data drop2
+        ( update last dict ent, left on stack )
+        2dup
+        args swap cell+n rotdrop2 peek
+        set-dict-entry-data
+        drop2
     ( clean the stack )
     int32 1 int-add return0-n
 ; immediate-as ;
