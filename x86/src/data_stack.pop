@@ -44,9 +44,10 @@ def dmove
   
 def dallot
   begin_frame
-  dhere dup
-  arg0 cell_size int_mul int_add dmove
-  local0 return1
+  dhere cell_size int_add
+  dup arg0 int_add dmove
+  local0 set_arg0
+  return0
   
 def dpush
   begin_frame

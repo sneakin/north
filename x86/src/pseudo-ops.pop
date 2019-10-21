@@ -1,5 +1,14 @@
 const terminator $504f5453
 
+variable _dict,0
+
+def dict
+  _dict peek unshift_call_frame fexit
+
+def set_dict
+  shift_call_frame _dict poke
+  fexit
+    
 ;;def cell_add_1
 ;;  shift_call_frame
 ;;  cell_size int_add
