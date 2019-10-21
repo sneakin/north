@@ -336,12 +336,15 @@ Forth.macros = {
   RECURSE: function(token, code) {
     this.interp(`literal ${this.last_dictionary} jump-entry-data`);
   },
+  'code-pointer': function(token, code) {
+    this.interp('pointer');
+  },
   "DOTIMES[": function(token, code) {
     var start_label = this.genlabel('dotimes');
     var finish_label = this.genlabel('dotimes');
     this.stack.push(start_label);
     this.stack.push(finish_label);
-    this.interp(`int32 0 pointer ${finish_label} begin`);
+    this.interp(`int32 0 code-pointer ${finish_label} begin`);
     this.emitter.label(start_label);
     this.interp(`arg0 arg1 < int32 ${this.cell_size} ifthenreljump return-locals`);
   },

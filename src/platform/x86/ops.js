@@ -36,6 +36,11 @@ this.macros.pointer = function(token, code)
   this.interp('off32');
 }
 
+this.macros['code-pointer'] = function(token, code)
+{
+  this.interp("' next-offset-indirect dict-entry-code swapdrop off32");
+}
+
 this.macros.literal = function(token, code)
 {
   this.interp('off32');
