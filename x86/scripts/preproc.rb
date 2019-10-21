@@ -61,7 +61,7 @@ def process_lines(iter)
     elsif line =~ /^var\s+(\w+)\s+(.*)/
       # var name value
       puts "section .data"
-      puts "#{$1} #{cell_prefix} #{$2}"
+      puts "#{$1} #{$word_prefix} #{$2}"
     elsif line =~ /^import\s+(\w+)\s+(.*)/
       # import library functions...
       puts ";; #{$1}"
