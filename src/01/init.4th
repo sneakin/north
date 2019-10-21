@@ -1,7 +1,7 @@
 ( Entry )
 
 :: boot
-  init-00
+  stack-init init-00 test-init-00
   eval-loop
   RECURSE
 ;

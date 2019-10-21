@@ -1,8 +1,19 @@
 ( Entry )
 
 global-var *debug*
+global-var *stack-top*
+
+: stack-init
+    current-frame parent-frame peek *stack-top* poke
+;
+
+: stack-top
+  *stack-top* peek
+    return1
+;
 
 : init-00
+    " init-00" .S .\n
   int32 0 *tokenizer* poke
   int32 0 *tokenizer-stack* poke
   int32 0 *status* poke
@@ -25,6 +36,7 @@ global-var *debug*
 ;
 
 : boot
+    stack-init
     init-00
     test-init-00
     eval-input
