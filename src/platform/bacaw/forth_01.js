@@ -4,6 +4,8 @@ const EVAL_IP_REG = platform.registers.eval_ip;
 const DICT_REG = platform.registers.dict;
 const FP_REG = platform.registers.fp;
 
+this.defalias('call-offset-data-seq', 'call-data-seq');
+
 this.defop('ifthencall', function(asm) {
   asm.
       // condition addr

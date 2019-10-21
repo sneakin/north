@@ -503,7 +503,7 @@ Forth.prototype.add_source = function(path, data, binary)
   }
   var label = 'sources-' + name + '-src';
   this.sources[label] = data;
-  this.dictionary_add('src/' + name, 'value-peeker-code', label);
+  this.dictionary_add('src/' + name, 'data-peeker-code', label);
 }
 
 Forth.prototype.raw_dict_entry = function(label, name, code, data, last_label, doc, args) {
