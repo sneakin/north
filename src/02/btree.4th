@@ -301,7 +301,7 @@ field right
     args( branch fn accumulator ++ result )
     arg2 btree-branch? IF
         arg2 btree-branch-left @ arg1 arg0 btree-branch-reduce
-        arg2 btree-branch-value @ swap arg1 exec
+        arg2 btree-branch-value @ swap arg1 exec-core-word
         arg2 btree-branch-right @ arg1 shift btree-branch-reduce
         return1
     THEN
@@ -315,7 +315,7 @@ field right
     args( branch fn )
     arg1 btree-branch? IF
         dup btree-branch-left @ arg0 btree-branch-map drop2
-        dup btree-branch-value @ arg0 exec drop
+        dup btree-branch-value @ arg0 exec-core-word drop
         dup btree-branch-right @ arg0 btree-branch-map drop2
         drop
         return0
@@ -441,7 +441,7 @@ field span
 : test-btree-add-loop
     arg0 int32 0 > UNLESS return0 THEN
     arg0 int32 1 int-sub set-arg0
-    arg0 arg1 exec arg2 btree-add
+    arg0 arg1 exec-core-word arg2 btree-add
     .\n " btree-map: " .S arg2 ' ,i btree-map drop2
     .\n " btree dump: " .S int32 2 overn .i
     .\n arg2 btree-dump

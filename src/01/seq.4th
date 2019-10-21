@@ -16,7 +16,7 @@ alias swap-return-address swap
   arg1 int32 0 <= IF return0 THEN
   arg1 int32 1 int-sub set-arg1
   arg2 arg1 cell* swapdrop int-add peek
-  arg0 exec
+  arg0 exec-core-word
   RECURSE
 ;
 
@@ -30,7 +30,7 @@ alias swap-return-address swap
 : map-seq/4 ( ptr count fn counter )
   arg0 arg2 >= IF return0 THEN
   arg3 arg0 cell* swapdrop int-add peek
-  arg1 exec
+  arg1 exec-core-word
   arg0 int32 1 int-add set-arg0
   RECURSE
 ;

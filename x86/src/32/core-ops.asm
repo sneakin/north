@@ -183,7 +183,7 @@ defop exec_core_word
   push ebx
   jmp [eax+dict_entry_code]
   
-defop exec                      ; assembly word
+defop exec_op                      ; assembly word
   pop eax
   pop eax
   jmp eax

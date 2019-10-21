@@ -38,14 +38,6 @@ this.defop('exec-word', function(asm) {
   asm.load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE);
 });
 
-this.defop('call-data', function(asm) {
-  // Given an entry in R0, load eval IP with the data value.
-  asm.push(EVAL_IP_REG). // save return
-  load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load data value
-  load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('begin-code').
-      ret();
-});
-
 this.defop('call-data-seq', function(asm) {
   // Given an entry in R0, jump to it's data sequence's first value.
   asm.push(EVAL_IP_REG). // save return

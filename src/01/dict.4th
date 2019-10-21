@@ -21,7 +21,7 @@
 
 : dict-each  ( fn dict -- fn last-dict)
   arg0 terminator? IF return0 THEN
-  arg1 exec 
+  arg1 exec-core-word
   arg0 dict-entry-next set-arg0 drop2
   RECURSE
 ;

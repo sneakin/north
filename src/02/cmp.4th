@@ -2,16 +2,16 @@
     doc( Uses the first argument, a function, to retrieve values from the third and fourth arguments that are then passed to the second argument. )
     args( a b sort-fn key-fn ++ sort-result )
     zero
-    arg3 arg0 exec store-local0
-    arg2 arg0 exec
-    local0 over arg1 exec return1    
+    arg3 arg0 exec-core-word store-local0
+    arg2 arg0 exec-core-word
+    local0 over arg1 exec-core-word return1    
 ;
 
 : key-slot-cmp
     doc( Uses the first argument to get a value from only the third before passing the fourth value as is along with the gotten value to the second function argument. )
     args( key b sort-fn key-fn ++ sort-result )
-    arg2 arg0 exec
-    arg3 over arg1 exec return1    
+    arg2 arg0 exec-core-word
+    arg3 over arg1 exec-core-word return1    
 ;
 
 : <=>

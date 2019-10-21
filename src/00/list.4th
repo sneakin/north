@@ -27,7 +27,7 @@
 : reduce-list
     args( list initial fn )
     arg2 dup IF
-        head swapdrop arg1 arg0 exec set-arg1
+        head swapdrop arg1 arg0 exec-core-word set-arg1
         arg2 tail set-arg2 drop
         RECURSE
     THEN

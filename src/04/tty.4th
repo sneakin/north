@@ -427,7 +427,7 @@ constant TTY-READ-MOUSE 4
 
 : tty-query2
     tty-enter-raw-mode
-    arg0 exec
+    arg0 exec-core-word
     tty-read
     local0 tty-exit-raw-mode drop
     TTY-READ-CSI equals IF
@@ -593,7 +593,7 @@ constant TTY-READ-MOUSE 4
         ( todo key events need it all )
         shift drop
         dup arg1 equals UNLESS shift drop THEN
-        exec
+        exec-core-word
     THEN
     drop-locals RECURSE
 ;
