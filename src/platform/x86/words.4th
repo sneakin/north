@@ -24,3 +24,11 @@ global-var input-dev-mode
 : input-dev-enter-raw-mode
   return0
 ;
+
+: next-code-pointer
+    doc( next-op+ but places a call frame on the stack. )
+    arg0
+    current-frame frame-eval-address @ set-arg0
+    return-address local0 cell+n
+    return1
+;

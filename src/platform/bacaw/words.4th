@@ -11,3 +11,8 @@
     arg1 set-arg0
     set-arg1
 ;
+
+: next-code-pointer
+    doc( next-op+ but places a call frame on the stack. )
+    return-address arg0 cell+n return1-1
+;

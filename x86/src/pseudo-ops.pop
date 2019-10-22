@@ -55,10 +55,16 @@ def parent_frame
   fexit
 
 def frame_return_address
-  shift_call_frame literal 2 cell_add_n unshift_call_frame fexit
+  shift_call_frame int32 1 cell_add_n rotdrop2
+  unshift_call_frame fexit
+
+def frame_eval_address
+  shift_call_frame int32 2 cell_add_n rotdrop2
+  unshift_call_frame fexit
 
 def frame_args
-  shift_call_frame int32 call_frame_size int_add unshift_call_frame fexit
+  shift_call_frame int32 call_frame_size int_add
+  unshift_call_frame fexit
 
 def argn
   shift_call_frame args swap cell_add_n rotdrop2 peek

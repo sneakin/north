@@ -358,7 +358,7 @@
   literal int32 terminator
   ( loop return address )
   literal cell/ literal swapdrop
-  literal next-op+ literal swapdrop
+  literal next-code-pointer
   literal begin ( loop in a frame )
       literal arg0 literal arg1 literal < ( check the counter )
       POSTPONE UNLESS literal return-locals POSTPONE THEN
@@ -371,7 +371,7 @@
     literal arg0 ' literal int32 1 literal int-add literal set-arg0
     ( calculate jump offset )
     literal int32
-    call-frame-size int32 4 cell+n rotdrop2
+    call-frame-size int32 3 cell+n rotdrop2
     here bytes-to-terminator int-sub
     ( loop )
     literal jumprel
