@@ -74,14 +74,16 @@ defop return2
   push eax
   push ecx
 	ret
-  
-defop quit
+
+defop bye
+  .loop:
   mov ebx, [esp+ptrsize]        ; keep the ToS as C expects a return value
-  mov eax, [fp]                 ; pop frames until the parent frame is 0
+  mov ecx, [fp]                 ; pop frames until the parent frame is 0
+  mov eax, [ecx]
   cmp eax, 0
   je .done
-  mov fp, eax
-  jmp quit_asm
+  mov fp, ecx
+  jmp .loop
 .done:
   mov esp, fp                   ; enter the top most frame
   pop fp

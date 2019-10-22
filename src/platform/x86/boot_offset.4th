@@ -21,15 +21,16 @@ namespace: op
 eip index-size int-sub set-indirect-offset
 
 ( allocate space for initial variables )
+begin-frame
 int32 ::builtin-data-size stack-allot
 
 ( resolve dictionary code fields and convert fields to pointers )
 off32 ::builtin-dictionary
-off32 patch-dictionary call-op
+off32 patch-dictionary eval-ptr-index
 
 int32 3 overn
 off32 ::immediate-dictionary
-off32 patch-dictionary call-op
+off32 patch-dictionary eval-ptr-index
 
 swapdrop rot drop
 
@@ -38,7 +39,7 @@ uint32 $504f5453 set-dict
 data-init
 off32 ::boot
 break exec-core-word
-( drop osexit )
+return1
 
 ( function to patch entries in a dictionary. )
 patch-dictionary:

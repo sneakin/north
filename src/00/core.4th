@@ -344,6 +344,23 @@
 
 ( Basic error quiting )
 
+: return-from-frame
+    arg0 set-current-frame
+    current-frame move
+;
+
+: top-frame
+    arg0 peek
+    dup stack-top uint< IF
+      set-arg0 RECURSE
+    THEN
+;
+
+: quit
+    doc( Return to the function started with outer-start-thread, but not the outer-start-thread's caller. )
+    current-frame top-frame return-from-frame
+;
+
 global-var *state* doc( Holds a function pointer that determines how words are interpreted. See `compile`. )
 
 global-var *status* doc( The last error value. )

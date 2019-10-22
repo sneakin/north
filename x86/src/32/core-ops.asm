@@ -186,15 +186,6 @@ defop jump                      ; evaluated code
   push eax
   ret
 
-defop call_op                      ; evaluated code
-  pop eax
-  pop ebx
-  push eax
-  push eval_ip
-  push eax
-  mov eval_ip, ebx
-  ret
-
 defop jump_entry_data
   pop eax
   pop eval_ip
@@ -288,9 +279,6 @@ defop shift_stack
 defop reboot
   ret
 
-defop bye
-  ret
-
 defop do_accessor
   pop ecx
   pop ebx
@@ -300,7 +288,12 @@ defop do_accessor
   push ecx
   ret
 
+variable on_trace,0
+  
 defop do_trace
+  ;; push eax
+  ;; mov eax, d_on_trace
+  ;; call [d_exec_core_word+dict_entry_code]
   ret
 
 defop do_op_trace

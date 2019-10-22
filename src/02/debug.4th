@@ -173,8 +173,7 @@ global-var *tracing* doc( Controls if trace messages are printed. )
 : on-trace-op
     doc( Called by do-op-trace op used by traced assembly op words. )
     args( dict-entry )
-    arg0 " Trace op:" trace-log drop2
-    
+    arg0 " Trace op:" trace-log drop2    
     ( drop the frame )
     end drop
     ( trace-op put the code in the data slot )

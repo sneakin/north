@@ -98,24 +98,6 @@ this.defop('bye', function(asm) {
       ret();
 }, "Exit and return from the interpreter.");
 
-this.defop('quit', function(asm) {
-  asm.
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.INS).uint32(0).
-      // get the top most stack frame
-      label('quit-loop').
-      load(VM.CPU.REGISTERS.R1, 0, FP_REG).uint32(0).
-      cmpi(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.R0).
-      inc(VM.CPU.REGISTERS.IP, VM.CPU.STATUS.ZERO).uint32('quit-done', true).
-      mov(FP_REG, VM.CPU.REGISTERS.R1).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('quit-loop').
-      label('quit-done').
-      // drop and exit frame
-      mov(VM.CPU.REGISTERS.SP, FP_REG).
-      dec(VM.CPU.REGISTERS.SP).uint32(CELL_SIZE). // not the top most frame's return
-      pop(EVAL_IP_REG).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-}, "Return to the function started with outer-start-thread, but not the outer-start-thread's caller.");
-
 // Return to the calling function.
 this.defop('exit', function(asm) {
   asm.load(EVAL_IP_REG, 0, FP_REG).int32(CELL_SIZE).
