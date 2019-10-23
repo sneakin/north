@@ -81,6 +81,10 @@ int32 9 a-def-op a-dec
   int32 0 arg1 arg0 int32 8 make-short return1
 ;
 
+: a-call
+  arg1 arg0 int32 7 int32 7 make-short return1
+;
+
 ( Registers: )
 
 : a-ins int32 15 return1 ;
@@ -126,7 +130,8 @@ int32 9 a-def-op a-dec
 ;
 
 ( ideally: exec-data-seq-asm variable exec-data-seq-1 drop )
-int32 0 variable exec-data-seq-1 drop
+( int32 0 variable exec-data-seq-1 drop )
+global-var exec-data-seq-1
 
 ( Make the newest dictionary entry jump to the first cell in the data sequence. )
 : does-asm
@@ -156,4 +161,4 @@ int32 0 variable exec-data-seq-1 drop
 ;
 
 ( Do NOT forget: )
-a-init
+( a-init )

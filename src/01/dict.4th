@@ -48,11 +48,11 @@
   ( functions )
   arg0 dict-entry-code
   literal call-data-seq dict-entry-code swapdrop
-  equals IF longify FUNC write-word return0 THEN
+  equals IF longify IFUN write-word return0 THEN
   ( functions with offset words )
   dict-entry-code
   literal call-offset-data-seq dict-entry-code swapdrop
-  equals IF longify FUNC write-word return0 THEN
+  equals IF longify OFUN write-word return0 THEN
   ( constants )
   dict-entry-code 
   literal value-peeker dict-entry-code swapdrop
