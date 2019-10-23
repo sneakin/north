@@ -13,7 +13,6 @@ global-var *stack-top*
 ;
 
 : init-00
-    " init-00" .S .\n
   int32 0 *tokenizer* poke
   int32 0 *tokenizer-stack* poke
   int32 0 *status* poke
@@ -27,6 +26,7 @@ global-var *stack-top*
 ;
 
 : test-init-00
+    " init-00" .S .\n
     base peek int32 10 " set base to 10" assert-equal
     *tokenizer* peek int32 0 " set *tokenizer* to 0" assert-equal
     *tokenizer-stack* peek int32 0 " set *tokenizer-stack* to 0" assert-equal
@@ -38,7 +38,6 @@ global-var *stack-top*
 : boot
     stack-init
     init-00
-    test-init-00
     eval-input
     RECURSE
 ;

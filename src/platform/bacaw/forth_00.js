@@ -315,6 +315,14 @@ this.defop('here', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+this.defop('move', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      cls(VM.CPU.STATUS.NUMERICS).
+      addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
+      mov(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 this.defop('swap', function(asm) {
   asm.
       pop(VM.CPU.REGISTERS.R0).
