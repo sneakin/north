@@ -121,6 +121,47 @@ defop uint_divmod
 ;;; Floats
 ;;;
 
+defop float_negate
+  fld dword [esp+ptrsize]
+	fchs
+  fstp dword [esp+ptrsize]
+	mov [esp+ptrsize], ebx
+  ret
+
+defop float_abs
+  fld dword [esp+ptrsize]
+	fabs
+  fstp dword [esp+ptrsize]
+	mov [esp+ptrsize], ebx
+  ret
+
+defop float_add
+	pop ebx
+  fld dword [esp]
+	fld dword [esp+ptrsize]
+	fadd st0, st1
+  fstp dword [esp+ptrsize]
+	mov [esp], ebx
+  ret
+
+defop float_sub
+	pop ebx
+  fld dword [esp]
+	fld dword [esp+ptrsize]
+	fsub st0, st1
+  fstp dword [esp+ptrsize]
+	mov [esp], ebx
+  ret
+
+defop float_mul
+	pop ebx
+  fld dword [esp]
+	fld dword [esp+ptrsize]
+	fmul st0, st1
+  fstp dword [esp+ptrsize]
+	mov [esp], ebx
+  ret
+
 defop float_div
 	pop ebx
   fld dword [esp]
@@ -130,16 +171,29 @@ defop float_div
 	mov [esp], ebx
   ret
 
+defop ylogf
+	pop ebx
+  fld dword [esp+ptrsize]
+	fld dword [esp]
+	fyl2x
+  fstp dword [esp+ptrsize]
+	mov [esp], ebx
+  ret
+
 ;;;
 ;;; Conversions
 ;;;
 
-defop "u->f",uint_to_float
+defop "i->f",uint_to_float
   fild dword [esp+ptrsize]
   fstp dword [esp+ptrsize]
   ret
 
-defop "f->u",float_to_uint
+defop "f->i",float_to_uint
   fld dword [esp+ptrsize]
   fistp dword [esp+ptrsize]
   ret
+
+defalias "u->f", int_to_float, uint_to_float
+defalias "f->u", float_to_int, float_to_uint
+  
