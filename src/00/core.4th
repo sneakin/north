@@ -35,7 +35,7 @@
 
 : cell-n
   arg0 cell*
-  arg1 int-sub
+  arg1 swap int-sub
   return1
 ;
 
@@ -45,7 +45,7 @@
 ;
 
 : cell-2
-  arg0 int32 -2 cell+n
+  arg0 cell-size dup int-add int-sub
   return1
 ;
 
@@ -781,6 +781,10 @@ global-var *tokenizer* doc( The interpreter's tokenizer. )
     arg0 frame-args arg1 cell+n peek return1
 ;
 
+: frame-locals
+    arg0 cell- return1-1
+;
+
 : frame-byte-size
     arg0 dup peek swap int-sub return1-1
 ;
@@ -1030,6 +1034,10 @@ global-var eval-tos
   doc( Add an entry to the dictionary for a new variable that stores its value at `dhere`. The entry stores a pointer. `peek` gets the value and `poke` will set it. )
   args( value : name ++ )
   create arg0 does-var
+;
+
+: global-var
+    create int32 0 does-var
 ;
 
 ( Dictionary initialization )

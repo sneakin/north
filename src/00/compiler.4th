@@ -168,7 +168,7 @@
   literal call-data-seq dict-entry-code swapdrop
   arg0 set-dict-entry-code
   [
-  return2
+  return-locals
 ;
 
 : endcol
@@ -601,7 +601,7 @@
 ;
 
 : 'longify
-    ' literal POSTPONE longify return2
+    ' uint32 POSTPONE longify return2
 ; immediate-as longify
 
 : longify"
@@ -612,5 +612,5 @@
 ;
 
 : 'longify"
-    ' literal POSTPONE longify" return2
+    ' uint32 POSTPONE longify" return2
 ; immediate-as longify"

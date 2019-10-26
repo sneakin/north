@@ -9,12 +9,17 @@ this.defop('eip', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
+this.defop('fexit', function(asm) {
+  asm.pop(EVAL_IP_REG).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 this.defop('call-seq', function(asm) {
-  asm.push(EVAL_IP_REG).
-      load(EVAL_IP_REG, 0, VM.CPU.REGISTERS.SP).uint32(CELL_SIZE).
+  asm.pop(VM.CPU.REGISTERS.R0).
+      push(EVAL_IP_REG).
+      mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0). 
       inc(EVAL_IP_REG).uint32(CELL_SIZE).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('begin-code').
-      ret();
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
 

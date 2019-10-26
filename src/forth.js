@@ -104,7 +104,7 @@ Forth.prototype.lookup = function(word)
 
 Forth.prototype.apply_namespace = function(word)
 {
-  if(word.match(/^::/)) word = word.slice(2);
+  if(word.match(/^::\w+/)) word = word.slice(2);
   else if(this.word_prefix) word = this.word_prefix + ':' + word;
   return word;
 }

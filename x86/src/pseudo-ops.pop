@@ -1,4 +1,6 @@
-const terminator $504f5453
+;;:
+;;; Dictionary variable
+;;;
 
 variable _dict,0
 
@@ -8,27 +10,10 @@ def dict
 def set_dict
   shift_call_frame _dict poke
   fexit
-    
-;;def cell_add_1
-;;  shift_call_frame
-;;  cell_size int_add
-;;  unshift_call_frame
-;;  fexit
 
-def cell_add_1
-  begin_frame
-  arg0 cell_size int_add return1
-
-def cell_sub_1
-  begin_frame
-  arg0 cell_size int_sub return1
-
-def cell_add_n
-  begin_frame
-  arg0 cell_size int_mul
-  arg1
-  int_add
-  return1
+;;;
+;;; Call frame shifting
+;;;
 
 def shift_call_frame
   begin_frame
@@ -49,64 +34,3 @@ def unshift_call_frame
   set_arg0
   set_arg2
   return0
-
-def parent_frame
-  ; first field
-  fexit
-
-def frame_return_address
-  shift_call_frame int32 1 cell_add_n rotdrop2
-  unshift_call_frame fexit
-
-def frame_eval_address
-  shift_call_frame int32 2 cell_add_n rotdrop2
-  unshift_call_frame fexit
-
-def frame_args
-  shift_call_frame int32 call_frame_size int_add
-  unshift_call_frame fexit
-
-def argn
-  shift_call_frame args swap cell_add_n rotdrop2 peek
-  unshift_call_frame
-  fexit
-
-def arg4
-  literal 4 argn unshift_call_frame fexit
-  
-def return_address
-  current_frame frame_return_address peek
-  unshift_call_frame
-  fexit
-
-def local1
-  locals cell_sub_1 swapdrop peek
-  unshift_call_frame fexit
-
-def store_local1
-  shift_call_frame locals cell_sub_1 swapdrop poke
-  fexit
-
-def copydown
-  begin_frame
-  arg0 cell_size uint_gte ifzero return0
-  arg0 arg2 int_add peek
-  arg0 arg1 int_add poke
-  arg0 cell_size int_sub set_arg0
-  end_frame
-  literal copydown jump
-
-include "data_stack.pop"
-
-def dallot_seq
-  begin_frame
-  arg0 cell_size int_mul
-  dup cell_size literal 2 int_mul int_add
-  dup dallot
-  over over int_add literal terminator swap poke
-  arg0 over poke
-  set_arg0
-  return0
-
-def code_segment
-  indirect_offset peek unshift_call_frame fexit

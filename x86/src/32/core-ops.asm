@@ -194,19 +194,31 @@ defop jump_entry_data
   push eax
   ret
 
+defop do_seq             ; word is in eax
+  push eval_ip
+  mov eval_ip, eax
+  add eval_ip, ptrsize
+  jmp [d_next+dict_entry_code]
+
+defop call_indirect_seq
+  pop ebx
+  pop eax
+  push ebx
+  jmp [d_do_seq+dict_entry_code]
+
+defop call_data_seq             ; word is in eax
+  push eval_ip
+  mov eval_ip, [eax+dict_entry_data]
+  add eval_ip, ptrsize
+  call [d_begin_frame+dict_entry_code]
+  jmp [d_next+dict_entry_code]
+
 defop call_offset_data_seq             ; word is in eax
   push eval_ip
   mov eval_ip, [eax+dict_entry_data]
   add eval_ip, [d_offset_indirect_size+dict_entry_data]
   call [d_begin_frame+dict_entry_code]
   jmp [d_next_offset_indirect+dict_entry_code]
-
-defop call_data_seq             ; word is in eax
-  push eval_ip
-  mov eval_ip, [eax+dict_entry_data]
-  add eval_ip, [d_offset_indirect_size+dict_entry_data]
-  call [d_begin_frame+dict_entry_code]
-  jmp [d_next+dict_entry_code]
 
 defop value_peeker
 	pop ebx

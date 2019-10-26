@@ -130,12 +130,18 @@
 ;
 
 : dict-entry?
-  arg0 null? IF int32 1 return1 THEN
-  pointer? UNLESS int32 0 return1 THEN
-  dict-entry-name seq-length cell* swapdrop
-  int-add cell+ peek
-  terminator?
-  return1
+    arg0 pointer? UNLESS int32 0 return1 THEN
+    ( name a valid string? )
+    dict-entry-name pointer? UNLESS int32 0 return1 THEN
+    seq-length cell* swapdrop
+    int-add cell+ peek
+    terminator? return1
+;
+
+: dict-entry-def?
+    arg0 dict-entry-code
+    ' call-data-seq dict-entry-code swapdrop
+    equals return1
 ;
 
 ( Dictionary building helpers: )

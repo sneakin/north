@@ -1,5 +1,11 @@
 ( Better string to unsigned integer due to looping: )
 
+: local2
+    current-frame parent-frame peek
+    frame-locals cell-2 swapdrop peek
+    return1
+;
+
 : base-char-to-int
   ( % is binary )
   arg0 int32 37 equals IF int32 2 return1 THEN

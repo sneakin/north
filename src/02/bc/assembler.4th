@@ -152,7 +152,7 @@ global-var exec-data-seq-1
   dict dict-entry-data end-seq
   args terminator stack-find
   cell+2 ( eat terminator and arg to doasm[ return too )
-  return-to
+  return-from-frame
 ;
 
 ( Initialiize the assembler. )

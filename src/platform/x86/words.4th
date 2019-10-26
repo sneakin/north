@@ -6,6 +6,8 @@
     cell-size int32 3 int-mul return1
 ;
 
+alias call-seq call-indirect-seq
+
 global-var input-dev-mode
 
 : input-dev-init
