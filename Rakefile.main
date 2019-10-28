@@ -158,7 +158,7 @@ PLATFORM_SRC = {
                 '03/input-device.4th')                
   },
   x86: {
-    prolog: src('platform/x86/boot.js', 'platform/x86/ops.js', 'platform/x86/boot_offset.4th', 'platform/x86/precore.4th', 'platform/x86/words.4th'),
+    prolog: src('platform/x86/boot.js', 'platform/x86/ops.js', 'platform/x86/boot.4th', 'platform/x86/precore.4th', 'platform/x86/words.4th'),
   }
 }
 
