@@ -1,20 +1,20 @@
 " Building stage2..." write-line
 
 mark
-*mark* variable *init-mark*
+*mark* variable *stage2-mark*
 
-01-atoi-src load
-01-tty-src load
-( 01-dict-src load )
-01-seq-src load
-01-ui-src load
+src/01/atoi.4th load
+src/01/tty.4th load
+( src/01/dict.4th load )
+src/01/seq.4th load
+src/01/ui.4th load
 
-assembler-src load
-ops-src load
+src/02/assembler.4th load
+src/02/ops.4th load
 
 ( todo... )
 " Now to save the dictionary..." write-line
-*init-mark* save-to-mark
-hex write-unsigned-int dec
+( *init-mark* save-to-mark )
+( hex write-unsigned-int dec )
 
 write-ok

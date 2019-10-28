@@ -119,6 +119,15 @@
     return1
 ;
 
+: internrev-current-seq
+    ( arg0 terminator stack-find yellow ,h drop3 )
+    *current-seq* peek
+    ( green ,h dup peek .h color-reset )
+    arg0
+    2dup int-sub cell/ swapdrop internrev
+    return1
+;
+
 ( Compiler )
 
 : compile
@@ -131,43 +140,76 @@
 
 ( Colon definitions )
 
-: [
+global-var *current-seq*
+
+: [/1
     doc( Enter the compiling state where words, unless immediates, are looked up and pushed to the stack. )
-  *state* peek
-  literal compile *state* poke
-  terminator return2
+    ( save state )
+    *current-seq* peek
+    *state* peek
+    ( end of the new sequence )
+    terminator
+    ( update state )
+    arg0 int32 3 cell-n rotdrop2
+    ( fixme this and again need to be portable. frame in the way? )
+    ( magenta ,h dup peek .h white )
+    *current-seq* poke
+    literal compile *state* poke
+    ( let's compile )
+    return-locals
+;
+
+: [
+    args [/1 int32 3 returnN
+;
+
+: '[/1
+    arg0 cell- swapdrop [/1
+    ' pointer store-local0
+    return-locals
 ;
 
 : '[
-    ' literal
-    [
-    int32 3 returnN
+    doc( Enter the compiling state in the compiling state, quoting the sequence's address. )
+    args '[/1 int32 4 returnN
 ; immediate-as [
 
 : exit-compiler
     doc( Exits the compiling state and stores all the words in reverse order on the data stack in a proper sequence leaving a pointer on the stack. )
   args( stack-ptr ++ sequence cells-to-drop )
-    arg0 internrev-to-terminator
-    seq-length
-    int32 1 int-add
-    arg0 over cell+n rotdrop2 peek *state* poke
-    int32 1 int-add
-    return2
+  arg0 internrev-current-seq
+  ( restore global vars )
+  seq-length int32 1 int-add
+  arg0 over cell+n rotdrop2
+  dup peek *state* poke
+  cell+ swapdrop peek *current-seq* poke
+  ( clear the storage space too )
+  int32 2 int-add
+  return2
 ;
 
 : ]
-    doc( Exits the compiling state and stores all the words in reverse order on the data stack in a proper sequence leaving a pointer on the stack. )
+    doc( Exits the compiling state and stores local words in reverse order on the data stack in a proper sequence leaving a pointer on the stack . )
     args( ... -- sequence )
     args exit-compiler
     return1-n
-; immediate
+; immediate-as ]
+
+: ']
+    doc( Exits the compiler using the caller's arguments. Returns the sequenge and how many items from the stack that need dropping. )
+    args( stack-pointer ++ seq num-cells-to-drop )
+    current-frame parent-frame peek frame-args
+    exit-compiler
+    return2
+;
 
 : docol>
   doc( Sets the last word's code to evaluate a definition and enters compiling mode until endcol or ; is executed. )
   args( ++ open-sequence... )
   literal call-data-seq dict-entry-code swapdrop
   arg0 set-dict-entry-code
-  [
+  current-frame parent-frame peek frame-args
+  int32 4 cell-n rotdrop2 [/1
   return-locals
 ;
 
@@ -181,13 +223,13 @@
     unshift-call-frame begin
     ( now exit the compiler )
     args exit-compiler
-        ( update last dict ent, left on stack )
-        2dup
-        args swap cell+n rotdrop2 peek
-        set-dict-entry-data
-        drop2
+    ( update last dict ent, left on stack )
+    2dup
+    args swap int32 1 int-add cell+n rotdrop2 peek
+    set-dict-entry-data
+    drop2
     ( clean the stack )
-    int32 1 int-add return0-n
+    int32 4 int-add return0-n
 ; immediate-as ;
 
 : :
@@ -204,23 +246,17 @@
   docol> return-locals
 ;
 
-: test-double-colon-1
-    int32 200 return1
-;
-
-: test-double-colon
-    test-double-colon-1 int32 200 " starts right" assert-equal
-    " :: test-double-colon-1 int32 100 return1 ;" load
-    test-double-colon-1 int32 100 " redefined a definition." assert-equal
-;
-
-
 ( Terminator on stack search and replace: )
+
+: bytes-to-value
+    args( start-offset value -- distance )
+    arg1 arg0 stack-find
+    arg1 int-sub int32 2 return1-n
+;
 
 : bytes-to-terminator
     args( start-offset -- distance )
-    arg0 terminator stack-find
-    arg0 int-sub return1-1
+    arg0 terminator bytes-to-value return1-1
 ;
 
 : patch-terminator/2
@@ -285,69 +321,67 @@
 
 ( Loops: )
 
-: next-op
-  doc( Get the address of the operation after the callsite. )
-  return-address cell+ return1
-;
-
-: next-op+
-  doc( Get the address N cells from the callsite. )
-  return-address arg0 cell+n return1
-;
-
 : DO
-  doc( Starts a new frame with the start and hopefully end of loop pointers as arguments. )
-( Loop pointer )
-  ' literal int32 6 literal next-op+ literal swapdrop
-  ( Abort pointer and return address when looping. )
-  literal dup ' literal terminator literal int-add
-  literal begin
-  return-locals
-; immediate-only
-
-: AGAIN
-  doc( Start a new loop iteration. )
-  literal arg0
-  literal jump
-  return-locals
-; immediate-only
-
-: LEAVE
-  doc( Exit a loop. )
-  literal exit
-  return-locals
-; immediate-only
-
-( int32 2 lit frame-size constant drop2 )
-( int32 8 lit frame-byte-size constant drop2 )
-
-: UNTIL
-  doc( jump back to do )
-    ( Use this w/o IF: literal arg0 literal ifthenjump )
-    POSTPONE UNLESS
-      POSTPONE AGAIN
-      POSTPONE THEN
-    literal end
-    ( Patch the loop's abort increment. )
-    here int32 16 int-add patch-terminator drop
-  return-locals
+    doc( Calls the sequence defined by word until `done`. )
+    args '[/1
+    literal begin
+    locals-size int32 1 int-sub returnN
 ; immediate-only
 
 : DONE
-    literal end
-    ( Patch the loop's abort increment. )
-    here int32 16 int-add patch-terminator drop
+    doc( Closes a sequence started by `do` and returns the words to call it. )
+    ( add an exit to the sequence )
+  end drop
+  literal exit unshift-call-frame begin
+    ( close it )
+    '] dropn-args
+    ( call it )
+    literal call-seq
+    return-locals
+; immediate-only
+
+: AGAIN/1
+    doc( Jump back to the *current-seq*'s beginning. )
+    doc( Expected address on the stack of the current-seq's last cell. )
+    literal int32
+    ( calc jump offset )
+    *current-seq* peek
+    arg0 cell-2 swapdrop
+    int-sub
+    negate swapdrop
+    literal jumprel
+    ( clean stack )
+    int32 1 dropn-args
+    int32 3 returnN
+;
+
+: AGAIN
+    doc( Jump back to the *current-seq*'s beginning. )
+    args AGAIN/1 int32 3 returnN
+; immediate-as AGAIN
+
+: LEAVE
+    doc( Helper for do...done loops that exits the sequence. )
+    literal exit
+    return1
+; immediate-only
+
+: UNTIL
+  doc( Close a DO and do another iteration only if the ToS is zero. )
+    ( Use this w/o IF: literal arg0 literal ifthenjump )
+    POSTPONE UNLESS
+    locals-byte-size args swap int-sub AGAIN/1
+    POSTPONE THEN
     return-locals
 ; immediate-only
 
 : WHILE
-  doc( jump back to do )
+  doc( Close a DO and do another iteration only if the ToS is not zero. )
     ( Use this w/o IF: literal arg0 literal ifthenjump )
     POSTPONE IF
-      POSTPONE AGAIN
+    locals-byte-size args swap int-sub AGAIN/1
     POSTPONE THEN
-    DONE
-  return-locals
+    return-locals
 ; immediate-only
 
 : DOTIMES[
@@ -360,8 +394,8 @@
   literal cell/ literal swapdrop
   literal next-code-pointer
   literal begin ( loop in a frame )
-      literal arg0 literal arg1 literal < ( check the counter )
-      POSTPONE UNLESS literal return-locals POSTPONE THEN
+  literal arg0 literal arg1 literal < ( check the counter )
+  POSTPONE UNLESS literal return-locals POSTPONE THEN
   return-locals
 ; immediate-only
 
@@ -384,6 +418,13 @@
 
 ( Quoting: )
 
+: POSTPONE'
+    doc( Pastpone the following word and return it with literal before it. )
+    literal POSTPONE literal
+    POSTPONE POSTPONE
+    return-locals
+; immediate
+
 : lit
   doc( Read and intern the next token. )
   next-token dup UNLESS eos return0 THEN
@@ -392,7 +433,7 @@
 
 : 'lit
   doc( A postponed LIT. )
-  ' literal POSTPONE lit return2
+  POSTPONE' lit return2
 ; immediate-as lit
 
 : '
@@ -409,7 +450,7 @@
 
 : ''
   doc( Actually emit ' to be called later. )
-  literal POSTPONE ' return-locals ( a piece of magic )
+  POSTPONE' ' return-locals ( a piece of magic )
 ; immediate-only
 
 : [']
@@ -561,7 +602,7 @@
 ;
 
 : 'char-code
-      ' literal POSTPONE char-code return2
+      POSTPONE' char-code return2
 ; immediate-as char-code
 
 : make-long-msb

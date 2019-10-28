@@ -111,33 +111,6 @@
   true return1
 ;
 
-: in-range-unsigned?
-    doc( Inclusively test if VALUE is between MAX and MIN. )
-    args( Max min value ++ result )
-  arg0 dup arg1 uint>= IF
-    arg2 uint<= IF int32 1 return1 THEN
-    int32 0 return1
-  THEN
-  
-  drop int32 0 return1
-;
-
-: pointer?
-    stack-top here arg0 in-range-unsigned? IF true return1 THEN
-    dhere data-segment arg0 in-range-unsigned? IF true return1 THEN
-    code-segment int32 binary-size int-add code-segment arg0 in-range-unsigned? IF true return1 THEN
-    false return1
-;
-
-: dict-entry?
-    arg0 pointer? UNLESS int32 0 return1 THEN
-    ( name a valid string? )
-    dict-entry-name pointer? UNLESS int32 0 return1 THEN
-    seq-length cell* swapdrop
-    int-add cell+ peek
-    terminator? return1
-;
-
 : dict-entry-def?
     arg0 dict-entry-code
     ' call-data-seq dict-entry-code swapdrop

@@ -201,3 +201,12 @@
   local2 return1
 ;
 
+: next-op
+  doc( Get the address of the operation after the callsite. )
+  return-address cell+ return1
+;
+
+: next-op+
+  doc( Get the address N cells from the callsite. )
+  return-address arg0 cell+n return1
+;

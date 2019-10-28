@@ -362,6 +362,12 @@ Forth.macros = {
     this.emitter.uint32(this.lookup(tok[0]));
     return tok[1];
   },
+  "POSTPONE'": function(token, code) {
+    var tok = this.next_token(code);
+    this.interp('literal');
+    this.emitter.uint32(this.lookup(tok[0]));
+    return tok[1];
+  },
   '"': function(token, code) {
     var m = code.indexOf('"');
     if(m >= 0) {
@@ -493,17 +499,12 @@ Forth.prototype.constant = function(name, value)
 
 Forth.prototype.add_source = function(path, data, binary)
 {
-  var name = path.match(/(\w+[\\\/]\w+)\.\w+$/);
-  if(name) name = name[1];
-  else name = path;
-  
-  name = name.replace(/[\\\/]/g, '/');
   if(!binary) {
     data = this.cellpad(data);
   }
-  var label = 'sources-' + name + '-src';
+  var label = 'sources-' + path + '-src';
   this.sources[label] = data;
-  this.dictionary_add('src/' + name, 'data-peeker-code', label);
+  this.dictionary_add(path, 'data-peeker-code', label);
 }
 
 Forth.prototype.raw_dict_entry = function(label, name, code, data, last_label, doc, args) {
@@ -654,7 +655,7 @@ Forth.prototype.assemble = function(stage, opts) {
   this.emit_dictionary('immediate-dictionary', this.immediates, 'immed-');
   this.emit_sources();
 
-  this.emitter.label('binary-size');
+  this.emitter.label('*binary-size*');
   
   return this;
 }

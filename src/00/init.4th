@@ -19,6 +19,7 @@ global-var *stack-top*
   int32 0 *debug* poke
   int32 0 *state* poke
   int32 10 base poke
+  int32 *binary-size* binary-size poke
   dict terminator? swapdrop IF
     dict-init
     about

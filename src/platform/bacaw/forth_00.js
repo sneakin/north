@@ -47,6 +47,21 @@ this.defop('call-data-seq', function(asm) {
       ret();
 });
 
+this.defalias('call-offset-data-seq', 'call-data-seq');
+
+this.defop('fexit', function(asm) {
+  asm.pop(EVAL_IP_REG).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
+this.defop('call-seq', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      push(EVAL_IP_REG).
+      mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0). 
+      inc(EVAL_IP_REG).uint32(CELL_SIZE).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
+});
+
 this.defop('jump-entry-data', function(asm) {
   // Load the eval IP with the entry at the ToS's data value.
   asm.pop(VM.CPU.REGISTERS.R0). // entry
@@ -353,6 +368,18 @@ this.defop('over', function(asm) {
       push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
       ret();
+});
+
+this.defop('overn', function(asm) {
+  asm.pop(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
+      cls(VM.CPU.STATUS.NUMERICS).
+      muli(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
+      cls(VM.CPU.STATUS.NUMERICS).
+      addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
+      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
+      push(VM.CPU.REGISTERS.R0).
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
 this.defop('dup', function(asm) {

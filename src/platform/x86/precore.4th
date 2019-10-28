@@ -12,8 +12,9 @@
 ;
 
 : arg4
+    int32 4
     current-frame parent-frame peek
-    int32 4 frame-argn return1
+    frame-argn return1
 ;
 
 : frame-locals

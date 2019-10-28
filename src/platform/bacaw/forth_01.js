@@ -4,8 +4,6 @@ const EVAL_IP_REG = platform.registers.eval_ip;
 const DICT_REG = platform.registers.dict;
 const FP_REG = platform.registers.fp;
 
-this.defalias('call-offset-data-seq', 'call-data-seq');
-
 this.defop('ifthencall', function(asm) {
   asm.
       // condition addr
@@ -92,18 +90,6 @@ this.defop('dropn', function(asm) {
       cls(VM.CPU.STATUS.NUMERICS).
       addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
       mov(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
-this.defop('overn', function(asm) {
-  asm.pop(VM.CPU.REGISTERS.R0).
-      load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.INS).uint32(CELL_SIZE).
-      cls(VM.CPU.STATUS.NUMERICS).
-      muli(VM.CPU.REGISTERS.R1, VM.CPU.REGISTERS.STATUS).
-      cls(VM.CPU.STATUS.NUMERICS).
-      addi(VM.CPU.REGISTERS.SP, VM.CPU.REGISTERS.STATUS).
-      load(VM.CPU.REGISTERS.R0, 0, VM.CPU.REGISTERS.R0).uint32(0).
-      push(VM.CPU.REGISTERS.R0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 

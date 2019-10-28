@@ -142,6 +142,10 @@ def src(*names)
   names.collect { |s| $root.join('src', s) }
 end
 
+def tests(*names)
+  names.collect { |s| $root.join('tests', s) }
+end
+
 META_SRC = src 'forth.js', 'version.txt'             
 PLATFORM_SRC = {
   bacaw: {
@@ -172,9 +176,12 @@ STAGE0_SRC = src('00/core.4th',
                  '00/assert.4th',
                  '00/init.4th',
                  '00/ui.4th')
+STAGE0_TEXTS = src('01/atoi.4th', 'build-stage0.4th', 'build-stage2.4th')
+STOGE0_TESTS = tests('00/test-do.4th')
 
 stage(:stage0,
       sources: with_platform(:bacaw, STAGE0_SRC),
+      texts: STAGE0_TEXTS,
       minimal: true)
 
 STAGE1_SRC = STAGE0_SRC +
@@ -218,15 +225,18 @@ STAGE1_SRC = STAGE0_SRC +
       '04/frames.4th',
       '04/unicode.4th')
 
+STAGE1_TEXTS = STAGE0_TEXTS
+
 stage(:stage1,
       sources: with_platform(:bacaw, STAGE1_SRC, :stage1),
-      texts: src('01/atoi.4th'),
+      texts: STAGE1_TEXTS,
       minimal: true)
 
 namespace :i32 do
   stage('stage0',
         machine: 'i32',
         sources: with_platform(:x86, STAGE0_SRC),
+        texts: STAGE0_TEXTS,
         minimal: true,
         platform: :x86,
         data_segment: 0)
@@ -234,6 +244,7 @@ namespace :i32 do
   stage('stage1',
         machine: 'i32',
         sources: with_platform(:x86, STAGE1_SRC),
+        texts: STAGE1_TEXTS,
         minimal: true,
         platform: :x86,
         data_segment: 0)
@@ -243,6 +254,7 @@ namespace 'i64' do
   stage('stage0',
         machine: 'i64',
         sources: with_platform(:x86, STAGE0_SRC),
+        texts: STAGE0_TEXTS,
         minimal: true,
         platform: :x86,
         data_segment: 0)
@@ -250,6 +262,7 @@ namespace 'i64' do
   stage('stage1',
         machine: 'i64',
         sources: with_platform(:x86, STAGE1_SRC),
+        texts: STAGE1_TEXTS,
         minimal: true,
         platform: :x86,
         data_segment: 0)
@@ -264,6 +277,7 @@ STAGE2_SRC = STAGE1_SRC +
 
 stage(:stage2,
       sources: with_platform(:bacaw, STAGE2_SRC, :stage1),
+      texts: STAGE1_TEXTS,
       minimal: true)
 
 STAGE3_SRC = src('build-stage3.4th',
@@ -272,6 +286,7 @@ STAGE3_SRC = src('build-stage3.4th',
 
 stage(:stage3,
       sources: with_platform(:bacaw, STAGE3_SRC, :stage1),
+      texts: STAGE1_TEXTS,
       minimal: true)
 
 STAGE4_SRC = STAGE1_SRC +
@@ -283,7 +298,7 @@ STAGE4_SRC = STAGE1_SRC +
 
 stage(:stage4,
       sources: with_platform(:bacaw, STAGE4_SRC, :stage1),
-      texts: src('04/tiler.4th'),
+      texts: STAGE1_TEXTS,
       minimal: true)
 
 #

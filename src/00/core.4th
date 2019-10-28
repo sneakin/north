@@ -481,7 +481,7 @@ global-var *status* doc( The last error value. )
 
 ( Tokenizing with state )
 
-: token-max-cell-size int32 128 return1 ;
+: token-max-cell-size int32 256 return1 ;
 : token-max-byte-size token-max-cell-size cell* return1 ;
 
 : tokenizer-str-offset
@@ -803,6 +803,37 @@ global-var *tokenizer* doc( The interpreter's tokenizer. )
     arg0 cell+ return1-1
 ;
 
+: locals-byte-size
+    current-frame parent-frame peek
+    args int-sub return1
+;
+
+: locals-size
+    current-frame parent-frame peek
+    args int-sub cell/ return1
+;
+
+: dropn-args
+    doc( Drop N arguments from the calling frame keeping any locals. )
+    ( calc size of locals + call frame )
+    current-frame parent-frame peek
+    ( copy from here to nth arg - the size )
+    ( src )
+    here
+    ( dest )
+    dup arg0 cell+n rotdrop2
+    ( number bytes )
+    local0
+    call-frame-size int-add
+    int32 2 overn int-sub
+    ( update pointers first )
+    local0 arg0 cell+n rotdrop2 current-frame parent-frame poke
+    current-frame arg0 cell+n rotdrop2 set-current-frame
+    ( now )
+    copydown
+    return-1
+;
+
 ( Some signed math: )
 
 : negative?
@@ -865,33 +896,34 @@ global-var base doc( The input and output number conversion base. )
   arg0 negative-sign equals return1
 ;
 
-( Does not handle base prefixes. )
+: unsigned-number-loop
+  doc( Does not handle base prefixes or decimals. )
+  args( value num-chars ptr ++ value valid? )
+  arg0 dup peek
+  negative-sign? UNLESS
+    whitespace? UNLESS
+      terminator? IF arg2 int32 1 return2 THEN
+      digit? UNLESS int32 0 int32 0 return2 THEN
+      digit-char swapdrop
+      arg2 base peek int-mul
+      int-add set-arg2
+    ELSE
+      drop
+    THEN
+  ELSE
+    drop
+  THEN
+  cell+ swapdrop set-arg0
+  arg1 int32 1 int-sub set-arg1
+  RECURSE
+;
+
 : unsigned-number
-  doc( Convert a sequence into anmunsigned number in `base`. )
+  doc( Convert a sequence into an unsigned number in base `base`. )
   int32 0
   arg0 seq-length swap
   cell+ swapdrop
-  unsigned-number-loop:
-  dup peek
-  negative-sign? UNLESS
-    whitespace? UNLESS
-      terminator? IF local0 int32 1 return2 THEN
-      digit? UNLESS int32 0 int32 0 return2 THEN
-      digit-char swapdrop
-      local0 base peek int-mul
-      int-add store-local0
-      unsigned-number-inc:
-
-      cell+ swapdrop
-      swap int32 1 int-sub swap
-      literal unsigned-number-loop jump
-    THEN
-  THEN
-  drop literal unsigned-number-inc jump
-
-  cell+ swapdrop
-  swap int32 1 int-sub swap
-  literal unsigned-number-loop jump
+  unsigned-number-loop return2
 ;
 
 : number
@@ -926,6 +958,12 @@ global-var eval-tos
 : next-word
     next-token UNLESS eos error THEN
     seq-length intern-seq return1
+;
+
+: next-lookup
+    next-token UNLESS eos error THEN
+    interp drop dup UNLESS " lookup-error" error THEN
+    return1
 ;
 
 : eval-read-line
@@ -1038,6 +1076,56 @@ global-var eval-tos
 
 : global-var
     create int32 0 does-var
+;
+
+( Entry type testing: )
+
+: in-range-unsigned?
+    doc( Inclusively test if VALUE is between MAX and MIN. )
+    args( Max min value ++ result )
+  arg0 dup arg1 uint>= IF
+    arg2 uint<= IF int32 1 return1 THEN
+    int32 0 return1
+  THEN
+  
+  drop int32 0 return1
+;
+
+global-var binary-size
+
+: pointer?
+    stack-top here arg0 in-range-unsigned? IF true return1 THEN
+    dhere data-segment arg0 in-range-unsigned? IF true return1 THEN
+    code-segment binary-size @ int-add code-segment arg0 in-range-unsigned? IF true return1 THEN
+    false return1
+;
+
+: dict-entry?
+    arg0 pointer? UNLESS int32 0 return1 THEN
+    ( name a valid string? )
+    dict-entry-name pointer? UNLESS int32 0 return1 THEN
+    seq-length cell* swapdrop
+    int-add cell+ peek
+    terminator? return1
+;
+
+( Word aliases: )
+
+: copy-dict-entry
+    args( dest src )
+    arg0 dict-entry-code arg1 set-dict-entry-code
+    arg0 dict-entry-data arg1 set-dict-entry-data
+    arg0 dict-entry-doc arg1 set-dict-entry-doc
+    arg0 dict-entry-args arg1 set-dict-entry-args
+;
+
+: alias
+    args( : new-word src-word )
+    create next-lookup dict-entry? IF
+      copy-dict-entry
+    ELSE
+      " not a dictionary entry" " alias-error" error
+    THEN
 ;
 
 ( Dictionary initialization )

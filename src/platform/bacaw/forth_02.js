@@ -9,20 +9,6 @@ this.defop('eip', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
 });
 
-this.defop('fexit', function(asm) {
-  asm.pop(EVAL_IP_REG).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
-this.defop('call-seq', function(asm) {
-  asm.pop(VM.CPU.REGISTERS.R0).
-      push(EVAL_IP_REG).
-      mov(EVAL_IP_REG, VM.CPU.REGISTERS.R0). 
-      inc(EVAL_IP_REG).uint32(CELL_SIZE).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');
-});
-
-
 this.defop('exec-data-seq', function(asm) {
   // Given an entry in R0, load IP with the address after the data value's length.
   asm.load(VM.CPU.REGISTERS.R1, 0, VM.CPU.REGISTERS.R0).uint32(CELL_SIZE*2). // load entry data

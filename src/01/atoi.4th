@@ -25,14 +25,14 @@
 ;
 
 ( Converts a string pointer with length to an unsigned integer with the supplied base. )
-: unsigned-number-base ( ptr-str length base )
+: stage-01:unsigned-number-base ( ptr-str length base )
   ( locals: base accumulator digit-counter ptr )
   arg0
   zero
   arg1
   arg2
   DO
-    arg1 peek ( digit )
+    arg0 peek ( digit )
     number-base-char? swap
     negative-sign? swap
     rot or
@@ -40,30 +40,32 @@
     UNLESS
       whitespace? UNLESS
         terminator? IF LEAVE THEN
-        digit? UNLESS int32 4 argn int32 10 > UNLESS LEAVE THEN THEN
+        digit? UNLESS arg3 int32 10 > UNLESS LEAVE THEN THEN
         digit-char
-        arg3 int32 4 argn int-mul
-        int-add set-arg3
+        arg2 arg3 int-mul
+        int-add set-arg2
       THEN
     THEN
 
     drop
-    arg1 cell+ set-arg1 drop
-    arg2 int32 1 int-sub dup set-arg2
-  WHILE
+    arg0 cell+ set-arg0 drop
+    arg1 int32 1 int-sub dup set-arg1
+    ( WHILE )
+    IF AGAIN THEN
+  DONE
 
   local1 local2 not return2
 ;
 
 ( Converts a string to an unsigned integer with the supplied base. )
-:: unsigned-number ( str )
+: stage-01:unsigned-number ( str )
   arg0 cell+ dup peek ( str ptr+1 value )
   number-base-char? IF ( str ptr+1 value )
     base-char-to-int swapdrop ( str ptr+1 base )
     rot seq-length swapdrop ( base ptr+1 len )
     int32 1 int-sub ( base ptr+1 len )
     swap cell+ swapdrop rot ( ptr+2 len base )
-    unsigned-number-base
+    stage-01:unsigned-number-base
     return2
   THEN
   drop swap ( ptr+1 str )
@@ -75,6 +77,10 @@
      swap
   THEN ( ptr+2 length-1 )
   base peek ( ptr+1 length base )
-  unsigned-number-base
+  stage-01:unsigned-number-base
   return2
 ;
+
+( `::` changes the code field before the definition is compiled breaking number parsing, so the entry is patched post definition. )
+
+' unsigned-number ' stage-01:unsigned-number copy-dict-entry drop2
