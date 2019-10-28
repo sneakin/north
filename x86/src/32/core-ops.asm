@@ -239,7 +239,16 @@ defop variable_peeker
 ;;;
   
 ;;; defalias lit,literal
-defalias next_param,off32
+defop next_param
+  mov ebx, [fp+ptrsize]
+  mov eax, [ebx]
+  call [d_indexed_offset_a+dict_entry_code]
+  pop ecx
+  push eax
+  push ecx
+  add ebx, [d_offset_indirect_size+dict_entry_data]
+  mov [fp+ptrsize], ebx
+  ret
   
   ;; defalias value_peeker,doconstant
   ;; defalias variable_peeker,dovar
