@@ -364,7 +364,7 @@ Forth.macros = {
   },
   "POSTPONE'": function(token, code) {
     var tok = this.next_token(code);
-    this.interp('literal');
+    this.interp('literal literal');
     this.emitter.uint32(this.lookup(tok[0]));
     return tok[1];
   },

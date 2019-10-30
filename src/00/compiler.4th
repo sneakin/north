@@ -421,6 +421,7 @@ global-var *current-seq*
 : POSTPONE'
     doc( Pastpone the following word and return it with literal before it. )
     literal POSTPONE literal
+    literal POSTPONE literal
     POSTPONE POSTPONE
     return-locals
 ; immediate
