@@ -98,7 +98,7 @@ Forth.prototype.lookup = function(word)
   var e = this.dictionary[word];
   if(e) return e.op;
   //e = asm && asm.resolve(word);
-  if(e === undefined) console.warn("Undefined word: " + word);
+  //if(e === undefined) console.warn("Undefined word: " + word);
   return word;
 }
 

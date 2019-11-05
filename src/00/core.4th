@@ -481,7 +481,8 @@ global-var *status* doc( The last error value. )
 
 ( Tokenizing with state )
 
-: token-max-cell-size int32 256 return1 ;
+constant token-max-cell-size 512
+
 : token-max-byte-size token-max-cell-size cell* return1 ;
 
 : tokenizer-str-offset
