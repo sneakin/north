@@ -113,6 +113,7 @@ dup uint32 $504f5453 eq UNLESS
     swap poke
     off32 boot-loop-code-done jump
   THEN
+  drop2
   ( else leave alone )
   boot-loop-code-done:
   ( doc )

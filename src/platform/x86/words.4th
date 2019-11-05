@@ -23,10 +23,6 @@ global-var input-dev-mode
   return1
 ;
 
-: input-dev-enter-raw-mode
-  return0
-;
-
 : next-code-pointer
     doc( next-op+ but places a call frame on the stack. )
     arg0

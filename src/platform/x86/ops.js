@@ -1,4 +1,13 @@
+/* Processes the x86 runner's op code list into dictionary entries
+ * prefixed with "op:". The code and data fields are set to values
+ * `boot.4th` uses to patch the words before running `init'.
+ */
+
+const namespace = 'op';
+
 const fs = require('fs');
+
+// Pick which op code list to use:
 var NORTH_X86_HEADER;
 switch(platform.bits) {
 case 32: NORTH_X86_HEADER = 'x86/build/posix-32/include/north/posix-32/opcodes.h';
@@ -8,7 +17,6 @@ case 64: NORTH_X86_HEADER = 'x86/build/posix-64/include/north/posix-64/opcodes.h
 default: throw "Unsupported bit size: " + platform.bits;
 }
 const opcodes_h = fs.readFileSync(NORTH_X86_HEADER, 'utf-8');
-const namespace = 'op';
 const builtins = {};
 
 for(var line of opcodes_h.split("\n")) {

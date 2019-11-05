@@ -155,10 +155,11 @@ PLATFORM_SRC = {
                 'platform/bacaw/forth_02.js',
                 'platform/bacaw/forth_interrupts.js',
                 '03/interrupts.4th',
-                '03/input-device.4th')                
+                '03/input-device.4th',
+                'platform/bacaw/tty.4th')                
   },
   x86: {
-    prolog: src('platform/x86/boot.js', 'platform/x86/ops.js', 'platform/x86/boot.4th', 'platform/x86/precore.4th', 'platform/x86/words.4th'),
+    prolog: src('platform/x86/boot.js', 'platform/x86/ops.js', 'platform/x86/boot.4th', 'platform/x86/precore.4th', 'platform/x86/words.4th', '03/byte_string.4th', 'platform/x86/shared-libs.4th', 'platform/x86/tty.4th'),
   }
 }
 

@@ -112,6 +112,14 @@ defop cont
   push ecx
   ;; push ebx
   jmp [eax+dict_entry_code]
+
+defop tailcall
+  pop ebx
+  pop eax
+  mov esp, fp
+  pop fp
+  pop eval_ip
+  jmp [eax+dict_entry_code]
   
 ;;;
 ;;; Pairs

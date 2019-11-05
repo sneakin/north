@@ -426,6 +426,24 @@ Forth.macros = {
     } else {
       return "parse error: unterminated doc comment";
     }
+  },
+  'import>': function(token, code) {
+    // import> library function-name arity returns?
+    var lib = this.next_token(code);
+    var fn = this.next_token(lib[1]);
+    var arity = this.next_token(fn[1]);
+    var returns = this.next_token(arity[1]);
+    var rest_code = returns[1];
+    var name = this.apply_namespace(fn[0]);
+    lib = lib[0];
+    arity = parseInt(arity[0]);
+    returns = parseInt(returns[0]);
+    
+    console.log(`Importing ${fn[0]}/${arity} from ${lib}`);
+    // Make a definition that resolves the function and then calls it.
+    this.interp(`: ${name} " ${lib}" literal ${name} int32 ${arity} int32 ${returns} import/4 ` +
+                ` literal ${name} tailcall ;`);
+    return rest_code;
   }
 };
 

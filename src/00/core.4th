@@ -966,6 +966,13 @@ global-var eval-tos
     return1
 ;
 
+: next-int
+    next-token UNLESS " End of stream" error THEN
+    number drop
+    ( POSTPONE int32 swap return2 )
+    return1
+;
+
 : eval-read-line
    read-line return1
 ;
@@ -1049,8 +1056,8 @@ global-var eval-tos
 ;
 
 : constant
-  args( value : name )
-  create arg0 does-constant
+  args( : name integer )
+  create next-int does-constant
 ;
 
 ( Variables )
