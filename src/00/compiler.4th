@@ -238,12 +238,17 @@ global-var *current-seq*
   create docol> return-locals
 ;
 
+: next-lookup-or-create
+    next-token dup UNLESS eos eos error return0 THEN
+    over dict dict-lookup
+    dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
+    return1
+;
+
 : ::
-  doc( Redefine or create the next word as a colon definition. )
-  args( _ : name ++ entry open-seq )
-  next-token dup UNLESS eos eos error return0 THEN
-  over dict dict-lookup dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
-  docol> return-locals
+    doc( Redefine or create the next word as a colon definition. )
+    args( _ : name ++ entry open-seq )
+    next-lookup-or-create docol> return-locals
 ;
 
 ( Terminator on stack search and replace: )
