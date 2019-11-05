@@ -358,16 +358,15 @@ end
 #
 
 namespace :doc do
-  DOC_SRC_DIR = $buildroot.join('doc', 'src')
+  DOC_SRC_DIR = $buildroot.join('doc/src')
 
-  directory DOC_SRC_DIR
-  
   desc "Turn the source into HTML."
-  task :src => DOC_SRC_DIR do |t|
+  task :src => STAGE2_SRC do |t|
     STAGE2_SRC.each do |src|
       lang = 'forth'
       lang = 'javascript' if src.extname == '.js'
-      sh("pygmentize -f html -O full -l #{lang} -o #{Shellwords.escape(DOC_SRC_DIR.join(src.basename))}.html #{Shellwords.escape(src)}")
+      dest = DOC_SRC_DIR.join(src)
+      sh("mkdir -p #{Shellwords.escape(dest.dirname)} && pygmentize -f html -O full -l #{lang} -o #{Shellwords.escape(dest)}.html #{Shellwords.escape(src)}")
     end
   end
 end
