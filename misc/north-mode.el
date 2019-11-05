@@ -25,8 +25,8 @@
      (font-lock-keyword-face . 1)
      "[ 	\n]" t name
      (font-lock-function-name-face . 3))
-    (("if" "unless" "else" "then" "begin" "end" "do" "while" "until" "leave" "recurse" "cont")
-     compile-only
+    (("if" "unless" "else" "then" "begin" "end" "do" "while" "until" "leave" "recurse" "cont" "again")
+     immediate
      (font-lock-keyword-face . 2))
     ("return\\w*"
      compile-only
@@ -37,7 +37,7 @@
     (("break" "pause")
      compile-only
      (font-lock-warning-face . 2))
-    (("postpone" "[']" "[compile]")
+    (("postpone" "postpone'" "[']" "[compile]")
      compile-only
      (font-lock-keyword-face . 2)
      "[ 	\n]" t name
@@ -47,7 +47,7 @@
      (font-lock-keyword-face . 2)
      "[ 	\n]" t name
      (font-lock-function-name-face . 3))
-    (("create" "variable" "constant"
+    (("create" "variable" "global-var" "constant"
       "literal" "int32" "pointer" "offset"
       "char-code")
      non-immediate
@@ -79,29 +79,29 @@
 
 (defvar north-indent-words
   '(("\\w*\\["
-     (0 . 2)
-     (0 . 2))
+     (0 . 1)
+     (0 . 1))
     ("\\]\\w*"
-     (-2 . 0)
-     (0 . -2))
+     (-1 . 0)
+     (0 . -1))
     (("def" "defop")
-     (0 . 2)
-     (0 . 2))
+     (0 . 1)
+     (0 . 1))
     (("end")
-     (-2 . 0)
-     (0 . -2))
+     (-1 . 0)
+     (0 . -1))
     (("if" "unless" "begin" "do")
-     (0 . 2)
-     (0 . 2))
-    (("again" "then" "endif")
-     (-2 . 0)
-     (0 . -2))
+     (0 . 1)
+     (0 . 1))
+    (("then" "endif" "done")
+     (-1 . 0)
+     (0 . -1))
     (("else" "recover")
-     (-2 . 2)
+     (-1 . 1)
      (0 . 0))
     (("while" "[while]" "until" "[until]")
-     (-2 . 4)
-     (0 . 2))))
+     (-1 . 0)
+     (0 . -1))))
 
 (define-derived-mode north-mode forth-mode "North"
   "Major mode for North."

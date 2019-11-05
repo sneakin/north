@@ -1,0 +1,22 @@
+def print_eval_stack
+  print/c (**(int **)$eax)@20
+  x/8a $esp
+end
+
+break call_data_seq_asm
+commands
+  print_eval_stack
+  continue
+end
+
+break call_offset_data_seq_asm
+commands
+  print_eval_stack
+  continue
+end
+
+break doop_offset_indirect_asm
+commands
+  print_eval_stack
+  continue
+end
