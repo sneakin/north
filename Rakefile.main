@@ -24,6 +24,12 @@ BCCON = "node #{Shellwords.escape(BCBIN)}"
 NODE_PATH << [ $root.join('www'), $root.join('src'), BCLIB ]
 # ENV['NODE_PATH'] = NODE_PATH.flatten.join(':')
 
+Runners = {
+  bacaw: [ "node",  BCBIN.to_s ],
+  posix_32: "./x86/build/posix-32/bin/north-runner",
+  posix_64: "./x86/build/posix-64/bin/north-runner"
+}
+
 ENV['PATH'] = $root.join('node_modules/.bin').to_s + ':' + ENV['PATH']
 
 $stage_targets = []
@@ -83,7 +89,8 @@ def stage(name, options)
   options = {
     sources: [],
     minimal: nil,
-    platform:  :bacaw
+    platform: 'bacaw',
+    runner:  'bacaw',
   }.merge(options)
 
   full_name = name
@@ -116,10 +123,10 @@ def stage(name, options)
   namespace name do
     desc "Build #{name}"
     task :build => [ target ]
-    
+
     desc "Run #{name}"
     task :run => target do
-      sh("node #{BCBIN} #{target}")
+      sh(*Runners.fetch(options[:runner].to_sym), target.to_s)
     end
 
     if min_target
@@ -129,7 +136,7 @@ def stage(name, options)
         
         desc "Run the minimal #{name}"
         task :run => min_target do
-          sh("node #{BCBIN} #{min_target}")
+          sh(*Runners.fetch(options[:runner].to_sym), min_target.to_s)
         end
       end
 
@@ -181,6 +188,7 @@ STAGE0_TEXTS = src('01/atoi.4th', 'build-stage0.4th', 'build-stage2.4th')
 STOGE0_TESTS = tests('00/test-do.4th')
 
 stage(:stage0,
+      runner: 'bacaw',
       sources: with_platform(:bacaw, STAGE0_SRC),
       texts: STAGE0_TEXTS,
       minimal: true)
@@ -229,6 +237,7 @@ STAGE1_SRC = STAGE0_SRC +
 STAGE1_TEXTS = STAGE0_TEXTS
 
 stage(:stage1,
+      runner: 'bacaw',
       sources: with_platform(:bacaw, STAGE1_SRC, :stage1),
       texts: STAGE1_TEXTS,
       minimal: true)
@@ -236,6 +245,7 @@ stage(:stage1,
 namespace :i32 do
   stage('stage0',
         machine: 'i32',
+        runner: 'posix_32',
         sources: with_platform(:x86, STAGE0_SRC),
         texts: STAGE0_TEXTS,
         minimal: true,
@@ -244,6 +254,7 @@ namespace :i32 do
 
   stage('stage1',
         machine: 'i32',
+        runner: 'posix_32',
         sources: with_platform(:x86, STAGE1_SRC),
         texts: STAGE1_TEXTS,
         minimal: true,
@@ -254,6 +265,7 @@ end
 namespace 'i64' do
   stage('stage0',
         machine: 'i64',
+        runner: 'posix_64',
         sources: with_platform(:x86, STAGE0_SRC),
         texts: STAGE0_TEXTS,
         minimal: true,
@@ -262,6 +274,7 @@ namespace 'i64' do
 
   stage('stage1',
         machine: 'i64',
+        runner: 'posix_64',
         sources: with_platform(:x86, STAGE1_SRC),
         texts: STAGE1_TEXTS,
         minimal: true,
@@ -277,6 +290,7 @@ STAGE2_SRC = STAGE1_SRC +
       '02/sound.4th')
 
 stage(:stage2,
+      runner: 'bacaw',
       sources: with_platform(:bacaw, STAGE2_SRC, :stage1),
       texts: STAGE1_TEXTS,
       minimal: true)
@@ -286,6 +300,7 @@ STAGE3_SRC = src('build-stage3.4th',
                  '02/ops.4th')
 
 stage(:stage3,
+      runner: 'bacaw',
       sources: with_platform(:bacaw, STAGE3_SRC, :stage1),
       texts: STAGE1_TEXTS,
       minimal: true)
@@ -298,6 +313,7 @@ STAGE4_SRC = STAGE1_SRC +
       '02/dict.4th')
 
 stage(:stage4,
+      runner: 'bacaw',
       sources: with_platform(:bacaw, STAGE4_SRC, :stage1),
       texts: STAGE1_TEXTS,
       minimal: true)
@@ -362,7 +378,7 @@ namespace :doc do
 
   desc "Turn the source into HTML."
   task :src => STAGE2_SRC do |t|
-    STAGE2_SRC.each do |src|
+    (STAGE2_SRC + STAGE1_TEXTS).each do |src|
       lang = 'forth'
       lang = 'javascript' if src.extname == '.js'
       dest = DOC_SRC_DIR.join(src)
