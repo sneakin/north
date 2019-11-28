@@ -11,7 +11,7 @@ def c
   begin_frame
   pointer cstr cputs
   literal 0
-  quit
+  bye
   
 def b
   begin_frame

@@ -1,3 +1,5 @@
+include "pseudo-ops.pop"
+
 data_size_value equ 1024*1024
 constant data_size, data_size_value
 
