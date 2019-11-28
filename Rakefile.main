@@ -26,8 +26,8 @@ NODE_PATH << [ $root.join('www'), $root.join('src'), BCLIB ]
 
 Runners = {
   bacaw: [ "node",  BCBIN.to_s ],
-  posix_32: "./x86/build/posix-32/bin/north-runner",
-  posix_64: "./x86/build/posix-64/bin/north-runner"
+  posix_32: [ "./x86/build/posix-32/bin/north-runner" ],
+  posix_64: [ "./x86/build/posix-64/bin/north-runner" ]
 }
 
 ENV['PATH'] = $root.join('node_modules/.bin').to_s + ':' + ENV['PATH']
@@ -85,6 +85,10 @@ def meta_north(opts)
   sh(cmd.flatten.shelljoin)
 end
 
+task :node do
+  # dummy task
+end
+
 def stage(name, options)
   options = {
     sources: [],
@@ -92,6 +96,8 @@ def stage(name, options)
     platform: 'bacaw',
     runner:  'bacaw',
   }.merge(options)
+
+  runner = Runners.fetch(options[:runner].to_sym)
 
   full_name = name
   full_name = "#{full_name}-#{options[:platform]}" if options[:platform]
@@ -125,8 +131,8 @@ def stage(name, options)
     task :build => [ target ]
 
     desc "Run #{name}"
-    task :run => target do
-      sh(*Runners.fetch(options[:runner].to_sym), target.to_s)
+    task :run => [ target, runner.first ] do
+      sh(*runner, target.to_s)
     end
 
     if min_target
@@ -136,7 +142,7 @@ def stage(name, options)
         
         desc "Run the minimal #{name}"
         task :run => min_target do
-          sh(*Runners.fetch(options[:runner].to_sym), min_target.to_s)
+          sh(*runner, min_target.to_s)
         end
       end
 
@@ -317,6 +323,21 @@ stage(:stage4,
       sources: with_platform(:bacaw, STAGE4_SRC, :stage1),
       texts: STAGE1_TEXTS,
       minimal: true)
+
+#
+# x86
+#
+
+X86_PLATFORMS=%w(posix)
+X86_BITS=%w(32)
+
+X86_PLATFORMS.each do |platform|
+  X86_BITS.each do |bits|
+    file "x86/build/#{platform}-#{bits}/bin/north-runner" do |t|
+      sh("cd x86 && make PLATFORMS='#{platform}' BITS='#{bits}'")
+    end
+  end
+end
 
 #
 # Web building
