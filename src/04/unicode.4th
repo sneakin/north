@@ -55,7 +55,7 @@ constant UNICODE-MAX $10FFFF
         int32 $F0 logior
         int32 4 int32 5 returnN
     THEN
-    " invalid UTF-32 code" " argument-error" error
+    arg0 .\n .h " invalid UTF-32 code" " argument-error" error
 ;
 
 ( UTF-8 cell sequence to UTF-32mcell: )
