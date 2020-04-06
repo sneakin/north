@@ -122,7 +122,7 @@ global-var *tracing* doc( Controls if trace messages are printed. )
 
 : trace
     doc( Traces a dictionary entry by changing the code and data fields to call `on-trace` or `on-trace-op`. Will error if given anything but a colon definition or assembly op with no dictionary parameter. )
-    args( dict-enhry )
+    args( dict-entry )
     arg0 trace-definition UNLESS
         trace-op UNLESS
             " can not trace" " trace-error" error
@@ -133,7 +133,7 @@ global-var *tracing* doc( Controls if trace messages are printed. )
 
 : untrace
     doc( Untrace a dictionary entry by restoring the code and data fields. )
-    args( dict-enhry )
+    args( dict-entry )
     arg0 dict-entry-code swapdrop
     ' do-op-trace dict-entry-code swapdrop local0 equals IF
         arg0 untrace-op
@@ -155,7 +155,6 @@ global-var *tracing* doc( Controls if trace messages are printed. )
         current-frame parent-frame @
         int32 32 hexdump
         color-reset
-
         start-tracing
     THEN
 ;

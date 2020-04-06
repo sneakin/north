@@ -1,5 +1,11 @@
 ( Frames again: )
 
+: local2
+    current-frame parent-frame peek
+    frame-locals cell-2 swapdrop peek
+    return1
+;
+
 : shift-frame-up
     args( offset n -- ... )
     doc( Move the parent frame with N arguments OFFSET cells up the stack adjusting the frame links. )

@@ -14,7 +14,7 @@
 
 :: prompt
   bold yellow
-  int32 $203e0a0d write-word 
+  " > " write-string
   color-reset 
 ;
 
@@ -42,7 +42,7 @@
   eval-tos @
   dup @ write-int drop
   write-tab dim write-depth drop
-  color-reset prompt
+  color-reset write-crnl prompt
   read-line
   blue write-string color-reset
   return1

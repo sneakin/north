@@ -91,11 +91,11 @@
 ( Cursor position procedures: )
 
 : tty-cursor-save
-    " \es" write-string
+    " \e[s" write-string
 ;
 
 : tty-cursor-restore
-    " \eu" write-string
+    " \e[u" write-string
 ;
 
 : tty-cursor-save-attr
@@ -106,15 +106,13 @@
     " \e8" write-string
 ;
 
-: tty-cursor-home
-    " \eH" write-string
-;
-
 : tty-cursor-home-bottom
     " \eF" write-string
 ;
 
 : tty-cursor-to arg0 arg1 " f" tty-basic-escape2 ;
+: tty-cursor-to-column arg0 " G" tty-basic-escape1 ;
+: tty-cursor-home int32 1 tty-cursor-to-column ;
 
 : tty-cursor-up arg0 " A" tty-basic-escape1 ;
 : tty-cursor-down arg0 " B" tty-basic-escape1 ;
@@ -219,6 +217,7 @@
 
 ( Font selection: )
 
+: tty-font-utf8 " \e%G" write-string ;
 : tty-font-g0 int32 15 write-byte ;
 : tty-font-g1 int32 14 write-byte ;
 : tty-font-g2 " \eN" write-string ;
@@ -458,13 +457,20 @@ constant TTY-READ-MOUSE 4
             int32 char-code C
             int32 3
         ELSE
+          dup int32 127 equals IF
+            int32 char-code ?
+            int32 char-code -
+            int32 char-code C
+            int32 3
+          ELSE
             int32 1
+          THEN
         THEN
         here arg0 int32 2 overn copy-seq
         return0
     THEN
     arg1 TTY-READ-ESCAPE equals IF
-        " escape " .s arg3 .d arg2 .d arg1 .d .\n
+      ( " escape " .s arg3 .d arg2 .d arg1 .d .\n )
         terminator
         ( Control + Meta codes except escape: M-C-letter )
         arg3 control-code?
@@ -493,7 +499,7 @@ constant TTY-READ-MOUSE 4
         return0
     THEN
     arg1 TTY-READ-CSI equals IF
-        " csi " .s arg3 .d arg2 .d arg1 .d .\n
+      ( " csi " .s arg3 .d arg2 .d arg1 .d .\n )
         ( Arrow keys are named. )
         int32 char-code D int32 char-code A arg3 in-range? IF
             dup int32 char-code A equals IF " <up>" THEN
@@ -528,10 +534,22 @@ constant TTY-READ-MOUSE 4
     terminator int32 0 here arg0 int32 2 overn copy-seq
 ;
 
-: tty-readeval-key-name-test
+: test-tty-readeval-key-name
     int32 32 stack-allot
     int32 char-code A TTY-READ-BYTE shift tty-readeval-key-name
-    int32 64 hexdump
+    int32 64 write-line-n hexdump
+    .\n
+    int32 32 stack-allot
+    int32 127 TTY-READ-BYTE shift tty-readeval-key-name
+    int32 64 write-line-n hexdump
+    .\n
+    int32 32 stack-allot
+    int32 0 TTY-READ-BYTE shift tty-readeval-key-name
+    int32 64 write-line-n hexdump
+    .\n
+    int32 32 stack-allot
+    int32 char-code \r TTY-READ-BYTE shift tty-readeval-key-name
+    int32 64 write-line-n hexdump
     .\n
     int32 32 stack-allot
     int32 char-code A TTY-READ-ESCAPE int32 2 overn tty-readeval-key-name
@@ -542,9 +560,18 @@ constant TTY-READ-MOUSE 4
     int32 64 hexdump
 ;
 
+: tty-readeval-done!/2
+  args( readeval-dict value )
+    lit tty-readeval-done arg1 dict-lookup
+    dup IF arg0 swap set-dict-entry-data THEN
+;
+
 : tty-readeval-done!
-    lit tty-readeval-done arg0 dict-lookup
-    dup IF int32 1 swap set-dict-entry-data THEN
+  arg0 int32 1 tty-readeval-done!/2
+;
+
+: tty-readeval-reset-done!
+  arg0 int32 0 tty-readeval-done!/2
 ;
 
 : tty-readeval-done?
@@ -554,16 +581,20 @@ constant TTY-READ-MOUSE 4
 ;
 
 : tty-readeval-on-break
+  " on-break" .s .\n
     arg0 tty-readeval-done!
 ;
 
 : tty-readeval-loop
-    .\n " readeval " .s
-    args( on-char on-key dict ) 
+    args( key-name-buffer on-char on-key dict ) 
     arg0 tty-readeval-done? swapdrop IF return0 THEN
     tty-read
-    arg3 tty-readeval-key-name write-escaped-string
-    arg0 dict-lookup ( ...event-data event-kind name dict entry )
+    arg3 tty-readeval-key-name ( write-escaped-string )
+    seq-length int32 1 > IF
+      arg0 dict-lookup ( ...event-data event-kind name dict entry )
+    ELSE
+      arg0 int32 0
+    THEN
     null? IF ( nothing in dictionary )
         drop
         int32 2 overn TTY-READ-BYTE equals
@@ -571,7 +602,7 @@ constant TTY-READ-MOUSE 4
         IF arg2 ELSE arg1 THEN
     THEN
     null? UNLESS
-        "  exec " .s write-dict-entry
+      ( "  exec " .s write-dict-entry )
         ( todo named events don't need the kind and name )
         ( todo char events only need the name )
         ( todo key events need it all )
@@ -585,17 +616,16 @@ constant TTY-READ-MOUSE 4
 : tty-readeval-start
     tty-enter-raw-mode
     tty-mouse-on
-    return1
 ;
 
 : tty-readeval-end
     tty-mouse-off
-    arg0 tty-exit-raw-mode
+    tty-exit-raw-mode
     input-reset
 ;
 
 : tty-readeval
-    doc( Read TTY input  dispatching to dictionary entries
+    doc( Read TTY input dispatching to dictionary entries
     whose name matches the input's key name, or to on-char for
     simple byte inputs, and on-key for escaped inputs.
     The default handlers when called receive all of the input
@@ -607,27 +637,24 @@ constant TTY-READ-MOUSE 4
     " on-char" arg0 dict-lookup rotdrop2
     " on-key" arg0 dict-lookup rotdrop2
     arg0
+    tty-readeval-reset-done!
     tty-readeval-loop drop
-    local0 tty-readeval-end drop
+    tty-readeval-end
 ;
 
 : tty-make-readeval-default-dict
     doc( Construct the default dictionary that `tty-readeval`  expects. )
     args( dict )
     arg0
-    " \e[c" aliases> tty-readeval-on-status
     " C-c" aliases> tty-readeval-on-break
     " tty-readeval-loop" aliases> tty-readeval-loop
-    " tty-readeval-done"
-    ' variable-peeker dict-entry-code swapdrop
-    int32 0
-    make-dict/4
+    " tty-readeval-done" ' variable-peeker dict-entry-code swapdrop int32 0 make-dict/4
     return1
 ;
 
 ( ReadEval test: )
 
-: tty-readeval-on-csi
+: test-tty-readeval-on-csi
     " on-csi" .s
     arg1 .d arg2 .d arg3 .d .\n
     arg3 int32 0 > IF
@@ -637,26 +664,26 @@ constant TTY-READ-MOUSE 4
     THEN
 ;
 
-: tty-readeval-on-escape
+: test-tty-readeval-on-escape
     " on-escape" .s
     arg1 .d arg2 .d arg3 .d .\n
 ;
 
-: tty-readeval-on-return
+: test-tty-readeval-on-return
     "  on-return" .s
     arg0 tty-readeval-done!
 ;
 
-: tty-readeval-on-newline
+: test-tty-readeval-on-newline
     "  on-newline" .s
     arg0 tty-readeval-done!
 ;
 
-: tty-readeval-on-control
+: test-tty-readeval-on-control
     "  on-control" .s arg1 .d .\n
 ;
 
-: tty-readeval-on-key
+: test-tty-readeval-on-key
     "  on-key" .s arg1 .d arg2 .d arg3 .d
     int32 4 argn .d
     int32 5 argn .d
@@ -665,47 +692,52 @@ constant TTY-READ-MOUSE 4
     .\n
 ;
 
-: tty-readeval-on-char
+: test-tty-readeval-on-char
+  arg1 control-code? IF
+    "  on-char control" .s arg1 .d arg2 .d .\n
+  ELSE
     "  on-char" .s arg1 .d arg2 .d .\n
+  THEN
 ;
 
-: tty-readeval-on-mouse
+: test-tty-readeval-on-mouse
     "  on-mouse" .s
     arg1 .d arg2 .d arg3 .d .\n
 ;
 
-: tty-readeval-on-up
+: test-tty-readeval-on-up
     "  on-up" .s
     arg1 .d arg2 .d arg3 .d .\n
 ;
 
-: tty-readeval-on-status
+: test-tty-readeval-on-status
     "  on-status" .s
     arg1 .d arg2 .d arg3 .d .\n
 ;
 
-: tty-readeval-on-report-cursor
+: test-tty-readeval-on-report-cursor
     " on-report-cursor" .s
     arg1 .d arg2 .d arg3 .d .\n
 ;
 
-: tty-readeval-test-dict
+: test-tty-readeval-dict
     terminator
-    " <up>" aliases> tty-readeval-on-up
-    " \e[M" aliases> tty-readeval-on-mouse
-    " \e[R" aliases> tty-readeval-on-report-cursor
+    " \e[c" aliases> test-tty-readeval-on-status
+    " <up>" aliases> test-tty-readeval-on-up
+    " \e[M" aliases> test-tty-readeval-on-mouse
+    " \e[R" aliases> test-tty-readeval-on-report-cursor
     " C" aliases> tty-get-cursor
     " M-O-P" aliases> help
     " C-l" aliases> tty-reset
-    " C-m" aliases> tty-readeval-on-return
-    " C-j" aliases> tty-readeval-on-newline
-    " M-\e" aliases> tty-readeval-on-newline
-    " on-key" aliases> tty-readeval-on-key
-    " on-char" aliases> tty-readeval-on-char
+    " C-m" aliases> test-tty-readeval-on-return
+    " C-j" aliases> test-tty-readeval-on-newline
+    " M-\e" aliases> test-tty-readeval-on-newline
+    " on-key" aliases> test-tty-readeval-on-key
+    " on-char" aliases> test-tty-readeval-on-char
     tty-make-readeval-default-dict
     return1
 ;
 
-: tty-readeval-test
-    tty-readeval-test-dict tty-readeval
+: test-tty-readeval
+    test-tty-readeval-dict tty-readeval
 ;

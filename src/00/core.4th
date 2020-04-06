@@ -173,19 +173,17 @@
 ( Sequence copying )
 
 : copy-n ( src dest number counter )
-    ( dest )
-  arg0 arg2 int-add
   ( src )
-  arg0 arg3 int-add
-  peek
-  ( store )
-  swap poke
+  arg0 arg3 int-add peek
+  ( dest )
+  arg0 arg2 int-add poke
   ( inc )
   arg0 cell+ swapdrop set-arg0
   ( loop? )
-  arg0 arg1 <= IF RECURSE THEN
+  arg0 arg1 < IF RECURSE THEN
 ;
 
+( TODO handle non-cell aligned sequences )
 : copy ( src dest number )
   arg2 arg1 arg0 int32 0 copy-n
 ;
@@ -193,13 +191,12 @@
 : copydown-loop ( src dest counter )
   ( dec )
   arg0 cell- swapdrop set-arg0
+  ( src value )
+  arg0 arg2 int-add peek
   ( dest )
   arg0 arg1 int-add
-  ( src )
-  arg0 arg2 int-add
-  peek
   ( store )
-  swap poke
+  poke
   ( loop? )
   arg0 int32 0 > IF RECURSE THEN
 ;
@@ -328,6 +325,7 @@
 ;
   
 : dict-lookup-parent
+  args( name dict ++ entry )
   arg0 dict-entry-next
   terminator? IF int32 0 return1 THEN
   dict-entry-name arg1 string-equal IF drop3 return1 THEN
@@ -336,6 +334,7 @@
 ;
 
 : dict-lookup
+  args( name dict ++ entry )
   ( check dict's head )
   arg0 dict-entry-name arg1 string-equal IF arg0 return1 THEN
   ( search the list )

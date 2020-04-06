@@ -237,6 +237,7 @@ STAGE1_SRC = STAGE0_SRC +
       '04/tty-readline.4th',
       'help/tty-attrs.4th',
       '04/integer.4th',
+      '04/numerics.4th',
       '04/frames.4th',
       '04/unicode.4th')
 

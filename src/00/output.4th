@@ -16,6 +16,7 @@
 : write-string-n
   args( seq number )
   doc( Write a number of characters from the sequence to the output device. )
+  arg0 int32 0 equals IF return0 THEN
   arg1 seq-data swapdrop
   dup
   arg0 cell* swapdrop
