@@ -174,7 +174,7 @@ global-var *tracing* doc( Controls if trace messages are printed. )
     args( dict-entry )
     arg0 " Trace op:" trace-log drop2    
     ( drop the frame )
-    end drop
+    end-frame drop
     ( trace-op put the code in the data slot )
     swap dict-entry-data swapdrop seq-data swapdrop swap
     ( restore eip and ip )

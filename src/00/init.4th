@@ -3,16 +3,16 @@
 global-var *debug*
 global-var *stack-top*
 
-: stack-init
+def stack-init
     current-frame parent-frame peek *stack-top* poke
-;
+end
 
-: stack-top
+def stack-top
   *stack-top* peek
     return1
-;
+end
 
-: init-00
+def init-00
   int32 0 *tokenizer* poke
   int32 0 *tokenizer-stack* poke
   int32 0 *status* poke
@@ -24,9 +24,9 @@ global-var *stack-top*
     dict-init
     about
   THEN
-;
+end
 
-: test-init-00
+def test-init-00
     " init-00" .S .\n
     base peek int32 10 " set base to 10" assert-equal
     *tokenizer* peek int32 0 " set *tokenizer* to 0" assert-equal
@@ -34,11 +34,11 @@ global-var *stack-top*
     *status* peek int32 0 " set *status* to 0" assert-equal
     *state* peek int32 0 " set *state* to 0" assert-equal
     *debug* peek int32 0 " set *debug* to 0" assert-equal
-;
+end
 
-: boot
+def boot
     stack-init
     init-00
     eval-input
     RECURSE
-;
+end

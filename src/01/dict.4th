@@ -1,6 +1,6 @@
 ( Dictionary manipulation: )
 
-: dict-forget
+def dict-forget
   ( name dict )
   ( find parent )
   arg1 arg0 dict-lookup-parent
@@ -8,43 +8,43 @@
   dict-entry-next dict-entry-next ( parent child grandkid )
   ( link parent to child )
   rot set-dict-entry-next
-;
+end
 
-: add-dict-after
+def add-dict-after
     arg0 dict-entry-next swapdrop
     arg3 arg2 arg1 make-dict/4
     arg0 set-dict-entry-next
     drop return1
-;
+end
 
 ( Dictionary iteration: )
 
-: dict-each  ( fn dict -- fn last-dict)
+def dict-each  ( fn dict -- fn last-dict)
   arg0 terminator? IF return0 THEN
   arg1 exec-core-word
   arg0 dict-entry-next set-arg0 drop2
   RECURSE
-;
+end
 
 ( Dictionary output listing: )
 
-: write-dict-entry-name
+def write-dict-entry-name
   arg0 dict-entry-name write-escaped-string
-;
+end
 
-: write-dict-entry-data
+def write-dict-entry-data
   arg0 dict-entry-data write-unsigned-int 
-;
+end
 
-: write-dict-entry-code
+def write-dict-entry-code
   arg0 dict-entry-code write-unsigned-int 
-;
+end
 
-: write-dict-entry-next
+def write-dict-entry-next
   arg0 dict-entry-next write-unsigned-int
-;
+end
 
-: write-dict-entry-kind
+def write-dict-entry-kind
   ( functions )
   arg0 dict-entry-code
   literal call-data-seq dict-entry-code swapdrop
@@ -63,34 +63,34 @@
   equals IF longify VAR write-word return0 THEN
   ( asm )
   longify ASM write-word 
-;
+end
 
-: write-dict-entry
+def write-dict-entry
   arg0
   write-dict-entry-kind write-tab 
   write-dict-entry-name write-tab 
   write-dict-entry-code write-tab
   write-dict-entry-data write-tab 
   write-dict-entry-next write-crnl 
-;
+end
 
 ( Write a dictionary out entry by entry. )
-: dict-list ( dict )
+def dict-list ( dict )
   literal write-dict-entry arg0 dict-each 
-;
+end
 
-: words doc( Write the primary dictionary out. )
+def words doc( Write the primary dictionary out. )
   dict dict-list
-;
+end
 
-: iwords doc( Write the immediate dictionary out. )
+def iwords doc( Write the immediate dictionary out. )
   immediate-dict peek dict-list
-;
+end
 
 ( Dictionary predicates: )
 
 ( Returns the number of definitions in the dictionary. )
-: dict-count ( dictionary -- count )
+def dict-count ( dictionary -- count )
   int32 0
   arg0
   
@@ -99,9 +99,9 @@
   null? swapdrop UNTIL
 
   local0 return1
-;
+end
 
-: dict-entry-indirect?
+def dict-entry-indirect?
   arg0 dict-entry-code swapdrop
   literal call-data-seq dict-entry-code swapdrop
   over equals UNLESS
@@ -109,17 +109,17 @@
   THEN
 
   true return1
-;
+end
 
-: dict-entry-def?
+def dict-entry-def?
     arg0 dict-entry-code
     ' call-data-seq dict-entry-code swapdrop
     equals return1
-;
+end
 
 ( Dictionary building helpers: )
 
-: aliases>
+def aliases>
     doc( Creates a dictionary entry named NAME, linked to the PREV-ENTRY
     and with the same code and data values as the following param. )
     args( prev-entry name : entry-to-copy ++ dict-entry )
@@ -128,4 +128,4 @@
     next-param dict-entry-code
     swap dict-entry-data swapdrop
     make-dict/4 return1
-;
+end

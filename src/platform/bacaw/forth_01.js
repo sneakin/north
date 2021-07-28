@@ -64,7 +64,7 @@ this.defop('tailcall1', function(asm) {
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('exec-code');
 });
 
-this.defop('end-frame', function(asm) {
+this.defop('pop-frame', function(asm) {
   asm.load(FP_REG, 0, FP_REG).uint32(0).
       mov(VM.CPU.REGISTERS.SP, FP_REG).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code');

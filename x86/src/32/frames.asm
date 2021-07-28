@@ -23,6 +23,8 @@ defop end_frame
   mov fp, [fp]
   ret
 
+defalias pop_frame,end_frame
+
 ;;;
 ;;; Returns
 ;;;

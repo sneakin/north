@@ -16,7 +16,7 @@
 
 ( Return all the locals except the number from the top. )
 : return-locals-less ( num-to-overwrite )
-  end drop2
+  end-frame drop2
   here swap
   cell* swapdrop
   locals swap int-sub

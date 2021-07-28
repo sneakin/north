@@ -116,11 +116,11 @@ this.defop('bye', function(asm) {
 // Return to the calling function.
 this.defop('exit', function(asm) {
   asm.load(EVAL_IP_REG, 0, FP_REG).int32(CELL_SIZE).
-      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('end-code');
+      load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('end-frame-code');
 });
 
 // Ends the current frame.
-this.defop('end', function(asm) {
+this.defop('end-frame', function(asm) {
   asm.load(FP_REG, 0, FP_REG).uint32(0).
       load(VM.CPU.REGISTERS.IP, 0, VM.CPU.REGISTERS.INS).uint32('next-code').
       ret();

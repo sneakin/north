@@ -1,94 +1,94 @@
 ( TTY Color )
 
-: TTY-ESCAPE-ATTR int32 $30305b1b return1 ;
-: TTY-ESCAPE-CSI int32 $00005b1b return1 ;
-: TTY-ESCAPE-SGR-END int32 $0000006d return1 ;
-: TTY-COLOR-FG int32 $30335b1b return1 ;
-: TTY-COLOR-BG int32 $30345b1b return1 ;
-: TTY-COLOR-BRIGHT-FG int32 $30395b1b return1 ;
-: TTY-COLOR-BRIGHT-BG int32 $30315b1b return1 ;
-: TTY-COLOR-BRIGHT-BG2 int32 $6d30 return1 ;
-: TTY-COLOR-BG2 int32 $6d30343b return1 ;
-: TTY-COLOR-FG2 int32 $6d30333b return1 ;
+def TTY-ESCAPE-ATTR int32 $30305b1b return1 ;
+def TTY-ESCAPE-CSI int32 $00005b1b return1 ;
+def TTY-ESCAPE-SGR-END int32 $0000006d return1 ;
+def TTY-COLOR-FG int32 $30335b1b return1 ;
+def TTY-COLOR-BG int32 $30345b1b return1 ;
+def TTY-COLOR-BRIGHT-FG int32 $30395b1b return1 ;
+def TTY-COLOR-BRIGHT-BG int32 $30315b1b return1 ;
+def TTY-COLOR-BRIGHT-BG2 int32 $6d30 return1 ;
+def TTY-COLOR-BG2 int32 $6d30343b return1 ;
+def TTY-COLOR-FG2 int32 $6d30333b return1 ;
 
-: color-reset
+def color-reset
   int32 $6d305b1b write-word
-;
+end
 
-: color/2
+def color/2
   TTY-COLOR-FG arg0 int32 24 bsl int-add write-word 
   TTY-COLOR-BG2 arg1 int32 16 bsl int-add write-word 
-;
+end
 
-: fgcolor
+def fgcolor
     TTY-COLOR-FG arg0 int32 24 bsl int-add write-word
     TTY-ESCAPE-SGR-END write-byte
-;
+end
 
-: bright-fgcolor
+def bright-fgcolor
     TTY-COLOR-BRIGHT-FG arg0 int32 24 bsl int-add write-word
     TTY-ESCAPE-SGR-END write-byte
-;
+end
 
-: bgcolor
+def bgcolor
     TTY-COLOR-BG arg0 int32 24 bsl int-add write-word
     TTY-ESCAPE-SGR-END write-byte
-;
+end
 
-: bright-bgcolor
+def bright-bgcolor
     TTY-COLOR-BRIGHT-BG write-word
     TTY-COLOR-BRIGHT-BG2 arg0 int-add write-word
-;
+end
 
-: bold
+def bold
     longify \e[1m write-word
-;
+end
 
-: dim
+def dim
     longify \e[2m write-word
-;
+end
 
-: underline
+def underline
     longify \e[4m write-word
-;
+end
 
-: black
+def black
   int32 8 int32 0 color/2 
-;
+end
 
-: red
+def red
   int32 8 int32 1 color/2 
-;
+end
 
-: green
+def green
   int32 8 int32 2 color/2 
-;
+end
 
-: yellow
+def yellow
   int32 8 int32 3 color/2 
-;
+end
 
-: blue
+def blue
   int32 8 int32 4 color/2 
-;
+end
 
-: magenta
+def magenta
   int32 8 int32 5 color/2 
-;
+end
 
-: cyan
+def cyan
   int32 8 int32 6 color/2 
-;
+end
 
-: white
+def white
   int32 8 int32 7 color/2 
-;
+end
 
-: tty-default-fg
+def tty-default-fg
   int32 8 int32 9 color/2 
-;
+end
 
-: write-heading
+def write-heading
     doc( Print the argument out underlined, bold, and on its own line. )
     bold underline arg0 write-line color-reset write-crnl
-;
+end

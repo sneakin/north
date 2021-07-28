@@ -1,6 +1,6 @@
 ( Better string to unsigned integer due to looping: )
 
-: base-char-to-int
+def base-char-to-int
   ( % is binary )
   arg0 int32 37 equals IF int32 2 return1 THEN
   ( & and # are decimal )
@@ -11,15 +11,15 @@
   arg0 int32 120 equals IF int32 16 return1 THEN
   ( not base char )
   int32 0 return1
-;
+end
 
-: number-base-char?
+def number-base-char?
   arg0 base-char-to-int UNLESS false return1 THEN
   true return1
-;
+end
 
 ( Converts a string pointer with length to an unsigned integer with the supplied base. )
-: stage-01:unsigned-number-base ( ptr-str length base )
+def stage-01:unsigned-number-base ( ptr-str length base )
   ( locals: base accumulator digit-counter ptr )
   arg0
   zero
@@ -49,10 +49,10 @@
   DONE
 
   local1 local2 not return2
-;
+end
 
 ( Converts a string to an unsigned integer with the supplied base. )
-: stage-01:unsigned-number ( str )
+def stage-01:unsigned-number ( str )
   arg0 cell+ dup peek ( str ptr+1 value )
   number-base-char? IF ( str ptr+1 value )
     base-char-to-int swapdrop ( str ptr+1 base )
@@ -73,7 +73,7 @@
   base peek ( ptr+1 length base )
   stage-01:unsigned-number-base
   return2
-;
+end
 
 ( `::` changes the code field before the definition is compiled breaking number parsing, so the entry is patched post definition. )
 

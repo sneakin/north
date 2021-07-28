@@ -42,7 +42,6 @@ defop set_dict
 
 defalias exit,continue
 defalias begin,begin_frame
-defalias end,end_frame
   
 defop arg2
   mov rax, [fp+ptrsize*5]

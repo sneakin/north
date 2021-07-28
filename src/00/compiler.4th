@@ -1,21 +1,21 @@
 ( An immediate dictionary for compiling words: )
 
-: immediate-lookup
+def immediate-lookup
   doc( Find the immediate dictionary entry by name. )
   args( string ++ dict-entry )
   arg0 immediate-dict peek dict-lookup
   return1
-;
+end
 
-: immediate-dict-add
+def immediate-dict-add
   doc( Create and add an immediate dictionary entry. )
   args( name code date ++ dict-entry )
   immediate-dict peek arg2 arg1 arg0 make-dict/4
   dup immediate-dict poke
   return1
-;
+end
 
-: add-immediate-as
+def add-immediate-as
   doc( Add a copy of an entry to the immediate dictionary with the given name. )
   args( entry name )
   arg1
@@ -24,49 +24,49 @@
   swap dict-entry-data
   swapdrop immediate-dict-add
   return0
-;
+end
 
-: add-immediate
+def add-immediate
   doc( Add the entry to the immediate dictionary. )
   args( dict-entry )
   arg0 dict-entry-name add-immediate-as
-;
+end
 
-: immediate
+def immediate
   doc( Add the last word to the immediate dictionary. )
   dict add-immediate
-;
+end
 
-: immediate-only
+def immediate-only
   doc( Add the latest dictionary entry to the immediate dictionary and remove it from the normal dictionary. )
   args( ++ dict-entry )
   immediate drop-dict
-;
+end
 
 ( Comments and the like )
 
-: (
+def (
   doc( Skip all input until a right parenthesis is found. )
   *tokenizer* peek int32 41 tokenizer-skip-until
-; immediate
+end immediate
 
-: doc(
+def doc(
   doc( Capture input into the last word's doc string until a right parenthesis is read. )
   args( : characters... ++ )
   *tokenizer* peek int32 41 tokenizer-read-until intern-seq
   dict set-dict-entry-doc
-; immediate
+end immediate
 
-: args(
+def args(
   doc( Capture input into the last word's args field until a right parenthesis is read. )
   args( : characters... ++ )
   *tokenizer* peek int32 41 tokenizer-read-until intern-seq
   dict set-dict-entry-args
-; immediate
+end immediate
 
 ( Reverse interning: )
 
-: copyrev
+def copyrev
   doc( Copy num-bytes from src to dest backwards. )
   args( src dest num-bytes )
   arg0 cell- swapdrop
@@ -86,9 +86,9 @@
   local1 cell+ swapdrop store-local1
   ( loop? )
   dup arg0 < literal copyrev-loop ifthenjump
-;
+end
 
-: internrev
+def internrev
   doc( Copy num-cells in reverse order into a sequence in the data stack. )
   args( src num-cells ++ sequence )
   arg0 dallot-seq
@@ -96,53 +96,53 @@
   cell+ arg1 swap arg0 cell* swapdrop copyrev drop3
   ( terminate )
   arg0 terminate-seq drop return1
-;
+end
 
 ( Stack search: )
 
-: stack-find-loop
+def stack-find-loop
   args( start-location needle current! ++ ptr )
   arg0 peek arg1 equals IF arg0 return1 THEN
   arg0 cell+ set-arg0 drop
   RECURSE
-;
+end
 
-: stack-find
+def stack-find
   doc( Find needle searching up the stack from start-location. Better be found? fixme )
   args( start-location needle ++ ptr )
   arg1 arg0 arg1 stack-find-loop return1
-;
+end
 
-: internrev-to-terminator
+def internrev-to-terminator
     arg0 terminator stack-find swapdrop 
     swap 2dup int-sub cell/ swapdrop internrev
     return1
-;
+end
 
-: internrev-current-seq
+def internrev-current-seq
     ( arg0 terminator stack-find yellow ,h drop3 )
     *current-seq* peek
     ( green ,h dup peek .h color-reset )
     arg0
     2dup int-sub cell/ swapdrop internrev
     return1
-;
+end
 
 ( Compiler )
 
-: compile
+def compile
   doc( Look up a word calling it if it is an immediate. )
   args( tok -- lookup executable? )
   arg0 immediate-lookup dup IF int32 1 return2 THEN
   drop
   interp return2
-;
+end
 
 ( Colon definitions )
 
 global-var *current-seq*
 
-: [/1
+def [/1
     doc( Enter the compiling state where words, unless immediates, are looked up and pushed to the stack. )
     ( save state )
     *current-seq* peek
@@ -157,24 +157,24 @@ global-var *current-seq*
     literal compile *state* poke
     ( let's compile )
     return-locals
-;
+end
 
-: [
+def [
     args [/1 int32 3 returnN
-;
+end
 
-: '[/1
+def '[/1
     arg0 cell- swapdrop [/1
     ' pointer store-local0
     return-locals
-;
+end
 
-: '[
+def '[
     doc( Enter the compiling state in the compiling state, quoting the sequence's address. )
     args '[/1 int32 4 returnN
-; immediate-as [
+end immediate-as [
 
-: exit-compiler
+def exit-compiler
     doc( Exits the compiling state and stores all the words in reverse order on the data stack in a proper sequence leaving a pointer on the stack. )
   args( stack-ptr ++ sequence cells-to-drop )
   arg0 internrev-current-seq
@@ -186,24 +186,24 @@ global-var *current-seq*
   ( clear the storage space too )
   int32 2 int-add
   return2
-;
+end
 
-: ]
+def ]
     doc( Exits the compiling state and stores local words in reverse order on the data stack in a proper sequence leaving a pointer on the stack . )
     args( ... -- sequence )
     args exit-compiler
     return1-n
-; immediate-as ]
+end immediate-as ]
 
-: ']
+def ']
     doc( Exits the compiler using the caller's arguments. Returns the sequenge and how many items from the stack that need dropping. )
     args( stack-pointer ++ seq num-cells-to-drop )
     current-frame parent-frame peek frame-args
     exit-compiler
     return2
-;
+end
 
-: docol>
+def docol>
   doc( Sets the last word's code to evaluate a definition and enters compiling mode until endcol or ; is executed. )
   args( ++ open-sequence... )
   literal call-data-seq dict-entry-code swapdrop
@@ -211,13 +211,13 @@ global-var *current-seq*
   current-frame parent-frame peek frame-args
   int32 4 cell-n rotdrop2 [/1
   return-locals
-;
+end
 
-: endcol
+def endcol
   doc( Closes a docol> updating the last word's data field. )
     args( ... -- )
     ( end the frame to add a return to the definition)
-    end drop
+    POSTPONE end-frame drop
     literal return0
     ( swap the return address and last word before making a new frame)
     unshift-call-frame begin
@@ -230,122 +230,122 @@ global-var *current-seq*
     drop2
     ( clean the stack )
     int32 4 int-add return0-n
-; immediate-as ;
+end immediate-as end
 
-: :
+def def
   doc( Start a new definition with the following name. Definition ends with a ";". )
   args( _ : name ++ entry old-state open-seq )
   create docol> return-locals
-;
+end
 
-: next-lookup-or-create
+def next-lookup-or-create
     next-token dup UNLESS eos eos error return0 THEN
     over dict dict-lookup
     dup UNLESS drop3 intern-seq int32 0 int32 0 add-dict THEN
     return1
-;
+end
 
-: ::
+def redef
     doc( Redefine or create the next word as a colon definition. )
     args( _ : name ++ entry open-seq )
     next-lookup-or-create docol> return-locals
-;
+end
 
 ( Terminator on stack search and replace: )
 
-: bytes-to-value
+def bytes-to-value
     args( start-offset value -- distance )
     arg1 arg0 stack-find
     arg1 int-sub int32 2 return1-n
-;
+end
 
-: bytes-to-terminator
+def bytes-to-terminator
     args( start-offset -- distance )
     arg0 terminator bytes-to-value return1-1
-;
+end
 
-: patch-terminator/2
+def patch-terminator/2
     doc( Search up the stack from arg1, replacing the first terminator with "[ terminator - arg1 ] + arg0". )
     args( start-offset adjustment ++ )
     arg1 terminator stack-find swapdrop
     2dup swap int-sub arg0 int-add
     swap poke
-;
+end
 
-: patch-terminator
+def patch-terminator
     doc( Search up the stack replacing the first terminator with an offset to the TOS. )
     args( start-offset ++ )
     arg0 int32 0 patch-terminator/2
-;
+end
 
 ( Compiling words: )
 
-: UNLESS
+def UNLESS
   doc( Jump to the word after UNLESS and evaluate until THEN if the top of stack is zero. )
   ' literal terminator literal ifthenreljump
   int32 3 returnN
-; immediate-only
+end immediate-only
 
-: THEN
+def THEN
   doc( Stop evaluation for an UNLESS or IF. )
   args cell-size negate swapdrop patch-terminator/2
-; immediate-only
+end immediate-only
 
-: POSTPONE
+def POSTPONE
   doc( Read the next token and look it up in immediate and regular dictionaries. )
   next-token UNLESS literal eos eos error return0 THEN
   compile not UNLESS swapdrop return1 THEN
   swapdrop
   ' literal swap
   return2
-; immediate
+end immediate
 
-: ELSE
+def ELSE
     doc( Evaluate the calls until THEN when an IF or UNLESS's condition fails. )
     ( Add a new terminator for THEN to patch that ends IF / UNLESS )
     ' literal terminator literal jumprel
     ( find and replace IF or UNLESS's terminator to offset past jumprel )
     args cell-size cell-size int-add patch-terminator/2 drop2
     int32 3 returnN
-; immediate-only
+end immediate-only
 
-: IF
+def IF
   doc( Jump to the word after IF and evaluate until THEN if the top of stack is not zero. )
     ( literal not POSTPONE UNLESS return-locals )
   ' literal terminator literal unlessreljump
   int32 3 returnN
-; immediate-only
+end immediate-only
 
-: RECURSE
+def RECURSE
   doc( Tail call the dictionary definition currently being defined. )
   ' literal
   dict
   literal jump-entry-data
   return-locals
-; immediate
+end immediate
 
 ( Loops: )
 
-: DO
+def DO
     doc( Calls the sequence defined by word until `done`. )
     args '[/1
     literal begin
     locals-size int32 1 int-sub returnN
-; immediate-only
+end immediate-only
 
-: DONE
+def DONE
     doc( Closes a sequence started by `do` and returns the words to call it. )
     ( add an exit to the sequence )
-  end drop
-  literal exit unshift-call-frame begin
+    POSTPONE end-frame drop
+    literal exit unshift-call-frame begin
     ( close it )
     '] dropn-args
     ( call it )
     literal call-seq
     return-locals
-; immediate-only
+end immediate-only
 
-: AGAIN/1
+def AGAIN/1
     doc( Jump back to the *current-seq*'s beginning. )
     doc( Expected address on the stack of the current-seq's last cell. )
     literal int32
@@ -358,38 +358,38 @@ global-var *current-seq*
     ( clean stack )
     int32 1 dropn-args
     int32 3 returnN
-;
+end
 
-: AGAIN
+def AGAIN
     doc( Jump back to the *current-seq*'s beginning. )
     args AGAIN/1 int32 3 returnN
-; immediate-as AGAIN
+end immediate-as AGAIN
 
-: LEAVE
+def LEAVE
     doc( Helper for do...done loops that exits the sequence. )
     literal exit
     return1
-; immediate-only
+end immediate-only
 
-: UNTIL
+def UNTIL
   doc( Close a DO and do another iteration only if the ToS is zero. )
     ( Use this w/o IF: literal arg0 literal ifthenjump )
     POSTPONE UNLESS
     locals-byte-size args swap int-sub AGAIN/1
     POSTPONE THEN
     return-locals
-; immediate-only
+end immediate-only
 
-: WHILE
+def WHILE
   doc( Close a DO and do another iteration only if the ToS is not zero. )
     ( Use this w/o IF: literal arg0 literal ifthenjump )
     POSTPONE IF
     locals-byte-size args swap int-sub AGAIN/1
     POSTPONE THEN
     return-locals
-; immediate-only
+end immediate-only
 
-: DOTIMES[
+def DOTIMES[
   args( times )
   doc( Loop an N number of times. The counter is in arg0, max in arg1, and anything on the stack starts with arg2. Returns exit the loop. )
   literal zero ( counter )
@@ -402,9 +402,9 @@ global-var *current-seq*
   literal arg0 literal arg1 literal < ( check the counter )
   POSTPONE UNLESS literal return-locals POSTPONE THEN
   return-locals
-; immediate-only
+end immediate-only
 
-: ]DOTIMES
+def ]DOTIMES
     doc( Close `DOTIMES[`. )
     ( inc the counter )
     literal arg0 ' literal int32 1 literal int-add literal set-arg0
@@ -419,58 +419,58 @@ global-var *current-seq*
     call-frame-size int32 3 cell+n rotdrop2 negate swapdrop
     patch-terminator/2 drop2
     return-locals
-; immediate-only
+end immediate-only
 
 ( Quoting: )
 
-: POSTPONE'
+def POSTPONE'
     doc( Pastpone the following word and return it with literal before it. )
     literal POSTPONE literal
     literal POSTPONE literal
     POSTPONE POSTPONE
     return-locals
-; immediate
+end immediate
 
-: lit
+def lit
   doc( Read and intern the next token. )
   next-token dup UNLESS eos return0 THEN
   intern-seq return1
-;
+end
 
-: 'lit
+def 'lit
   doc( A postponed LIT. )
   POSTPONE' lit return2
-; immediate-as lit
+end immediate-as lit
 
-: '
+def '
   doc( Read the next token and look it up in the dictionary. )
   next-token UNLESS literal eos-sym error return0 THEN
   dict dict-lookup return1
-;
+end
 
-: i'
+def i'
   doc( Read the next token and look it up in the immediate dictionary. )
   next-token UNLESS literal eos-sym error return0 THEN
   immediate-dict peek dict-lookup return1
-; immediate
+end immediate
 
-: ''
+def ''
   doc( Actually emit ' to be called later. )
   POSTPONE' ' return-locals ( a piece of magic )
-; immediate-only
+end immediate-only
 
-: [']
+def [']
   doc( No need to perform a double lookup since compilation does that. )
   ' literal return1
-; immediate-as '
+end immediate-as '
 
-: forward-slash?
+def forward-slash?
   arg0 longify \\ equals return1
-;
+end
 
 ( Strings and tokens with escape sequences: )
 
-: tokenizer-read-digits/4
+def tokenizer-read-digits/4
     doc( Read up to max-digits words until a non-digit in base is read. Returns the integer the words represent in base. )
     args( tokenizer base max-digits number ++ number )
     arg3 tokenizer-next-word
@@ -484,24 +484,24 @@ global-var *current-seq*
         THEN
     THEN
     arg0 return1
-;
+end
 
-: tokenizer-read-hex2-digits
+def tokenizer-read-hex2-digits
     doc( Read up to 2 words until a non-hex-digit is read. Returns the integer the words represent. )
     arg0 int32 16 int32 2 int32 0 tokenizer-read-digits/4 return1
-;
+end
 
-: tokenizer-read-octal-digits
+def tokenizer-read-octal-digits
     doc( Read up to 3 words until a non-octal-digit is read. Returns the integer the words represent. )
     arg0 int32 8 int32 3 int32 0 tokenizer-read-digits/4 return1
-;
+end
 
-: tokenizer-read-hex8-digits
+def tokenizer-read-hex8-digits
     doc( Read up to 8 words words until a non-hex-digit is read. Returns the integer the words represent. )
     arg0 int32 16 int32 8 int32 0 tokenizer-read-digits/4 return1
-;
+end
 
-: tokenizer-read-escape-word
+def tokenizer-read-escape-word
     arg0 tokenizer-next-word
     int32 char-code a over equals IF int32 7 return1 THEN
     int32 char-code b over equals IF int32 char-code \b ( 8 ) return1 THEN
@@ -517,9 +517,9 @@ global-var *current-seq*
     int32 char-code u over equals IF drop tokenizer-read-hex8-digits return1 THEN
     int32 char-code 0 over equals IF drop tokenizer-read-octal-digits return1 THEN
     return1
-;
+end
 
-: tokenizer-next-escaped-word
+def tokenizer-next-escaped-word
     arg0 tokenizer-next-word null? UNLESS
         forward-slash? IF
             drop
@@ -528,9 +528,9 @@ global-var *current-seq*
     THEN
     
     return1
-;
+end
     
-: tokenizer-read-escaped-until-loop
+def tokenizer-read-escaped-until-loop
   ( tokenizer needle ++ output-seq length )
     arg1 tokenizer-next-word null? UNLESS
         dup arg0 equals UNLESS
@@ -545,15 +545,15 @@ global-var *current-seq*
     THEN
 
     drop tokenizer-finish-output return2
-;
+end
 
-: tokenizer-read-escaped-until
+def tokenizer-read-escaped-until
   ( tokenizer needle ++ output-seq length )
   arg1 tokenizer-buffer-reset
   arg0 tokenizer-read-escaped-until-loop return2
-;
+end
 
-: tokenizer-next-escaped-token-loop
+def tokenizer-next-escaped-token-loop
     arg0 tokenizer-next-word ( tokenizer byte )
     null? UNLESS
         whitespace? UNLESS
@@ -569,49 +569,49 @@ global-var *current-seq*
 
     drop ( tokenizer )
     tokenizer-finish-output return2 ( next-token length )
-;
+end
 
-: tokenizer-next-escaped-token
+def tokenizer-next-escaped-token
   ( tokenizer -> string-past-token token )
   arg0
   tokenizer-eat-spaces
   tokenizer-buffer-reset
   tokenizer-next-escaped-token-loop return2
-;
+end
 
-: next-escaped-token
+def next-escaped-token
   *tokenizer* peek dup IF tokenizer-next-escaped-token return2 THEN
   int32 0 int32 0 return2
-;
+end
 
 ( Quoted strings: )
 
 ( fixme: need to read strings larger than the tokenizer's buffer )
 
-: "
+def "
   doc( Capture input into a sequence until a " is read. )
   args( : characters... ++ sequence )
   *tokenizer* peek int32 34 tokenizer-read-escaped-until intern-seq return1
-;
+end
 
-: '"
+def '"
   doc( Emit a type specifier and capture input into a sequence until " is read. )
   ' string POSTPONE " return2
-; immediate-as "
+end immediate-as "
 
 ( Immediates needed to self compile the core words. )
 
-: char-code
+def char-code
   doc( Return the next-token's first character. )
   next-escaped-token UNLESS eos eos error THEN
   cell+ peek return1
-;
+end
 
-: 'char-code
+def 'char-code
       POSTPONE' char-code return2
-; immediate-as char-code
+end immediate-as char-code
 
-: make-long-msb
+def make-long-msb
   args( lsb lmsb mlsb msb ++ uint32 )
   doc( Construct a 32 bit value from 4 arguments, LSB to MSB. )
   arg0 int32 8 bsl
@@ -621,9 +621,9 @@ global-var *current-seq*
   int32 8 bsl
   arg3 logior
   return1
-;
+end
 
-: longify-string
+def longify-string
   doc( Turn the ToS string into a 4 byte "string" or long. )
   arg0 peek terminator? IF int32 0 return1 THEN
   arg0 cell+ swapdrop peek terminator? IF
@@ -636,28 +636,28 @@ global-var *current-seq*
     drop int32 0 make-long-msb return1
   THEN
   make-long-msb return1
-;
+end
 
 ( todo longify needs to unescape the next token. )
 
-: longify
+def longify
   doc( Turn the next token into a 4 byte "string" or long. )
   next-escaped-token UNLESS eos eos error THEN
   cell+ longify-string
   return1
-;
+end
 
-: 'longify
+def 'longify
     ' uint32 POSTPONE longify return2
-; immediate-as longify
+end immediate-as longify
 
-: longify"
+def longify"
   doc( Read until the next " and convert that to a long. )
   *tokenizer* peek int32 34 tokenizer-read-escaped-until UNLESS eos eos error THEN
   cell+ longify-string
   return1
-;
+end
 
-: 'longify"
+def 'longify"
     ' uint32 POSTPONE longify" return2
-; immediate-as longify"
+end immediate-as longify"

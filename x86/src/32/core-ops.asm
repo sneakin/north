@@ -23,7 +23,6 @@ defop peek_byte
 ;;; 
 
 defalias begin,begin_frame
-defalias end,end_frame
 
 defop exit
   mov eval_ip, [fp+ptrsize]

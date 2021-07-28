@@ -4,7 +4,7 @@
   terminator
   arg0 cell* swapdrop negate move
   arg0 here
-  return-address end jump
+  return-address end-frame jump
 ;
 
 : copy-seq-data

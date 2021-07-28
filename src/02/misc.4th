@@ -175,18 +175,18 @@
 ;
 
 : again
-  end-frame return-address jump ( exit/return w/o ending frame )
+  pop-frame return-address jump ( exit/return w/o ending frame )
 ;
 
 : leave
-  end-frame end rotdrop2 jump ( fixme needs to know where WHILE is )
+  pop-frame end-frame rotdrop2 jump ( fixme needs to know where WHILE is )
 ;
 
 : while
-  end drop ( drop frame )
+  end-frame drop ( drop frame )
   swap ( swap return addr & condition )
   literal while-loop ifthenjump
-  end rotdrop2 jump
+  end-frame rotdrop2 jump
   while-loop: drop return-address jump
 ;
 

@@ -8,77 +8,77 @@ global-var *termios*
 import> libc.so.6 tcgetattr 2 1
 import> libc.so.6 tcsetattr 3 1
 
-: allot-termios
+def allot-termios
     termios-byte-size dallot return1
-;
+end
 
-: clone-termios
+def clone-termios
   arg0 allot-termios termios-byte-size copy
   drop return1
-;
+end
 
-: tty-termios
+def tty-termios
   *termios* @ null? UNLESS return1 THEN
   allot-termios dup *termios* !
   return1
-;
+end
 
-: termios-lflag
+def termios-lflag
     arg0 int32 3 cell+n return1-1
-;
+end
 
-: termios-clear-lflag
+def termios-clear-lflag
     arg0 termios-lflag @
     arg1 lognot logand
     arg0 termios-lflag !
-;
+end
 
-: termios-set-lflag
+def termios-set-lflag
     arg0 termios-lflag @
     arg1 logior
     arg0 termios-lflag !
-;
+end
 
-: termios-clear-lflags/2
+def termios-clear-lflags/2
   doc( Clear the terminal's lflags. )
     tty-termios arg1 tcgetattr
     int32 0 < IF " failed to get attr" " input-dev-error" error THEN
     arg0 local0 termios-clear-lflag
     int32 0 arg1 tcsetattr
     int32 0 < IF " failed to set attr" " input-dev-error" error THEN
-;
+end
 
-: termios-set-lflags/2
+def termios-set-lflags/2
     doc( Set the terminal's lflags. )
     tty-termios arg1 tcgetattr
     int32 0 < IF " failed to get attr" " input-dev-error" error THEN
     arg0 local0 termios-set-lflag
     int32 0 arg1 tcsetattr
     int32 0 < IF " failed to set attr" " input-dev-error" error THEN
-;
+end
 
-: tty-enter-raw-mode/1
+def tty-enter-raw-mode/1
   doc( exit icanon|echo mode )
   arg0 ICANON ECHO logior termios-clear-lflags/2
-;
+end
 
-: tty-exit-raw-mode/1
+def tty-exit-raw-mode/1
   doc( enter icanon|echo mode )
   arg0 ICANON ECHO logior termios-set-lflags/2
-;
+end
 
-:: tty-enter-raw-mode int32 0 tty-enter-raw-mode/1 int32 0 return1 ;
-:: tty-exit-raw-mode int32 0 tty-exit-raw-mode/1 ;
+redef tty-enter-raw-mode int32 0 tty-enter-raw-mode/1 int32 0 return1 end
+redef tty-exit-raw-mode int32 0 tty-exit-raw-mode/1 end
 
-: tty-exit-echo-mode/1
+def tty-exit-echo-mode/1
   doc( exit echo mode )
   arg0 ECHO termios-clear-lflags/2
-;
+end
 
-: tty-enter-echo-mode/1
+def tty-enter-echo-mode/1
   doc( enter echo mode )
   arg0 ECHO termios-set-lflags/2
-;
+end
 
-:: tty-enter-echo-mode int32 0 tty-enter-echo-mode/1 int32 0 return1 ;
-:: tty-exit-echo-mode int32 0 tty-exit-echo-mode/1 ;
+redef tty-enter-echo-mode int32 0 tty-enter-echo-mode/1 int32 0 return1 end
+redef tty-exit-echo-mode int32 0 tty-exit-echo-mode/1 end

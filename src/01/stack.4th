@@ -1,12 +1,12 @@
 ( Frames again: )
 
-: local2
+def local2
     current-frame parent-frame peek
     frame-locals cell-2 swapdrop peek
     return1
-;
+end
 
-: shift-frame-up
+def shift-frame-up
     args( offset n -- ... )
     doc( Move the parent frame with N arguments OFFSET cells up the stack adjusting the frame links. )
     ( check that granny doesn't get ran over )
@@ -32,18 +32,18 @@
     ( update this frame )
     current-frame
     arg1 cell+n rotdrop2 set-current-frame
-;
+end
 
 ( Stack information )
 
-: stack-depth/1
+def stack-depth/1
   stack-top arg0 uint-sub cell/ return1
-;
+end
 
-: stack-depth
+def stack-depth
     args stack-depth/1 return1
-;
+end
 
-: write-depth
+def write-depth
   arg0 stack-depth/1 write-unsigned-int
-;
+end

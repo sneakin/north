@@ -1,22 +1,22 @@
-: control-code?
+def control-code?
     arg0 int32 32 < return1
-;
+end
 
-: printable-byte?
+def printable-byte?
     arg0 int32 32 < IF int32 0 return1 THEN
     arg0 int32 127 >= IF int32 0 return1 THEN
     arg0 int32 char-code \\ equals IF int32 0 return1 THEN
     int32 1 return1
-;
+end
 
-: write-hex-int
+def write-hex-int
     base peek hex
     arg0 int32 16 < IF int32 char-code 0 write-byte THEN
     arg0 write-int drop
     base poke
-;
+end
 
-: escape-code-for
+def escape-code-for
     int32 7 arg0 equals IF int32 char-code a return1 THEN
     int32 char-code \b ( 8 ) arg0 equals IF int32 char-code b return1 THEN
     int32 char-code \f ( $c ) arg0 equals IF int32 char-code f return1 THEN
@@ -28,9 +28,9 @@
     int32 char-code \\ ( $5c ) arg0 equals IF int32 char-code \\ return1 THEN
     int32 char-code \" ( $22 ) arg0 equals IF int32 char-code \" return1 THEN
     int32 0 return1
-;
+end
 
-: write-escaped-byte
+def write-escaped-byte
     arg0
     escape-code-for null? UNLESS
         int32 char-code \\ write-byte
@@ -46,9 +46,9 @@
     THEN
     " \\u" write-string drop
     write-hex-int
-;
+end
 
-: write-escaped-string-n
+def write-escaped-string-n
   arg1 seq-data swapdrop
   dup
   arg0 cell* swapdrop
@@ -63,8 +63,8 @@
   cell+ swapdrop
   2dup equals IF return0 THEN
   literal write-escaped-string-n-loop jump
-;
+end
 
-: write-escaped-string
+def write-escaped-string
     arg0 seq-length write-escaped-string-n
-;
+end

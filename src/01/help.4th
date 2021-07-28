@@ -1,4 +1,4 @@
-: help/1
+def help/1
   doc( Print the doc string of the argument. )
   args( word ++ )
   arg0
@@ -12,27 +12,27 @@
   write-crnl
   dict-entry-doc dup UNLESS " No help." THEN
   color-reset write-line drop
-;
+end
 
-: help:
+def help:
   doc( Print the following word's doc string. )
   args( _ : word ++ )
   POSTPONE ' dup UNLESS
     " No help." write-line return0
   THEN
   help/1
-;
+end
 
-: ihelp:
+def ihelp:
   doc( Print the following immediate word's doc string. )
   args( _ : word ++ )
   POSTPONE i' dup UNLESS
     " No help." write-line return0
   THEN
   help/1
-;
+end
 
-: help doc( Print introductory help.)
+def help doc( Print introductory help.)
   about
   write-crnl
   " Helpful Commands:" write-heading
@@ -52,13 +52,14 @@
     write-crnl
   " Compiling words:" write-heading
   ' variable help/1
-  ' : help/1
+  ' def help/1
   ( fixme may have a discrepancy in meta and self compiling with immediate lookups )
-  ' ; help/1
+  ( ' end help/1 )
+  " end  Leave compiling mode started by def." write-crnl
   ' ( help/1
   ' " help/1
   ' begin help/1
-  ' end help/1
+  ' end-frame help/1
   ' return1 help/1
   ' RECURSE help/1
   ' IF help/1
@@ -71,7 +72,7 @@
   ' literal help/1
   ' int32 help/1
   ' POSTPONE help/1
-;
+end
 
 ( todo categorical help commands for help, stack, system, compiling, frame & data, math, logic, input/output, assembly, internals ... )
 ( todo hypertext pager / viewer w/ links and semantic class coloring. )

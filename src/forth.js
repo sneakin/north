@@ -206,6 +206,17 @@ function colon_def(token, code)
   return tok[1];
 }
 
+function colon_end(token, code)
+{
+    var name = this.last_dictionary;
+    this.dictionary[name].data = name + '-entry-data';
+
+    this.interp('return0');
+    this.emitter.label(name + '-end').
+        label(name + '-size', (this.emitter.resolve(name + '-end') - this.emitter.resolve(name + '-ops')) / this.cell_size).
+        uint32(TERMINATOR);
+}
+
 Forth.prototype.literal_immediate = function(token, code)
 {
   var tok = this.next_token(code);
@@ -226,16 +237,11 @@ Forth.macros = {
     this.word_prefix = this.stack.pop();
   },
   ":": colon_def,
+  "def": colon_def,
   "::": colon_def,
-  ";": function(token, code) {
-    var name = this.last_dictionary;
-    this.dictionary[name].data = name + '-entry-data';
-
-    this.interp('return0');
-    this.emitter.label(name + '-end').
-        label(name + '-size', (this.emitter.resolve(name + '-end') - this.emitter.resolve(name + '-ops')) / this.cell_size).
-        uint32(TERMINATOR);
-  },
+  "redef": colon_def,
+  ";": colon_end,
+  "end": colon_end,
   alias: function(token, code) {
     // alias NAME AS
     // Adds a dictionary entry named NAME that is a copy of AS.
