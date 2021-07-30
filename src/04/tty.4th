@@ -5,15 +5,15 @@
     https://www.gnu.org/software/screen/manual/html_node/Control-Sequences.html
 )
 
-: write-bell int32 char-code \b write-byte ;
+def write-bell int32 char-code \b write-byte end
 
-: tty-reset
+def tty-reset
     " \ec" write-string
-;
+end
 
 ( Helper functions: )
 
-: tty-basic-escape3
+def tty-basic-escape3
     base peek dec
     " \e[" write-string
     arg3 write-int
@@ -23,9 +23,9 @@
     arg1 write-int
     arg0 write-string
     local0 base poke
-;
+end
 
-: tty-basic-escape2
+def tty-basic-escape2
     base peek dec
     " \e[" write-string
     arg2 write-int
@@ -33,273 +33,273 @@
     arg1 write-int
     arg0 write-string
     local0 base poke
-;
+end
 
-: tty-basic-escape1
+def tty-basic-escape1
     args( arg code )
     " \e[" write-string
     arg1 write-int
     arg0 write-string
-;
+end
 
-: tty-escape-private/1
+def tty-escape-private/1
     arg0 UNLESS longify l return1 THEN
     longify h return1
-;
+end
 
-: tty-escape-private!
+def tty-escape-private!
     arg0 write-string
     arg1 tty-escape-private/1 write-byte
-;
+end
 
 ( Tabs... )
 
-: tty-tab-set " \eH" write-string ;
-: tty-tab-clear " \e[g" write-string ;
-: tty-tab-clear-all " \e[3g" write-string ;
+def tty-tab-set " \eH" write-string end
+def tty-tab-clear " \e[g" write-string end
+def tty-tab-clear-all " \e[3g" write-string end
 
 ( Erasure: )
 
-: tty-erase
+def tty-erase
     " \e[2J" write-string
-;
+end
 
-: tty-erase-all
+def tty-erase-all
     " \e[2J" write-string
-;
+end
 
-: tty-erase-below
+def tty-erase-below
     " \e[0J" write-string
-;
+end
 
-: tty-erase-above
+def tty-erase-above
     " \e[1J" write-string
-;
+end
 
-: tty-erase-line-right
+def tty-erase-line-right
     " \e[0K" write-string
-;
+end
 
-: tty-erase-line-left
+def tty-erase-line-left
     " \e[1K" write-string
-;
+end
 
-: tty-erase-line
+def tty-erase-line
     " \e[2K" write-string
-;
+end
 
 ( Cursor position procedures: )
 
-: tty-cursor-save
+def tty-cursor-save
     " \e[s" write-string
-;
+end
 
-: tty-cursor-restore
+def tty-cursor-restore
     " \e[u" write-string
-;
+end
 
-: tty-cursor-save-attr
+def tty-cursor-save-attr
     " \e7" write-string
-;
+end
 
-: tty-cursor-restore-attr
+def tty-cursor-restore-attr
     " \e8" write-string
-;
+end
 
-: tty-cursor-home-bottom
+def tty-cursor-home-bottom
     " \eF" write-string
-;
+end
 
-: tty-cursor-to arg0 arg1 " f" tty-basic-escape2 ;
-: tty-cursor-to-column arg0 " G" tty-basic-escape1 ;
-: tty-cursor-home int32 1 tty-cursor-to-column ;
+def tty-cursor-to arg0 arg1 " f" tty-basic-escape2 end
+def tty-cursor-to-column arg0 " G" tty-basic-escape1 end
+def tty-cursor-home int32 1 tty-cursor-to-column end
 
-: tty-cursor-up arg0 " A" tty-basic-escape1 ;
-: tty-cursor-down arg0 " B" tty-basic-escape1 ;
-: tty-cursor-right arg0 " C" tty-basic-escape1 ;
-: tty-cursor-left arg0 " D" tty-basic-escape1 ;
+def tty-cursor-up arg0 " A" tty-basic-escape1 end
+def tty-cursor-down arg0 " B" tty-basic-escape1 end
+def tty-cursor-right arg0 " C" tty-basic-escape1 end
+def tty-cursor-left arg0 " D" tty-basic-escape1 end
 
-: tty-cursor-down-1 " \eD" write-string ;
-: tty-cursor-up-1 " \eM" write-string ;
+def tty-cursor-down-1 " \eD" write-string end
+def tty-cursor-up-1 " \eM" write-string end
 
-: tty-cursor-next-line arg0 " E" tty-basic-escape1 ;
-: tty-cursor-prev-line arg0 " F" tty-basic-escape1 ;
-: tty-cursor-to-col arg0 " G" tty-basic-escape1 ;
+def tty-cursor-next-line arg0 " E" tty-basic-escape1 end
+def tty-cursor-prev-line arg0 " F" tty-basic-escape1 end
+def tty-cursor-to-col arg0 " G" tty-basic-escape1 end
 
-: tty-cursor-move
+def tty-cursor-move
     arg1 negative? IF negate tty-cursor-left ELSE tty-cursor-right THEN
     arg0 negative? IF negate tty-cursor-up ELSE tty-cursor-down THEN
-;
+end
 
-: tty-get-cursor
+def tty-get-cursor
     " \e[6n" write-string
-;
+end
 
-: tty-scroll-region-off " \e[r" write-string ;
-: tty-scroll-region
+def tty-scroll-region-off " \e[r" write-string end
+def tty-scroll-region
     args( top bottom )
     arg1 arg0 " r" tty-basic-escape2
-;
+end
 
-: tty-scroll-up
+def tty-scroll-up
     " \eM" write-string
-;
+end
 
-: tty-scroll-down
+def tty-scroll-down
     " \eD" write-string
-;
+end
 
 ( Private escape sequences: )
 
-: tty-linewrap/1 arg0 " \e[7" tty-escape-private! ;
-: tty-linewrap-on int32 1 tty-linewrap/1 ;
-: tty-linewrap-off int32 0 tty-linewrap/1 ;
+def tty-linewrap/1 arg0 " \e[7" tty-escape-private! end
+def tty-linewrap-on int32 1 tty-linewrap/1 end
+def tty-linewrap-off int32 0 tty-linewrap/1 end
 
-: tty-local-echo/1 arg0 " \e[12" tty-escape-private! ;
-: tty-local-echo-on int32 1 tty-local-echo/1 ;
-: tty-local-echo-off int32 0 tty-local-echo/1 ;
+def tty-local-echo/1 arg0 " \e[12" tty-escape-private! end
+def tty-local-echo-on int32 1 tty-local-echo/1 end
+def tty-local-echo-off int32 0 tty-local-echo/1 end
 
-: tty-newline-mode/1 arg0 " \e[20" tty-escape-private! ;
-: tty-newline-mode int32 1 tty-newline-mode/1 ;
-: tty-line-feed-mode int32 0 tty-newline-mode/1 ;
+def tty-newline-mode/1 arg0 " \e[20" tty-escape-private! end
+def tty-newline-mode int32 1 tty-newline-mode/1 end
+def tty-line-feed-mode int32 0 tty-newline-mode/1 end
 
-: tty-show-cursor/1 arg0 " \e[?25" tty-escape-private! ;
-: tty-show-cursor int32 1 tty-show-cursor/1 ;
-: tty-hide-cursor int32 0 tty-show-cursor/1 ;
+def tty-show-cursor/1 arg0 " \e[?25" tty-escape-private! end
+def tty-show-cursor int32 1 tty-show-cursor/1 end
+def tty-hide-cursor int32 0 tty-show-cursor/1 end
 
-: tty-alt-buffer/1 arg0 " \e[?1047" tty-escape-private! ;
-: tty-alt-buffer int32 1 tty-alt-buffer/1 ;
-: tty-normal-buffer int32 0 tty-alt-buffer/1 ;
+def tty-alt-buffer/1 arg0 " \e[?1047" tty-escape-private! end
+def tty-alt-buffer int32 1 tty-alt-buffer/1 end
+def tty-normal-buffer int32 0 tty-alt-buffer/1 end
 
-: tty-alt-buffer-switch/1 arg0 " \e[?1049" tty-escape-private! ;
-: tty-alt-buffer-save int32 1 tty-alt-buffer-switch/1 ;
-: tty-normal-buffer-restore int32 0 tty-alt-buffer-switch/1 ;
+def tty-alt-buffer-switch/1 arg0 " \e[?1049" tty-escape-private! end
+def tty-alt-buffer-save int32 1 tty-alt-buffer-switch/1 end
+def tty-normal-buffer-restore int32 0 tty-alt-buffer-switch/1 end
 
-: tty-alt-cursor-save/1 arg0 " \e[?1048" tty-escape-private! ;
-: tty-alt-cursor-save int32 1 tty-alt-cursor-save/1 ;
-: tty-alt-cursor-restore int32 0 tty-alt-cursor-save/1 ;
+def tty-alt-cursor-save/1 arg0 " \e[?1048" tty-escape-private! end
+def tty-alt-cursor-save int32 1 tty-alt-cursor-save/1 end
+def tty-alt-cursor-restore int32 0 tty-alt-cursor-save/1 end
 
-: tty-mouse/1 arg0 " \e[?1000" tty-escape-private! ;
-: tty-mouse-on int32 1 tty-mouse/1 ;
-: tty-mouse-off int32 0 tty-mouse/1 ;
+def tty-mouse/1 arg0 " \e[?1000" tty-escape-private! end
+def tty-mouse-on int32 1 tty-mouse/1 end
+def tty-mouse-off int32 0 tty-mouse/1 end
 
-: tty-bracket-paste/1 arg0 " \e[?2004" tty-escape-private! ;
-: tty-bracket-paste-on int32 1 tty-bracket-paste/1 ;
-: tty-bracket-paste-off int32 0 tty-bracket-paste/1 ;
+def tty-bracket-paste/1 arg0 " \e[?2004" tty-escape-private! end
+def tty-bracket-paste-on int32 1 tty-bracket-paste/1 end
+def tty-bracket-paste-off int32 0 tty-bracket-paste/1 end
 
 ( Character attributes: )
 
-: color-attr
+def color-attr
     arg0 " m" tty-basic-escape1
-;
+end
 
-: tty-char-reset int32 0 color-attr ;
-: tty-normal int32 22 color-attr ;
+def tty-char-reset int32 0 color-attr end
+def tty-normal int32 22 color-attr end
 
-: bold int32 1 color-attr ;
-: bold-off int32 21 color-attr ;
-: dim int32 2 color-attr ;
-: italic int32 3 color-attr ;
-: italic-off int32 23 color-attr ;
-: underline int32 4 color-attr ;
-: underline-off int32 24 color-attr ;
-: blink-fast int32 5 color-attr ;
-: blink-off int32 25 color-attr ;
-: blink-slow int32 6 color-attr ;
-: inverse int32 7 color-attr ;
-: inverse-off int32 27 color-attr ;
-: invisible int32 8 color-attr ;
-: invisible-off int32 28 color-attr ;
-: strike int32 9 color-attr ;
-: strike-off int32 29 color-attr ;
+def bold int32 1 color-attr end
+def bold-off int32 21 color-attr end
+def dim int32 2 color-attr end
+def italic int32 3 color-attr end
+def italic-off int32 23 color-attr end
+def underline int32 4 color-attr end
+def underline-off int32 24 color-attr end
+def blink-fast int32 5 color-attr end
+def blink-off int32 25 color-attr end
+def blink-slow int32 6 color-attr end
+def inverse int32 7 color-attr end
+def inverse-off int32 27 color-attr end
+def invisible int32 8 color-attr end
+def invisible-off int32 28 color-attr end
+def strike int32 9 color-attr end
+def strike-off int32 29 color-attr end
 
-: tty-reset-font int32 10 color-attr ;
+def tty-reset-font int32 10 color-attr end
 
 ( Font selection: )
 
-: tty-font-utf8 " \e%G" write-string ;
-: tty-font-g0 int32 15 write-byte ;
-: tty-font-g1 int32 14 write-byte ;
-: tty-font-g2 " \eN" write-string ;
-: tty-font-g2-1 " \en" write-string ;
-: tty-font-g3 " \eO" write-string ;
-: tty-font-g3-1 " \eo" write-string ;
+def tty-font-utf8 " \e%G" write-string end
+def tty-font-g0 int32 15 write-byte end
+def tty-font-g1 int32 14 write-byte end
+def tty-font-g2 " \eN" write-string end
+def tty-font-g2-1 " \en" write-string end
+def tty-font-g3 " \eO" write-string end
+def tty-font-g3-1 " \eo" write-string end
 
-: TTY-FONT-US int32 char-code B return1 ;
-: TTY-FONT-UK int32 char-code A return1 ;
-: TTY-FONT-BOX int32 char-code 0 return1 ;
+def TTY-FONT-US int32 char-code B return1 end
+def TTY-FONT-UK int32 char-code A return1 end
+def TTY-FONT-BOX int32 char-code 0 return1 end
 
-: tty-set-g0 " \e(" write-string arg0 write-byte ;
-: tty-set-g1 " \e)" write-string arg0 write-byte ;
-: tty-set-g2 " \e*" write-string arg0 write-byte ;
-: tty-set-g3 " \e+" write-string arg0 write-byte ;
+def tty-set-g0 " \e(" write-string arg0 write-byte end
+def tty-set-g1 " \e)" write-string arg0 write-byte end
+def tty-set-g2 " \e*" write-string arg0 write-byte end
+def tty-set-g3 " \e+" write-string arg0 write-byte end
 
-: tty-box-drawing-on TTY-FONT-BOX tty-set-g1 tty-font-g1 ;
-: tty-box-drawing-off tty-font-g0 ;
+def tty-box-drawing-on TTY-FONT-BOX tty-set-g1 tty-font-g1 end
+def tty-box-drawing-off tty-font-g0 end
 
 ( Window codes: )
 
-: tty-window-deiconify int32 1 " t" tty-basic-escape1 ;
-: tty-window-iconify int32 2 " t" tty-basic-escape1 ;
+def tty-window-deiconify int32 1 " t" tty-basic-escape1 end
+def tty-window-iconify int32 2 " t" tty-basic-escape1 end
 
-: tty-window-move int32 3 arg1 arg0 " t" tty-basic-escape3 ;
-: tty-window-pixel-resize int32 4 arg1 arg0 " t" tty-basic-escape3 ;
-: tty-window-char-resize int32 8 arg1 arg0 " t" tty-basic-escape3 ;
+def tty-window-move int32 3 arg1 arg0 " t" tty-basic-escape3 end
+def tty-window-pixel-resize int32 4 arg1 arg0 " t" tty-basic-escape3 end
+def tty-window-char-resize int32 8 arg1 arg0 " t" tty-basic-escape3 end
 
-: tty-window-raise int32 5 " t" tty-basic-escape1 ;
-: tty-window-lower int32 6 " t" tty-basic-escape1 ;
-: tty-window-refresh int32 7 " t" tty-basic-escape1 ;
+def tty-window-raise int32 5 " t" tty-basic-escape1 end
+def tty-window-lower int32 6 " t" tty-basic-escape1 end
+def tty-window-refresh int32 7 " t" tty-basic-escape1 end
 
-: tty-window-restore-maximized int32 9 int32 0 " t" tty-basic-escape2 ;
-: tty-window-maximize int32 9 int32 1 " t" tty-basic-escape2 ;
+def tty-window-restore-maximized int32 9 int32 0 " t" tty-basic-escape2 end
+def tty-window-maximize int32 9 int32 1 " t" tty-basic-escape2 end
 
-: tty-window-state int32 11 " t" tty-basic-escape1 ;
-: tty-window-position int32 13 " t" tty-basic-escape1 ;
-: tty-window-pixel-size int32 14 " t" tty-basic-escape1 ;
-: tty-window-text-size int32 18 " t" tty-basic-escape1 ;
-: tty-window-screen-size int32 19 " t" tty-basic-escape1 ;
-: tty-window-icon-label int32 20 " t" tty-basic-escape1 ;
-: tty-window-title int32 21 " t" tty-basic-escape1 ;
-: tty-window-resize-lines arg0 " t" tty-basic-escape1 ;
+def tty-window-state int32 11 " t" tty-basic-escape1 end
+def tty-window-position int32 13 " t" tty-basic-escape1 end
+def tty-window-pixel-size int32 14 " t" tty-basic-escape1 end
+def tty-window-text-size int32 18 " t" tty-basic-escape1 end
+def tty-window-screen-size int32 19 " t" tty-basic-escape1 end
+def tty-window-icon-label int32 20 " t" tty-basic-escape1 end
+def tty-window-title int32 21 " t" tty-basic-escape1 end
+def tty-window-resize-lines arg0 " t" tty-basic-escape1 end
 
-: tty-osc-command
+def tty-osc-command
     " \e]" write-string
     arg1 write-unsigned-int
     " ;" write-string
     arg0 write-string
     " \a" write-string
-;
+end
 
-: tty-set-window-icon-and-title int32 0 arg0 tty-osc-command ;
-: tty-set-window-title int32 2 arg0 tty-osc-command ;
-: tty-set-window-icon-name int32 1 arg0 tty-osc-command ;
+def tty-set-window-icon-and-title int32 0 arg0 tty-osc-command end
+def tty-set-window-title int32 2 arg0 tty-osc-command end
+def tty-set-window-icon-name int32 1 arg0 tty-osc-command end
 
 
 ( Bad codes? )
 
-: tty-reversed/1 arg0 " \e[?12" tty-escape-private! ;
-: tty-reversed-on int32 1 tty-reversed/1 ;
-: tty-reversed-off int32 0 tty-reversed/1 ;
+def tty-reversed/1 arg0 " \e[?12" tty-escape-private! end
+def tty-reversed-on int32 1 tty-reversed/1 end
+def tty-reversed-off int32 0 tty-reversed/1 end
 
-: tty-blinking-cursor/1 arg0 " \e[?12" tty-escape-private! ;
-: tty-blinking-cursor int32 1 tty-blinking-cursor/1 ;
-: tty-solid-cursor int32 0 tty-blinking-cursor/1 ;
+def tty-blinking-cursor/1 arg0 " \e[?12" tty-escape-private! end
+def tty-blinking-cursor int32 1 tty-blinking-cursor/1 end
+def tty-solid-cursor int32 0 tty-blinking-cursor/1 end
 
-: tty-hi-mouse/1 arg0 " \e[?1001" tty-escape-private! ;
-: tty-hi-mouse-on int32 1 tty-hi-mouse/1 ;
-: tty-hi-mouse-off int32 0 tty-hi-mouse/1 ;
+def tty-hi-mouse/1 arg0 " \e[?1001" tty-escape-private! end
+def tty-hi-mouse-on int32 1 tty-hi-mouse/1 end
+def tty-hi-mouse-off int32 0 tty-hi-mouse/1 end
 
-: tty-mouse-cell-motion/1 arg0 " \e[?1002" tty-escape-private! ;
-: tty-mouse-cell-motion-on int32 1 tty-mouse-cell-motion/1 ;
-: tty-mouse-cell-motion-off int32 0 tty-mouse-cell-motion/1 ;
+def tty-mouse-cell-motion/1 arg0 " \e[?1002" tty-escape-private! end
+def tty-mouse-cell-motion-on int32 1 tty-mouse-cell-motion/1 end
+def tty-mouse-cell-motion-off int32 0 tty-mouse-cell-motion/1 end
 
-: tty-mouse-tracking/1 arg0 " \e[?1003" tty-escape-private! ;
-: tty-mouse-tracking-on int32 1 tty-mouse-tracking/1 ;
-: tty-mouse-tracking-off int32 0 tty-mouse-tracking/1 ;
+def tty-mouse-tracking/1 arg0 " \e[?1003" tty-escape-private! end
+def tty-mouse-tracking-on int32 1 tty-mouse-tracking/1 end
+def tty-mouse-tracking-off int32 0 tty-mouse-tracking/1 end
 
-: tty-relative/1 arg0 " \e[?6" tty-escape-private! ;
-: tty-relative int32 1 tty-relative/1 ;
-: tty-absolute int32 0 tty-relative/1 ;
+def tty-relative/1 arg0 " \e[?6" tty-escape-private! end
+def tty-relative int32 1 tty-relative/1 end
+def tty-absolute int32 0 tty-relative/1 end
 
 ( TTY Input )
 
@@ -309,11 +309,11 @@ constant TTY-READ-ESCAPE 2
 constant TTY-READ-CSI 3
 constant TTY-READ-MOUSE 4
 
-: tty-read-byte
+def tty-read-byte
     read-byte return1
-;
+end
 
-: tty-read-int
+def tty-read-int
     args( digit -- digit next-byte )
     tty-read-byte
     digit? UNLESS return1 THEN
@@ -321,9 +321,9 @@ constant TTY-READ-MOUSE 4
     arg0 int32 10 int-mul
     int-add set-arg0
     RECURSE
-;
+end
 
-: tty-read-int-seq-loop/3
+def tty-read-int-seq-loop/3
     args( initial-digit modifier counter ++ digits... num-digits next-byte modifier )
     ( Scanning: [ digit+ ';' ]* digit* char )
     arg0 int32 1 int-add set-arg0
@@ -334,22 +334,22 @@ constant TTY-READ-MOUSE 4
     drop
     arg2 IF int32 0 set-arg2 THEN
     RECURSE
-;
+end
 
-: tty-read-int-seq
+def tty-read-int-seq
     args( initial-digit modifier ++ digits code modifier )
     arg1 arg0 int32 0
     ' tty-read-int-seq-loop/3 cont
-;
+end
 
-: tty-read-mouse-coords
+def tty-read-mouse-coords
     tty-read-byte
     tty-read-byte int32 32 int-sub
     tty-read-byte int32 32 int-sub
     local0 TTY-READ-MOUSE int32 4 returnN
-;
+end
 
-: tty-read-csi
+def tty-read-csi
     args( ++ digits code modifier kind-of-escape  )
     tty-read-byte
     digit? IF
@@ -366,9 +366,9 @@ constant TTY-READ-MOUSE 4
         ' tty-read-int-seq cont
     THEN
     int32 0 swap int32 0 TTY-READ-CSI int32 4 returnN
-;
+end
 
-: tty-read-escape-seq
+def tty-read-escape-seq
     doc( Read a VT100 escape sequence after reading the escape byte.
     Makes a list of integer parameters, number of parameters,
     the final codo, the initial modifier, and  the kind of sequence. )
@@ -398,17 +398,17 @@ constant TTY-READ-MOUSE 4
     THEN
     ( Just \eX )
     int32 0 swap int32 0 TTY-READ-ESCAPE int32 4 returnN
-;
+end
 
-: tty-read
+def tty-read
     doc( Read the next byte or escape sequence from the input device. )
     args( ++ ...event-data event-kind )
     tty-read-byte
     escape? IF ' tty-read-escape-seq cont THEN
     TTY-READ-BYTE return2
-;
+end
 
-: tty-query2
+def tty-query2
     tty-enter-raw-mode
     arg0 exec-core-word
     tty-read
@@ -418,33 +418,33 @@ constant TTY-READ-MOUSE 4
     ELSE
       int32 0 int32 0 return2
     THEN
-;
+end
 
-: tty-read-cursor
+def tty-read-cursor
     doc( Query the terminal for the cursor position. )
     args( ++ row col )
     ' tty-get-cursor tty-query2 return2
-;
+end
 
-: tty-read-window-position
+def tty-read-window-position
     ' tty-window-position tty-query2 return2
-;
+end
 
-: tty-read-window-pixel-size
+def tty-read-window-pixel-size
     ' tty-window-pixel-size tty-query2 return2
-;
+end
 
-: tty-read-window-text-size
+def tty-read-window-text-size
     ' tty-window-text-size tty-query2 return2
-;
+end
 
-: tty-read-window-screen-size
+def tty-read-window-screen-size
     ' tty-window-screen-size tty-query2 return2
-;
+end
 
 ( TTY ReadEval: reader + dictionary word execution by key name: )
 
-: tty-readeval-key-name
+def tty-readeval-key-name
     doc( Convert `tty-read` output into a string. Key names are close to Emacs' style names: C- used for control, M- used for alt/meta. )
     args( ...event-data kind output-seq ++ )
     ( todo Function keys & mouse buttons? and a string escape code exception; and device status; cursor position state )
@@ -532,9 +532,9 @@ constant TTY-READ-MOUSE 4
         return0
     THEN
     terminator int32 0 here arg0 int32 2 overn copy-seq
-;
+end
 
-: test-tty-readeval-key-name
+def test-tty-readeval-key-name
     int32 32 stack-allot
     int32 char-code A TTY-READ-BYTE shift tty-readeval-key-name
     int32 64 write-line-n hexdump
@@ -558,34 +558,34 @@ constant TTY-READ-MOUSE 4
     int32 32 stack-allot
     int32 0 int32 char-code A int32 0 TTY-READ-CSI int32 4 overn tty-readeval-key-name
     int32 64 hexdump
-;
+end
 
-: tty-readeval-done!/2
+def tty-readeval-done!/2
   args( readeval-dict value )
     lit tty-readeval-done arg1 dict-lookup
     dup IF arg0 swap set-dict-entry-data THEN
-;
+end
 
-: tty-readeval-done!
+def tty-readeval-done!
   arg0 int32 1 tty-readeval-done!/2
-;
+end
 
-: tty-readeval-reset-done!
+def tty-readeval-reset-done!
   arg0 int32 0 tty-readeval-done!/2
-;
+end
 
-: tty-readeval-done?
+def tty-readeval-done?
     lit tty-readeval-done arg0 dict-lookup
     dup UNLESS int32 2 return1 THEN
     dict-entry-data return1
-;
+end
 
-: tty-readeval-on-break
+def tty-readeval-on-break
   " on-break" .s .\n
     arg0 tty-readeval-done!
-;
+end
 
-: tty-readeval-loop
+def tty-readeval-loop
     args( key-name-buffer on-char on-key dict ) 
     arg0 tty-readeval-done? swapdrop IF return0 THEN
     tty-read
@@ -611,20 +611,20 @@ constant TTY-READ-MOUSE 4
         exec-core-word
     THEN
     drop-locals RECURSE
-;
+end
 
-: tty-readeval-start
+def tty-readeval-start
     tty-enter-raw-mode
     tty-mouse-on
-;
+end
 
-: tty-readeval-end
+def tty-readeval-end
     tty-mouse-off
     tty-exit-raw-mode
     input-reset
-;
+end
 
-: tty-readeval
+def tty-readeval
     doc( Read TTY input dispatching to dictionary entries
     whose name matches the input's key name, or to on-char for
     simple byte inputs, and on-key for escaped inputs.
@@ -640,9 +640,9 @@ constant TTY-READ-MOUSE 4
     tty-readeval-reset-done!
     tty-readeval-loop drop
     tty-readeval-end
-;
+end
 
-: tty-make-readeval-default-dict
+def tty-make-readeval-default-dict
     doc( Construct the default dictionary that `tty-readeval`  expects. )
     args( dict )
     arg0
@@ -650,11 +650,11 @@ constant TTY-READ-MOUSE 4
     " tty-readeval-loop" aliases> tty-readeval-loop
     " tty-readeval-done" ' variable-peeker dict-entry-code swapdrop int32 0 make-dict/4
     return1
-;
+end
 
 ( ReadEval test: )
 
-: test-tty-readeval-on-csi
+def test-tty-readeval-on-csi
     " on-csi" .s
     arg1 .d arg2 .d arg3 .d .\n
     arg3 int32 0 > IF
@@ -662,65 +662,65 @@ constant TTY-READ-MOUSE 4
         arg3 cell* swapdrop
         hexdump drop2
     THEN
-;
+end
 
-: test-tty-readeval-on-escape
+def test-tty-readeval-on-escape
     " on-escape" .s
     arg1 .d arg2 .d arg3 .d .\n
-;
+end
 
-: test-tty-readeval-on-return
+def test-tty-readeval-on-return
     "  on-return" .s
     arg0 tty-readeval-done!
-;
+end
 
-: test-tty-readeval-on-newline
+def test-tty-readeval-on-newline
     "  on-newline" .s
     arg0 tty-readeval-done!
-;
+end
 
-: test-tty-readeval-on-control
+def test-tty-readeval-on-control
     "  on-control" .s arg1 .d .\n
-;
+end
 
-: test-tty-readeval-on-key
+def test-tty-readeval-on-key
     "  on-key" .s arg1 .d arg2 .d arg3 .d
     int32 4 argn .d
     int32 5 argn .d
     int32 6 argn .d
     int32 7 argn .d
     .\n
-;
+end
 
-: test-tty-readeval-on-char
+def test-tty-readeval-on-char
   arg1 control-code? IF
     "  on-char control" .s arg1 .d arg2 .d .\n
   ELSE
     "  on-char" .s arg1 .d arg2 .d .\n
   THEN
-;
+end
 
-: test-tty-readeval-on-mouse
+def test-tty-readeval-on-mouse
     "  on-mouse" .s
     arg1 .d arg2 .d arg3 .d .\n
-;
+end
 
-: test-tty-readeval-on-up
+def test-tty-readeval-on-up
     "  on-up" .s
     arg1 .d arg2 .d arg3 .d .\n
-;
+end
 
-: test-tty-readeval-on-status
+def test-tty-readeval-on-status
     "  on-status" .s
     arg1 .d arg2 .d arg3 .d .\n
-;
+end
 
-: test-tty-readeval-on-report-cursor
+def test-tty-readeval-on-report-cursor
     " on-report-cursor" .s
     arg1 .d arg2 .d arg3 .d .\n
-;
+end
 
-: test-tty-readeval-dict
+def test-tty-readeval-dict
     terminator
     " \e[c" aliases> test-tty-readeval-on-status
     " <up>" aliases> test-tty-readeval-on-up
@@ -736,8 +736,8 @@ constant TTY-READ-MOUSE 4
     " on-char" aliases> test-tty-readeval-on-char
     tty-make-readeval-default-dict
     return1
-;
+end
 
-: test-tty-readeval
+def test-tty-readeval
     test-tty-readeval-dict tty-readeval
-;
+end

@@ -4,55 +4,55 @@ field: count
 field: items
 )
 
-: ordered-seq-count arg0 return1-1 ;
-: ordered-seq-items arg0 cell+ return1-1 ;
+def ordered-seq-count arg0 return1-1 end
+def ordered-seq-items arg0 cell+ return1-1 end
 
-: dallot-ordered-seq/2
+def dallot-ordered-seq/2
     int32 2 cell* dallot
     arg0 over ordered-seq-count !
     arg1 over ordered-seq-items !
     return1
-;
+end
 
-: dallot-ordered-seq/1
+def dallot-ordered-seq/1
     arg0 int32 0 dallot-ordered-seq/2
     return1
-;
+end
 
-: make-ordered-seq
+def make-ordered-seq
     args( max-size )
     arg0 dallot-zeroed-seq dallot-ordered-seq/1 return1
-;
+end
 
-: ordered-seq-max-count
+def ordered-seq-max-count
     arg0 ordered-seq-items @ seq-length return1
-;
+end
 
-: ordered-seq-full?
+def ordered-seq-full?
     arg0 ordered-seq-count @
     arg0 ordered-seq-max-count swapdrop
     >= return1
-;
+end
 
-: ordered-seq-peek
+def ordered-seq-peek
     arg1 ordered-seq-items @ arg0 seq-peek
     return1
-;
+end
 
-: ordered-seq-poke
+def ordered-seq-poke
     arg2 arg1 ordered-seq-items @ arg0 seq-poke
-;
+end
 
-: ordered-seq-last
+def ordered-seq-last
     arg0 ordered-seq-count @
     dup int32 0 > IF
         int32 1 int-sub
         arg0 swap ordered-seq-peek true return2
     THEN
     int32 -1 false return2
-;
+end
 
-: ordered-seq-add/5
+def ordered-seq-add/5
     args( item seq sort-fn key-fn counter ++ reject added? )
     arg0 arg3 ordered-seq-max-count swapdrop >= IF
         arg4 false return2
@@ -76,9 +76,9 @@ field: items
     arg0 int32 1 int-add set-arg0
     ( and loop )
     drop-locals RECURSE
-;
+end
 
-: ordered-seq-add
+def ordered-seq-add
     args( item seq sort-fn key-fn ++ )
     ( skip if full & the item is right )
     arg2 ordered-seq-full? IF
@@ -93,9 +93,9 @@ field: items
         THEN
     THEN
     arg3 arg2 arg1 arg0 int32 0 ordered-seq-add/5 return2
-;
+end
 
-: ordered-seq-index/5
+def ordered-seq-index/5
     args( key seq sort-fn key-fn counter ++ index found? )
     arg0 arg3 ordered-seq-max-count swapdrop >= IF int32 -1 false return2 THEN
     arg0 arg3 ordered-seq-count @ >= IF int32 -1 false return2 THEN
@@ -103,38 +103,38 @@ field: items
     arg4 over arg2 arg1 key-slot-cmp int32 0 equals IF arg0 true return2 THEN
     arg0 int32 1 int-add set-arg0
     drop-locals RECURSE
-;
+end
 
-: ordered-seq-index
+def ordered-seq-index
     args( key seq sort-fn key-fn ++ index found? )
     arg3 arg2 arg1 arg0 int32 0 ordered-seq-index/5 return2
-;
+end
 
-: ordered-seq-find
+def ordered-seq-find
     args( key seq sort-fn key-fn ++ item found? )
     arg3 arg2 arg1 arg0 ordered-seq-index IF
         arg2 swap ordered-seq-peek true return2
     THEN
     int32 -1 false return2
-;
+end
 
-: map-ordered-seq
+def map-ordered-seq
     args( seq fn )
     arg1 ordered-seq-items @ seq-data
     arg1 ordered-seq-count @
     arg0
     map-seq-n
-;
+end
 
-: reduce-ordered-seq
+def reduce-ordered-seq
     args( seq fn initial ++ result )
     arg2 ordered-seq-items @ seq-data
     arg2 ordered-seq-count @
     arg1 arg0 reduce-seq-n
     return1
-;
+end
 
-: ordered-seq-pop
+def ordered-seq-pop
     args( ordered-seq ++ item ok? )
     arg0 ordered-seq-count @
     dup int32 0 > IF
@@ -147,9 +147,9 @@ field: items
         true return2
     THEN
     int32 -1 false return2
-;
+end
 
-: ordered-seq-shift
+def ordered-seq-shift
     args( ordered-seq ++ item ok? )
     arg0 ordered-seq-count @
     dup int32 0 > IF
@@ -165,21 +165,21 @@ field: items
         true return2
     THEN
     int32 -1 false return2
-;
+end
 
-: assert-ordered-seq-item
+def assert-ordered-seq-item
     arg1 arg3 ordered-seq-peek arg2 arg0 assert-equal
-;
+end
 
-: assert-ordered-seq-item-string
+def assert-ordered-seq-item-string
     arg1 arg3 ordered-seq-peek arg2 arg0 assert-strings
-;
+end
 
-: assert-ordered-seq-count
+def assert-ordered-seq-count
     arg1 arg0 ordered-seq-count @ " set the count" assert-equal
-;
+end
 
-: test-ordered-seq-add-lt
+def test-ordered-seq-add-lt
     doc( Test `ordered-seq-add` with `<=>` as the sort-fn. )
     dhere
     int32 3 make-ordered-seq swapdrop
@@ -228,18 +228,18 @@ field: items
     int32 2 int32 11 local0 " became item 2" assert-ordered-seq-item
 
     local0 return1
-;
+end
 
-: make-ordered-seq-test
+def make-ordered-seq-test
     int32 4 make-ordered-seq swapdrop
     int32 15 local0 ' not-<=> ' identity ordered-seq-add
     int32 10 local0 ' not-<=> ' identity ordered-seq-add
     int32 20 local0 ' not-<=> ' identity ordered-seq-add
     int32 12 local0 ' not-<=> ' identity ordered-seq-add
     local0 return1
-;
+end
 
-: test-ordered-seq-add-gt
+def test-ordered-seq-add-gt
     doc( Test ordered-seq-add with `not-<=>`. )
     make-ordered-seq-test
     int32 19 local0 ' not-<=> ' identity ordered-seq-add
@@ -249,9 +249,9 @@ field: items
     int32 1 int32 19 local0 " item 1" assert-ordered-seq-item
     int32 2 int32 15 local0 " item 2" assert-ordered-seq-item
     int32 3 int32 12 local0 " item 3" assert-ordered-seq-item
-;
+end
 
-: test-ordered-seq-index
+def test-ordered-seq-index
     make-ordered-seq-test
     int32 100 local0 ' not-<=> ' identity ordered-seq-index int32 0 " was not found" assert-equal int32 3 dropn
     int32 -1 " dummy value" assert-equal
@@ -263,18 +263,18 @@ field: items
     int32 2 " 12 in slot 2" assert-equal
     int32 10 local0 ' not-<=> ' identity ordered-seq-index int32 1 " found the item 10" assert-equal int32 3 dropn
     int32 3 " 15 in slot 3" assert-equal
-;
+end
 
-: make-ordered-seq-test-strings
+def make-ordered-seq-test-strings
     int32 4 make-ordered-seq swapdrop
     " george" local0 ' string-cmp ' identity ordered-seq-add
     " henry" local0 ' string-cmp ' identity ordered-seq-add
     " bob" local0 ' string-cmp ' identity ordered-seq-add
     " cathy" local0 ' string-cmp ' identity ordered-seq-add
     local0 return1
-;
+end
 
-: test-ordered-seq-add-string
+def test-ordered-seq-add-string
     doc( Test ordered-seq-add with string values and `string-cmp` as the sort-fn. )
     make-ordered-seq-test-strings
     " fred" local0 ' string-cmp ' identity ordered-seq-add
@@ -286,18 +286,18 @@ field: items
     int32 2 " fred" local0 " item 2" assert-ordered-seq-item-string
     int32 3 " george" local0 " item 3" assert-ordered-seq-item-string
     local0 return1
-;
+end
 
-: test-ordered-seq-index-string
+def test-ordered-seq-index-string
     doc( Test ordered-seq-index with finding string values. )
     make-ordered-seq-test-strings
     " dog" local0 ' string-cmp ' identity ordered-seq-index int32 0 " did not find the string" assert-equal int32 3 dropn
     int32 -1 " dummy value" assert-equal
     " cathy" local0 ' string-cmp ' identity ordered-seq-index int32 1 " found the string" assert-equal int32 3 dropn
     int32 1 " found cathy" assert-equal
-;
+end
 
-: test-ordered-seq-pop
+def test-ordered-seq-pop
     make-ordered-seq-test
 
     local0 ordered-seq-pop true " it popped" assert-equal int32 3 dropn
@@ -319,9 +319,9 @@ field: items
     local0 ordered-seq-pop false " it failed" assert-equal int32 3 dropn
     int32 -1 " was the dummy item" assert-equal
     local0 ordered-seq-count @ int32 0 " left count at zero" assert-equal
-;
+end
 
-: test-ordered-seq-shift
+def test-ordered-seq-shift
     make-ordered-seq-test
 
     local0 ordered-seq-shift true " it shifted" assert-equal int32 3 dropn
@@ -343,9 +343,9 @@ field: items
     local0 ordered-seq-shift false " it failed" assert-equal int32 3 dropn
     int32 -1 " was the dummy item" assert-equal
     local0 ordered-seq-count @ int32 0 " left count at zero" assert-equal
-;
+end
 
-: test-ordered-seq
+def test-ordered-seq
     test-ordered-seq-add-lt
     test-ordered-seq-add-gt
     test-ordered-seq-index
@@ -353,4 +353,4 @@ field: items
     test-ordered-seq-index-string
     test-ordered-seq-pop
     test-ordered-seq-shift
-;
+end

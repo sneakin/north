@@ -2,10 +2,10 @@
 
 ( Registers used by the inner interpreter. )
 
-: heap-reg int32 8 return1 ;
-: eval-ip int32 7 return1 ;
-: dict-reg int32 4 return1 ;
-: fp-reg int32 3 return1 ;
+def heap-reg int32 8 return1 end
+def eval-ip int32 7 return1 end
+def dict-reg int32 4 return1 end
+def fp-reg int32 3 return1 end
 
 ( Execute the next instruction in the thread. )
 create next-1 doasm[
@@ -15,16 +15,16 @@ create next-1 doasm[
 ]doasm
 
 ( Emit a NEXT that depends on the status register condition. )
-: next,/1
+def next,/1
   a-ins arg0 a-ip a-load int16, ( If condiion matches, jump to... )
   ' next-1 dict-entry-data int32, ( ...next! )
   a-nop int16, ( hopefully get back in alignment )
-;
+end
 
 ( Emit an unconditional NEXT. )
-: next,
+def next,
   int32 0 next,/1
-;
+end
 
 ( Move eval IP to the ToS. )
 create jump-1 doasm[

@@ -1,5 +1,5 @@
-def cons args return1 ;
-def nil int32 0 return1 ;
+def cons args return1 end
+def nil int32 0 return1 end
 
 def map-list! ( cons! fn ++ )
   arg1 UNLESS return0 THEN
@@ -22,7 +22,7 @@ def count-inner
   arg1 return1
 end
 
-def count-recurse int32 0 arg0 count-inner return1 ;
+def count-recurse int32 0 arg0 count-inner return1 end
 
 def reduce-list
     args( list initial fn )

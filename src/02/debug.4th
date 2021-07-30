@@ -8,7 +8,7 @@
 
 ( Stack printing: )
 
-: write-frame
+def write-frame
     args( frame )
     doc( Report on and dump the frame. )
     " Parent:" .s arg0 .h
@@ -18,18 +18,18 @@
     arg0
     arg0 frame-byte-size
     memdump
-;
+end
 
-: write-current-frame
+def write-current-frame
     doc( Write out the current and parent frame dumping their memory. )
     .\n " Current:" write-heading
     current-frame parent-frame @ write-frame
     .\n " Locals:" write-heading
     current-frame write-frame
     .\n
-;
+end
 
-: stack-trace/1
+def stack-trace/1
     args( frame counter )
     .\n arg0 .i ,tab
     arg1 .h ,tab
@@ -42,29 +42,29 @@
     ELSE
         .\n
     THEN
-;
+end
 
-: stack-trace
+def stack-trace
     doc( Print a brief table of call frames. )
     " id\tFrame\tReturn\t# Args" .s
     current-frame int32 0 stack-trace/1
-;
+end
 
 ( Call tracing: )
 
 global-var *tracing* doc( Controls if trace messages are printed. )
 
-: start-tracing
+def start-tracing
     doc( Turns tracing on. All traced words will be logged. )
     true *tracing* !
-;
+end
 
-: stop-tracing
+def stop-tracing
     doc( Turns tracing off. No logging will be done.)
     false *tracing* !
-;
+end
 
-: trace-definition
+def trace-definition
     doc( Changes a dictionary entry's code to trace a definition. )
     args( dict-entry ++ changed? )
     arg0 dict-entry-code swapdrop
@@ -75,9 +75,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
         true return1
     THEN
     false return1
-;
+end
 
-: untrace-definition
+def untrace-definition
     doc( Untraces a dictionary entry reverts a traced definition to a call-data-seq. )
     args( dict-entry ++ changed? )
     arg0 dict-entry-code swapdrop
@@ -88,9 +88,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
         true return1
     THEN
     false return1
-;
+end
 
-: trace-op
+def trace-op
     doc( Traces a dictionary entry that performs an op. )
     args( dict-entry ++ changed? )
     arg0 dict-entry-data null? IF
@@ -103,9 +103,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
         true return1
     THEN
     false return1
-;
+end
 
-: untrace-op
+def untrace-op
     doc( Untraces a dictionary entry that performs an op. )
     args( dict-entry ++ changed? )
     arg0 dict-entry-code swapdrop
@@ -118,9 +118,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
         true return1
     THEN
     false return1
-;
+end
 
-: trace
+def trace
     doc( Traces a dictionary entry by changing the code and data fields to call `on-trace` or `on-trace-op`. Will error if given anything but a colon definition or assembly op with no dictionary parameter. )
     args( dict-entry )
     arg0 trace-definition UNLESS
@@ -129,9 +129,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
         THEN
     THEN
     start-tracing
-;
+end
 
-: untrace
+def untrace
     doc( Untrace a dictionary entry by restoring the code and data fields. )
     args( dict-entry )
     arg0 dict-entry-code swapdrop
@@ -141,9 +141,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
     ' do-trace dict-entry-code swapdrop local0 equals IF
         arg0 untrace-definition
     THEN
-;
+end
 
-: trace-log
+def trace-log
     doc( The message writer for traced dictionary entries. )
     args( entry msg )
     *tracing* @ IF
@@ -157,9 +157,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
         color-reset
         start-tracing
     THEN
-;
+end
 
-: on-trace
+def on-trace
     doc( Called by do-trace op used by traced words. )
     args( dict-entry )
     arg0 " Trace:" trace-log drop2
@@ -167,9 +167,9 @@ global-var *tracing* doc( Controls if trace messages are printed. )
     here cell+ swapdrop set-current-frame
     shift
     jump-entry-data
-;
+end
 
-: on-trace-op
+def on-trace-op
     doc( Called by do-op-trace op used by traced assembly op words. )
     args( dict-entry )
     arg0 " Trace op:" trace-log drop2    
@@ -179,4 +179,4 @@ global-var *tracing* doc( Controls if trace messages are printed. )
     swap dict-entry-data swapdrop seq-data swapdrop swap
     ( restore eip and ip )
     jump-return
-;
+end

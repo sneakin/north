@@ -2,12 +2,12 @@ global-var dict-index
 global-var immediate-index
 constant *dict-index-span* 4
 
-: dict-index-add
+def dict-index-add
     args( entry btree )
     arg1 arg0 btree-add
-;
+end
 
-: dict-reindex-loop
+def dict-reindex-loop
     args( entry index )
     arg1 terminator? IF return0 THEN
     ( write-dict-entry )
@@ -15,49 +15,49 @@ constant *dict-index-span* 4
     arg0 dict-index-add
     arg1 dict-entry-next set-arg1
     drop-locals RECURSE
-;
+end
 
-: dict-reindex
+def dict-reindex
     args( dict index )
     arg1 arg0 dict-reindex-loop
-;
+end
 
-: dict-index-reset
+def dict-index-reset
     *dict-index-span* ' string-cmp ' dict-entry-name make-btree
     dict-index !
     *dict-index-span* ' string-cmp ' dict-entry-name make-btree
     immediate-index !    
-;
+end
 
-: dict-entry-copy
+def dict-entry-copy
     arg1 dict-entry-data arg0 set-dict-entry-data
     arg1 dict-entry-code arg0 set-dict-entry-code
     arg1 dict-entry-args arg0 set-dict-entry-args
     arg1 dict-entry-doc arg0 set-dict-entry-doc
-;
+end
 
-: dict-entry-patch
+def dict-entry-patch
     args( target new storage )
     arg2 dict-entry-data swapdrop
     arg1 dict-entry-data swapdrop
     equals IF return0 THEN
     arg2 arg0 dict-entry-copy
     arg1 arg2 dict-entry-copy
-;
+end
 
-: dict-index-lookup
+def dict-index-lookup
     arg0 dict-index @ btree-find return2
-;
+end
 
-: immediate-index-lookup
+def immediate-index-lookup
     arg0 immediate-index @ btree-find return2
-;
+end
 
-: dict-lookup-slow
+def dict-lookup-slow
     arg1 arg0 dict-lookup return1
-;
+end
 
-: dict-lookup-fast
+def dict-lookup-fast
     args( name dict ++ entry )
     dict-index @ IF
         arg0 dict equals IF
@@ -73,13 +73,13 @@ constant *dict-index-span* 4
     ELSE
         arg1 arg0 dict-lookup-slow return1
     THEN
-;
+end
 
-: dict-index-patch
+def dict-index-patch
     ' dict-lookup ' dict-lookup-fast ' dict-lookup-slow dict-entry-patch
-;
+end
 
-: dict-index-init
+def dict-index-init
     dict-index @ UNLESS
         dict-index-reset
         .\n bold " Indexing immediates" .s color-reset
@@ -88,19 +88,19 @@ constant *dict-index-span* 4
         dict dict-index @ dict-reindex
         dict-index-patch
     THEN
-;
+end
 
-: dict-index-dump/1
+def dict-index-dump/1
     args( btree )
     .\n " Tree" .s .\n
     arg0 btree-dump
     .\n " Nodes" .s .\n
     arg0 ' write-dict-entry btree-map
-;
+end
 
-: dict-index-dump
+def dict-index-dump
     " Immediates" write-heading
     immediate-index @ dict-index-dump/1
     " Words" write-heading
     dict-index @ dict-index-dump/1
-;
+end

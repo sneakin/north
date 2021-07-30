@@ -1,5 +1,5 @@
 ( Test a storage device by trying each operation. )
-: test-storage-at ( dev-irq dev-addr )
+def test-storage-at ( dev-irq dev-addr )
   int32 256 dallot-seq ( data )
   int32 256 dallot-seq ( data key )
   int32 256 dallot-seq ( data key out )
@@ -60,15 +60,15 @@
   arg1 arg0 storage-wait drop2
   arg0 storage-read-size write-int write-space drop
   local0 int32 32 write-line-n
-;
+end
 
-: test-ipfs-key-0 ( a hello world document )
+def test-ipfs-key-0 ( a hello world document )
   " Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD" return1
-;
+end
 
-: test-ipfs-key-1 " QmTjGStKeri3ET1xFn4kgaJYfstHdw3RwQQzTCZm4fZTk7" return1 ;
+def test-ipfs-key-1 " QmTjGStKeri3ET1xFn4kgaJYfstHdw3RwQQzTCZm4fZTk7" return1 end
 
-: test-ipfs-storage
+def test-ipfs-storage
   zero
   int32 256 stack-allot store-local0
   write-int write-crnl
@@ -90,9 +90,9 @@
   " Size: " write-string drop
   ipfs-storage-addr storage-read-size write-int write-crnl drop2
   local0 return1
-;
+end
 
-: test-http-storage
+def test-http-storage
   zero
   int32 4096 stack-allot store-local0
   ( enable device )
@@ -110,9 +110,9 @@
   http-storage-addr storage-dev-status peek write-int write-crnl drop
   local0 int32 64 hex memdump dec
   local0 return1
-;
+end
 
-: test-storage
+def test-storage
   " Table storage" write-line
   table-storage-irq table-storage-addr test-storage-at drop2
   " Session storage" write-line
@@ -129,4 +129,4 @@
   test-ipfs-key-1 write-line test-ipfs-storage
   ( todo needs to read the new key when setting )
   ipfs-storage test-storage-at drop2
-;
+end

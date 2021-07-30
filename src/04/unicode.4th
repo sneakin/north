@@ -17,21 +17,21 @@ constant UNICODE-MAX $10FFFF
 
 ( UTF-8 byte classifiers: )
 
-: utf8-single? arg0 int32 $7F <= return1 ;
-: utf8-second? arg0 int32 $C0 logand int32 $80 equals return1 ;
-: utf8-double? arg0 int32 $E0 logand int32 $C0 equals return1 ;
-: utf8-triple? arg0 int32 $F0 logand int32 $E0 equals return1 ;
-: utf8-quad? arg0 int32 $F8 logand int32 $F0 equals return1 ;
+def utf8-single? arg0 int32 $7F <= return1 end
+def utf8-second? arg0 int32 $C0 logand int32 $80 equals return1 end
+def utf8-double? arg0 int32 $E0 logand int32 $C0 equals return1 end
+def utf8-triple? arg0 int32 $F0 logand int32 $E0 equals return1 end
+def utf8-quad? arg0 int32 $F8 logand int32 $F0 equals return1 end
 
 ( UTF-32 cells to UTF-8 sequences: )
 
-: utf8-encode-second
+def utf8-encode-second
     arg0 int32 $3F logand int32 $80 logior
     arg0 int32 6 bsr
     return2
-;
+end
 
-: utf32->utf8
+def utf32->utf8
     doc( Convert an integer into an UTF-8 byte sequence as cells on the stack. )
     args( int32 ++ bytes... number-bytes )
     arg0 int32 $7F <= IF arg0 int32 1 return2 THEN
@@ -56,15 +56,15 @@ constant UNICODE-MAX $10FFFF
         int32 4 int32 5 returnN
     THEN
     arg0 .\n .h " invalid UTF-32 code" " argument-error" error
-;
+end
 
 ( UTF-8 cell sequence to UTF-32mcell: )
 
-: utf8-decode-second
+def utf8-decode-second
     arg0 int32 $3F logand return1
-;
+end
 
-: utf8->utf32
+def utf8->utf32
     doc( Convert a UTF-8 cell sequence into an UTF-32 value. )
     args( ptr -- next-ptr int32 )
     ( 0xxxxxxx )
@@ -113,9 +113,9 @@ constant UNICODE-MAX $10FFFF
     peek utf8-decode-second swapdrop
     logior
     return1
-;
+end
 
-: utf8-cell->utf32-loop
+def utf8-cell->utf32-loop
     args( ptr counter ++ utf32-chars... number )
     arg0 int32 4 < UNLESS arg0 return-locals THEN
     arg1 utf8->utf32
@@ -124,30 +124,30 @@ constant UNICODE-MAX $10FFFF
     set-arg1
     arg0 int32 1 int-add set-arg0
     RECURSE
-;
+end
 
-: utf8-cell->utf32
+def utf8-cell->utf32
     doc( Convert a cell with UTF-8 byte sequence as a value into UTF-32 cells. )
     args( cell ++ characters... number )
     arg0 uint32-bytes-lsb
     here int32 0 utf8-cell->utf32-loop
     dup int32 1 int-add returnN
-;
+end
 
-: utf32->utf8-cell
+def utf32->utf8-cell
     doc( Convert a UTF-32 value into UTF-8 and pack the bytes into a cell. )
     arg0 utf32->utf8 make-uint32-lsb-n return1
-;
+end
 
 ( UTF Output: )
 
-: write-utf32-char
+def write-utf32-char
     doc( Write a UTF-32 character to the output device as UTF-8 bytes. )
     arg0 utf32->utf8
     DOTIMES[ arg0 int32 2 int-add argn write-byte ]DOTIMES
-;
+end
 
-: write-utf32-string-n
+def write-utf32-string-n
     doc( Write N characters from a pointer to a UTF-32 sequence. )
     args( ptr num-chars -- end-ptr 0 )
     arg0 int32 0 > UNLESS return0 THEN
@@ -155,19 +155,19 @@ constant UNICODE-MAX $10FFFF
     arg1 cell+ set-arg1 drop
     arg0 int32 1 int-sub set-arg0
     RECURSE
-;
+end
 
-: write-utf32-string
+def write-utf32-string
     doc( Write a UTF-32 sequence to the output device. )
     arg0 seq-data
     swap seq-length
     swapdrop
     write-utf32-string-n
-;
+end
 
 ( UTF input: )
 
-: read-utf8
+def read-utf8
     doc( Read a UTF-8 byte sequence from the input device in as a UTF-32 cell. )
     read-byte
     utf8-second? IF drop RECURSE THEN
@@ -175,9 +175,9 @@ constant UNICODE-MAX $10FFFF
     utf8-triple? IF read-byte read-byte rot here utf8->utf32 return1 THEN
     utf8-double? IF read-byte swap here utf8->utf32 return1 THEN
     return1
-;
+end
 
-: char-map
+def char-map
     args( offset number )
     arg1
     arg0 int32 8 int-div DOTIMES[
@@ -190,11 +190,11 @@ constant UNICODE-MAX $10FFFF
         ]DOTIMES
     ]DOTIMES
     write-crnl
-;
+end
 
 ( Fun with the left over bits: )
 
-: color-char-color
+def color-char-color
     doc( Returns the foreground and background colorsmofba color-char. )
     args( color-char ++ bg fg )
     arg0 UNICODE-MAX
@@ -202,29 +202,29 @@ constant UNICODE-MAX $10FFFF
     dup int32 3 bsr int32 $7 logand
     swap int32 $7 logand
     return2
-;
+end
 
-: color-char-bold?
+def color-char-bold?
     doc( Returns the color-char's bold bit. )
     arg0 int32 30 bsr
     int32 1 logand return1
-;
+end
 
-: color-char-char
+def color-char-char
     doc( Returns the UTF-32 character of a color-char. )
     arg0 UNICODE-MAX
     2dup logand
     return1
-;
+end
 
-: write-color-char
+def write-color-char
     doc( Write a color charmout with formating. )
     arg0 color-char-bold? IF bold ELSE bold-off THEN
     arg0 color-char-color color/2 drop2
     color-char-char write-utf32-char
-;
+end
 
-: make-color-char
+def make-color-char
     args( char fg bg attrs ++ color-char )
     doc( Encodes color and formating attributes in the MSB of UTF-32. )
     arg0 int32 3 logand int32 6 bsl
@@ -234,11 +234,11 @@ constant UNICODE-MAX $10FFFF
     int32 24 bsl
     arg3 UNICODE-MAX logand logior
     return1
-;
+end
 
 ( Test functions: )
 
-: test-color-char
+def test-color-char
     int32 char-code N int32 4 int32 2 int32 0 make-color-char write-color-char
     int32 char-code O int32 2 int32 4 int32 1 make-color-char write-color-char
     int32 char-code L int32 3 int32 5 int32 2 make-color-char write-color-char
@@ -246,9 +246,9 @@ constant UNICODE-MAX $10FFFF
     int32 char-code N int32 6 int32 1 int32 4 make-color-char write-color-char
     int32 char-code ' int32 0 int32 7 int32 5 make-color-char write-color-char
     int32 char-code S int32 7 int32 0 int32 6 make-color-char write-color-char
-;
+end
 
-: test-utf32
+def test-utf32
     ( single byte )
     int32 $77 utf32->utf8
     int32 1 " 1 byte" assert-equal drop3
@@ -281,9 +281,9 @@ constant UNICODE-MAX $10FFFF
     int32 $90 " $90" assert-equal drop3
     int32 $80 " $80" assert-equal drop3
     int32 $80 " $80" assert-equal drop3
-;
+end
 
-: test-utf8
+def test-utf8
     ( single byte )
     int32 $77 here utf8->utf32
     int32 $77 " is $77" assert-equal drop3
@@ -308,9 +308,9 @@ constant UNICODE-MAX $10FFFF
     int32 $80 int32 $80 int32 $90 int32 $F0 here utf8->utf32
     int32 $10000 " is $10000" assert-equal drop3
     here int32 4 cell+n rotdrop2 " moved the pointer 4 cells" assert-equal
-;
+end
 
-: test-utf8-cells
+def test-utf8-cells
     ( round trip )
     int32 $8888 utf32->utf8-cell
     int32 $88A2E8 " encoded into a single cell" assert-equal drop
@@ -325,11 +325,11 @@ constant UNICODE-MAX $10FFFF
     int32 $55 " char 2" assert-equal drop3
     int32 $66 " char 3" assert-equal drop3
     int32 $77 " char 4" assert-equal drop3
-;
+end
 
-: test-utf
+def test-utf
     test-utf32
     test-utf8
     test-utf8-cells
-;
+end
 

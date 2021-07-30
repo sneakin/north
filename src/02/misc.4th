@@ -1,27 +1,27 @@
 ( Common writers )
 
-: program-size
+def program-size
   literal *program-size* return1
-;
+end
 
-: set-arg
+def set-arg
   current-frame parent-frame @ frame-size arg0 cell* swapdrop int-add int-add
   arg1 swap poke
   return-2
-;
+end
 
 ( Data storing: )
 
-: dpush-byte
+def dpush-byte
   arg0 dpush
   dhere int32 3 int-sub dmove
-;
+end
 
-: cell-align
+def cell-align
   arg0 int32 4 int-div int32 1 int-add int32 4 int-mul return1
-;
+end
 
-: copydown
+def copydown
   ( src dest num-bytes )
   arg0 cell- swapdrop
 
@@ -37,11 +37,11 @@
   local0 cell- swapdrop store-local0
   ( loop? )
   dup int32 0 >= literal copydown-loop ifthenjump
-;
+end
 
 ( Tokenizer exercisers: )
 
-: each-token
+def each-token
   ( str fn )
   terminator
   arg1 make-tokenizer swapdrop
@@ -72,57 +72,57 @@
   drop ( terminator )
   end-seq
   return1
-;  
+end  
 
-: write-tokens
+def write-tokens
   arg0 literal write-line-ret each-token
-;
+end
 
-: write-tokens1
+def write-tokens1
   arg0 tokenize literal write-line-ret map-seq
-;
+end
 
 ( Constants )
 
-: const
+def const
   ( value : name )
   next-param literal call-data-code arg0 constant-capturer
   swapdrop add-dict
-;
+end
 
-: args1
+def args1
   args cell+ return1
-;
+end
 
-: local-ref
+def local-ref
   ( the-location name => entry )
   arg0
   literal pointer-peeker-code
   args cell+ swapdrop
   add-dict
-;
+end
 
-: store-local-ref
+def store-local-ref
   ( value entry )
   arg0 dict-entry-data
   arg1 swap poke
-;
+end
 
-: wait-return
+def wait-return
   " Press return..." write-string
   flush-read-line
-;
+end
 
 ( Evaluation )
 
 ( fixme a frame not linking to it's parent as the parent's link gets overwritten by data )
 
-: if-test
+def if-test
   arg0 IF write-ok return0 THEN
   write-err return0
-;
+end
 
-: pop-to-seq
+def pop-to-seq
   ( start-ptr )
   start-seq
   arg0
@@ -134,63 +134,63 @@
   local1 local2 < IF local0 end-seq return1 THEN
   local1 cell- store-local1 drop
   literal pop-to-seq-loop jump
-;
+end
   
-: pause2
+def pause2
   *debug* peek IF wait-return THEN
-;
+end
  
-: one
+def one
   int32 1 return1
-;
+end
 
-: cell-3
+def cell-3
   arg0 int32 -3 cell+n
   return1
-;
+end
 
-: tail-call-test-1
+def tail-call-test-1
   arg0 int32 0 equals IF arg0 return1 THEN
   literal HELO write-word
   arg0 int32 1 int-sub
   literal tail-call-test-1 tailcall1
-;
+end
 
-: tail-call-test
+def tail-call-test
   longify \r\nGO write-word
   ( fixme arg0? )
   arg0 literal tail-call-test-1 tailcall1
-;
+end
 
 (
-: cont-test
+def cont-test
   literal write-line
   pause
   cont
-;
+end
 )
 
-: do
+def do
   return-address jump ( start a new frame for the loop )
-;
+end
 
-: again
+def again
   pop-frame return-address jump ( exit/return w/o ending frame )
-;
+end
 
-: leave
+def leave
   pop-frame end-frame rotdrop2 jump ( fixme needs to know where WHILE is )
-;
+end
 
-: while
+def while
   end-frame drop ( drop frame )
   swap ( swap return addr & condition )
   literal while-loop ifthenjump
   end-frame rotdrop2 jump
   while-loop: drop return-address jump
-;
+end
 
-: seq0
+def seq0
   arg1 arg0 2dup int-sub dallot-seq
   do arg1 write-int arg0 arg1 seq-poke drop3
      write-ok write-crnl
@@ -199,14 +199,14 @@
                                   arg2 arg1 > while
   write-ok int32 1146048327 write-word drop
   local2 return1
-;
+end
 
-: next-op
+def next-op
   doc( Get the address of the operation after the callsite. )
   return-address cell+ return1
-;
+end
 
-: next-op+
+def next-op+
   doc( Get the address N cells from the callsite. )
   return-address arg0 cell+n return1
-;
+end

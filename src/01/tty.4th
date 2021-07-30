@@ -1,15 +1,15 @@
 ( TTY Color )
 
-def TTY-ESCAPE-ATTR int32 $30305b1b return1 ;
-def TTY-ESCAPE-CSI int32 $00005b1b return1 ;
-def TTY-ESCAPE-SGR-END int32 $0000006d return1 ;
-def TTY-COLOR-FG int32 $30335b1b return1 ;
-def TTY-COLOR-BG int32 $30345b1b return1 ;
-def TTY-COLOR-BRIGHT-FG int32 $30395b1b return1 ;
-def TTY-COLOR-BRIGHT-BG int32 $30315b1b return1 ;
-def TTY-COLOR-BRIGHT-BG2 int32 $6d30 return1 ;
-def TTY-COLOR-BG2 int32 $6d30343b return1 ;
-def TTY-COLOR-FG2 int32 $6d30333b return1 ;
+def TTY-ESCAPE-ATTR int32 $30305b1b return1 end
+def TTY-ESCAPE-CSI int32 $00005b1b return1 end
+def TTY-ESCAPE-SGR-END int32 $0000006d return1 end
+def TTY-COLOR-FG int32 $30335b1b return1 end
+def TTY-COLOR-BG int32 $30345b1b return1 end
+def TTY-COLOR-BRIGHT-FG int32 $30395b1b return1 end
+def TTY-COLOR-BRIGHT-BG int32 $30315b1b return1 end
+def TTY-COLOR-BRIGHT-BG2 int32 $6d30 return1 end
+def TTY-COLOR-BG2 int32 $6d30343b return1 end
+def TTY-COLOR-FG2 int32 $6d30333b return1 end
 
 def color-reset
   int32 $6d305b1b write-word

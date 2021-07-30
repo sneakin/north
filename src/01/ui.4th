@@ -48,9 +48,9 @@ redef eval-read-line
   return1
 end
 
-( Make ; print the new entry's name and OK. )
-def ;
-  doc( Closes a colon definition updating the last word's data field. )
+( Make `end` print the new entry's name and OK. )
+def end
+  doc( Closes a definition updating the last word's data field. )
   dict dict-entry-name write-string drop2 write-ok
   ' endcol jump-entry-data
 end immediate-only

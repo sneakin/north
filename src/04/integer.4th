@@ -1,29 +1,29 @@
 ( Integer functions: )
 
-: clamp-uint8
+def clamp-uint8
     doc( Clamp a cell to the range of 0 to 255. )
     arg0 int32 $FF logand return1-1
-;
+end
 
-: uint32-bytes-lsb
+def uint32-bytes-lsb
     doc( Return a 32 bit number's bytes with the least signifigant byte on top. )
     arg0 int32 24 bsr clamp-uint8
     arg0 int32 16 bsr clamp-uint8
     arg0 int32 8 bsr clamp-uint8
     arg0 clamp-uint8
     int32 4 returnN
-;
+end
 
-: uint32-bytes-msb
+def uint32-bytes-msb
     doc( Return a 32 bit number's bytes with the most signifigant byte on top. )
     arg0 clamp-uint8
     arg0 int32 8 bsr clamp-uint8
     arg0 int32 16 bsr clamp-uint8
     arg0 int32 24 bsr clamp-uint8
     int32 4 returnN
-;
+end
 
-: make-uint32-lsb-n
+def make-uint32-lsb-n
     doc( Make a 32 bit value from N bytes on the stack. )
     args( ...bytes number ++ uint32 )
     zero
@@ -33,4 +33,4 @@
         arg2 logior set-arg2
     ]DOTIMES
     local0 return1
-;
+end

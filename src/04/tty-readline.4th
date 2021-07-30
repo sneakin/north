@@ -1,17 +1,17 @@
-: dict-lookup-data
+def dict-lookup-data
     arg0 arg1 dict-lookup
     null? IF arg0 " dict-not-found-error" error THEN
     cell+2 return1 ( fixme use dict-entry-data, but without peek )
-;
+end
 
-: clamp-pointer-value-to-max
+def clamp-pointer-value-to-max
   doc( Change the value to `max-value` when the value pointed to by `pointer` is greater than `max-value`. )
   args( max-value pointer )
   arg1
   arg0 dup peek > IF
     poke
   THEN
-;
+end
 
 ( TTY readline like line editor. )
 
@@ -21,19 +21,19 @@ global-var *TTY-READLINE-DICT*
 
 ( Accessors )
 
-: tty-readline-max-input arg0 " *max-input*" dict-lookup-data return1-1 ;
-: tty-readline-length arg0 " *length*" dict-lookup-data return1-1 ;
-: tty-readline-cursor arg0 " *cursor*" dict-lookup-data return1-1 ;
-: tty-readline-buffer arg0 " *buffer*" dict-lookup-data return1-1 ;
-: tty-readline-mark arg0 " *mark*" dict-lookup-data return1-1 ;
-: tty-readline-paste-buffer arg0 " *paste-buffer*" dict-lookup-data return1-1 ;
-: tty-readline-history arg0 " *history*" dict-lookup-data return1-1 ;
-: tty-readline-history-tip-in arg0 " *history-tip-in*" dict-lookup-data return1-1 ;
-: tty-readline-history-tip-out arg0 " *history-tip-out*" dict-lookup-data return1-1 ;
+def tty-readline-max-input arg0 " *max-input*" dict-lookup-data return1-1 end
+def tty-readline-length arg0 " *length*" dict-lookup-data return1-1 end
+def tty-readline-cursor arg0 " *cursor*" dict-lookup-data return1-1 end
+def tty-readline-buffer arg0 " *buffer*" dict-lookup-data return1-1 end
+def tty-readline-mark arg0 " *mark*" dict-lookup-data return1-1 end
+def tty-readline-paste-buffer arg0 " *paste-buffer*" dict-lookup-data return1-1 end
+def tty-readline-history arg0 " *history*" dict-lookup-data return1-1 end
+def tty-readline-history-tip-in arg0 " *history-tip-in*" dict-lookup-data return1-1 end
+def tty-readline-history-tip-out arg0 " *history-tip-out*" dict-lookup-data return1-1 end
 
 ( Drawing )
 
-: tty-readline-redraw
+def tty-readline-redraw
     tty-cursor-home tty-erase-line
     prompt
     tty-cursor-save
@@ -42,92 +42,92 @@ global-var *TTY-READLINE-DICT*
     tty-cursor-restore
     arg0 tty-readline-cursor @
     dup int32 1 >= IF tty-cursor-right THEN
-;
+end
 
-: tty-readline-redraw-text-from
+def tty-readline-redraw-text-from
   arg1
   tty-cursor-save
   arg0 tty-readline-buffer @ seq-data local0 int32 1 int-sub cell+n swapdrop
   arg0 tty-readline-length @ local0 int-sub
   write-string-n
   tty-cursor-restore
-;
+end
 
-: tty-readline-redraw-from-cursor
+def tty-readline-redraw-from-cursor
   arg0 tty-readline-cursor @
   arg0 tty-readline-redraw-text-from
-;
+end
 
-: tty-readline-redraw-text
+def tty-readline-redraw-text
   int32 0
   arg0 tty-readline-redraw-text-from
-;
+end
 
 ( Cursor motion )
 
-: tty-readline-move-cursor
+def tty-readline-move-cursor
     args( dict position )
     arg0 negative? IF drop int32 0 ELSE
       dup arg1 tty-readline-length @ >= IF arg1 tty-readline-length @ THEN
     THEN
     arg1 tty-readline-cursor !
-;
+end
 
-: tty-readline-move-cursor-by
+def tty-readline-move-cursor-by
     args( dict amount )
     arg1
     dup tty-readline-cursor @ arg0 int-add
     tty-readline-move-cursor
-;
+end
 
-: tty-readline-cursor-home
+def tty-readline-cursor-home
   ( update tty )
   arg0 tty-readline-cursor @ tty-cursor-left
   ( update state )
   arg0 int32 0 tty-readline-move-cursor
-;
+end
 
-: tty-readline-cursor-end
+def tty-readline-cursor-end
   ( update tty )
   arg0 tty-readline-length @
   arg0 tty-readline-cursor @
   int-sub dup int32 0 equals UNLESS tty-cursor-right THEN
   ( update state )
   arg0 dup tty-readline-length @ tty-readline-move-cursor
-;
+end
 
-: tty-readline-clamp-cursor-to
+def tty-readline-clamp-cursor-to
   arg1 arg0 tty-readline-cursor clamp-pointer-value-to-max
-;
+end
 
-: tty-readline-clamp-mark-to
+def tty-readline-clamp-mark-to
   arg1 arg0 tty-readline-mark clamp-pointer-value-to-max
-;
+end
 
-: tty-readline-clamp-cursors
+def tty-readline-clamp-cursors
   arg0 tty-readline-length @
   arg0 tty-readline-clamp-cursor-to tty-readline-clamp-mark-to
-;
+end
 
-: tty-readline-at-beginning?
+def tty-readline-at-beginning?
     arg0 tty-readline-cursor @ int32 0 equals return1-1
-;
+end
 
-: tty-readline-back-char
+def tty-readline-back-char
   ( update tty )
   arg0 tty-readline-at-beginning? UNLESS int32 1 tty-cursor-left THEN
   ( update record )
   arg0 int32 -1 tty-readline-move-cursor-by
-;
+end
 
-: tty-readline-forward-char
+def tty-readline-forward-char
   ( update state )
   arg0 tty-readline-at-end? UNLESS int32 1 tty-cursor-right THEN
   ( update record )
   arg0 int32 1 tty-readline-move-cursor-by
-;
+end
 
-: tty-readline-change-length-by
+def tty-readline-change-length-by
   args( num-chars readline-dict )
   arg0 tty-readline-length
   dup @ arg1 int-add
@@ -136,11 +136,11 @@ global-var *TTY-READLINE-DICT*
   int32 0 max-int
   ( poke )
   swap !
-;
+end
 
 ( Input shifting )
 
-: tty-readline-shift-buffer-right
+def tty-readline-shift-buffer-right
   args( readline cursor-pos num-right )
   arg2 tty-readline-buffer @ null? IF " *buffer* unallocated" " tty-readline-error" error THEN
   ( src: pointer to cursor position )
@@ -156,9 +156,9 @@ global-var *TTY-READLINE-DICT*
   cell* swapdrop
   ( do it )
   copydown
-;
+end
 
-: tty-readline-shift-buffer-left/3
+def tty-readline-shift-buffer-left/3
   args( readline cursor-pos count )
   ( buffer pointer )
   arg2 tty-readline-buffer @ null? IF " *buffer* unallocated" " tty-readline-error" error THEN
@@ -182,39 +182,39 @@ global-var *TTY-READLINE-DICT*
   cell* swapdrop
   ( do it )
   copy
-;
+end
 
-: tty-readline-shift-buffer-left
+def tty-readline-shift-buffer-left
   args( readline cursor-pos )
   arg1 arg0 int32 1 tty-readline-shift-buffer-left/3
-;
+end
 
 ( Erasing )
 
-: tty-readline-erase-from/3
+def tty-readline-erase-from/3
   args( start-index count dict )
   doc( Erase input text from the start for count characters. )
   ( shift input )
   arg0 arg2 arg1 tty-readline-shift-buffer-left/3
   ( update length )
   arg1 negate arg0 tty-readline-change-length-by
-;
+end
 
-: tty-readline-erase-from
+def tty-readline-erase-from
   args( dict index )
   doc( Erase input text from the index to the end. )
   arg0
   arg1 tty-readline-length @ arg0 int-sub
   arg1 tty-readline-erase-from/3
   arg1 tty-readline-clamp-cursors
-;
+end
 
-: tty-readline-erase
+def tty-readline-erase
   arg0 int32 0 tty-readline-erase-from tty-readline-move-cursor
   arg0 tty-readline-redraw
-;
+end
 
-: tty-readline-erase-char
+def tty-readline-erase-char
   arg0 tty-readline-cursor @ int32 0 equals IF " beginning of line" write-line return0 THEN
   ( shift input left )
   arg0
@@ -225,29 +225,29 @@ global-var *TTY-READLINE-DICT*
   ( decrease length )
   int32 -1 arg0 tty-readline-change-length-by
   arg0 tty-readline-redraw
-;
+end
 
-: tty-readline-delete-char
+def tty-readline-delete-char
   ( shift input left )
   arg0 arg0 tty-readline-cursor @ tty-readline-shift-buffer-left
   ( decrease length )
   int32 -1 arg0 tty-readline-change-length-by
   arg0 tty-readline-redraw
-;
+end
 
 ( Command completion )
 
-: tty-readline-complete
+def tty-readline-complete
   " Auto completing... " .S
   arg0 tty-readline-buffer @ ( seq-data ) ( FIXME need to use seq-data everytime elsewhere )
   arg0 tty-readline-cursor @
   write-line-n
   arg0 tty-readline-redraw
-;
+end
 
 ( Command History: )
 
-: tty-readline-history-allot
+def tty-readline-history-allot
   TTY-READLINE-MAX-HISTORY dallot-seq
   TTY-READLINE-MAX-HISTORY DOTIMES[
     TTY-MAX-INPUT dallot-seq
@@ -256,15 +256,15 @@ global-var *TTY-READLINE-DICT*
     drop3
   ]DOTIMES
   local0 return1
-;
+end
 
-: tty-readline-history-nth
+def tty-readline-history-nth
   args( n dict )
   arg0 tty-readline-history @
   arg1 seq-peek return1
-;
+end
 
-: tty-readline-history-tip-in-inc!
+def tty-readline-history-tip-in-inc!
   arg0 tty-readline-history-tip-in @
   dup TTY-READLINE-MAX-HISTORY >= IF
     drop int32 0
@@ -272,27 +272,27 @@ global-var *TTY-READLINE-DICT*
     int32 1 int-add
   THEN
   arg0 tty-readline-history-tip-in !
-;
+end
 
-: tty-readline-history-tip-out-dec!
+def tty-readline-history-tip-out-dec!
   arg0 tty-readline-history-tip-out @
   dup int32 0 <= IF
     drop TTY-READLINE-MAX-HISTORY
   THEN
   int32 1 int-sub
   arg0 tty-readline-history-tip-out !
-;
+end
 
-: tty-readline-history-tip-out-inc!
+def tty-readline-history-tip-out-inc!
   arg0 tty-readline-history-tip-out @
   int32 1 int-add
   dup TTY-READLINE-MAX-HISTORY >= IF
     drop int32 0
   THEN
   arg0 tty-readline-history-tip-out !
-;
+end
 
-: tty-readline-history-push/3
+def tty-readline-history-push/3
   args( string-ptr length dict )
   arg0 tty-readline-history-tip-in @
   arg0 tty-readline-history-nth rotdrop2
@@ -307,41 +307,41 @@ global-var *TTY-READLINE-DICT*
   arg0 tty-readline-history-tip-in-inc!
   tty-readline-history-tip-in @
   arg0 tty-readline-history-tip-out !
-;
+end
 
-: tty-readline-history-push
+def tty-readline-history-push
   args( dict )
   arg0 tty-readline-buffer @ seq-data swapdrop
   arg0 tty-readline-length @
   arg0 tty-readline-history-push/3
-;
+end
 
-: tty-readline-paste-history
+def tty-readline-paste-history
   arg0 tty-readline-history-tip-out @
   arg0 tty-readline-history-nth
   arg0 tty-readline-insert-string
-;
+end
 
-: tty-readline-use-history
+def tty-readline-use-history
   arg0
   tty-readline-erase
   tty-readline-paste-history
   tty-readline-cursor-end
   tty-readline-redraw-text
   tty-readline-length @ tty-cursor-right
-;
+end
 
-: tty-readline-history-prev
+def tty-readline-history-prev
   arg0 tty-readline-history-tip-out-dec! tty-readline-use-history
-;
+end
 
-: tty-readline-history-next
+def tty-readline-history-next
   arg0 tty-readline-history-tip-out-inc! tty-readline-use-history
-;
+end
 
 ( Command execution )
 
-: tty-readline-exec
+def tty-readline-exec
     " Read: " .s
     arg0 tty-readline-length @ write-int write-space
     arg0 tty-readline-buffer @
@@ -349,31 +349,31 @@ global-var *TTY-READLINE-DICT*
     swap seq-data swapdrop swap
     arg0 tty-readline-history-push/3
     tty-readline-erase tty-readline-redraw
-;
+end
 
 ( Predicates )
 
-: tty-readline-full?
+def tty-readline-full?
     arg0 tty-readline-max-input @
     arg0 tty-readline-length @
     <= return1-1
-;
+end
 
-: tty-readline-at-end?
+def tty-readline-at-end?
     arg0 tty-readline-length @
     arg0 tty-readline-cursor @
     <= return1-1
-;
+end
 
-: tty-readline-at-max?
+def tty-readline-at-max?
     arg0 tty-readline-max-input @
     arg0 tty-readline-cursor @
     <= return1-1
-;
+end
 
 ( Input buffer editing )
 
-: tty-readline-insert-char
+def tty-readline-insert-char
     arg0 tty-readline-at-max? IF return0 THEN
     ( write the character to the tty )
     arg1 write-byte
@@ -392,9 +392,9 @@ global-var *TTY-READLINE-DICT*
     int32 1 arg0 tty-readline-change-length-by
     ( move cursor )
     arg0 int32 1 tty-readline-move-cursor-by
-;
+end
 
-: tty-readline-replace
+def tty-readline-replace
     arg1
     arg0 tty-readline-buffer @
     null? IF " *buffer* unallocated" " tty-readline-error" error THEN
@@ -402,18 +402,18 @@ global-var *TTY-READLINE-DICT*
     seq-poke
     arg0 tty-readline-at-end? IF arg0 tty-readline-length dup @ int32 1 int-add swap ! THEN
     arg0 tty-readline-forward-char
-;
+end
 
 ( Copy and paste )
 
-: tty-readline-set-mark
+def tty-readline-set-mark
   arg0 tty-readline-cursor @
   .\n " mark set: " .s ,i .\n
   arg0 tty-readline-mark !
   arg0 tty-readline-redraw
-;
+end
 
-: tty-readline-insert-string-at
+def tty-readline-insert-string-at
   args( string position readline-dict )
   arg2
   seq-length
@@ -439,23 +439,23 @@ global-var *TTY-READLINE-DICT*
   local1 arg0 tty-readline-change-length-by
   ( move the cursor )
   arg0 local1 tty-readline-move-cursor-by
-;
+end
 
-: tty-readline-insert-string
+def tty-readline-insert-string
   args( string readline-dict )
   arg1
   arg0 tty-readline-cursor @
   arg0 tty-readline-insert-string-at
-;
+end
 
-: tty-readline-paste
+def tty-readline-paste
   arg0 tty-readline-paste-buffer @
   arg0 tty-readline-cursor @
   arg0 tty-readline-insert-string-at
   arg0 tty-readline-redraw
-;
+end
 
-: tty-readline-yank-string
+def tty-readline-yank-string
   args( pointer num-characters dict )
   ( copy the characters to the paste buffer )
   arg2
@@ -464,9 +464,9 @@ global-var *TTY-READLINE-DICT*
   copy
   ( update seq length )
   arg1 arg0 tty-readline-paste-buffer @ !
-;
+end
 
-: tty-readline-yank
+def tty-readline-yank
   doc( Yank the text between the cursor to the mark. )
   ( yank from cursor or mark? )
   arg0 tty-readline-cursor @
@@ -476,44 +476,44 @@ global-var *TTY-READLINE-DICT*
   arg0 tty-readline-buffer @ seq-data swapdrop local0 cell+n rotdrop2
   local1 local0 int-sub
   arg0 tty-readline-yank-string
-;
+end
 
-: tty-readline-yank-from-cursor-to-end
+def tty-readline-yank-from-cursor-to-end
   arg0 tty-readline-buffer @ seq-data swapdrop
   arg0 tty-readline-cursor @ cell+n rotdrop2
   arg0 tty-readline-length @ arg0 tty-readline-cursor @ int-sub
   arg0 tty-readline-yank-string
-;
+end
 
-: tty-readline-erase-from-cursor
+def tty-readline-erase-from-cursor
   arg0 tty-readline-yank-from-cursor-to-end
   arg0 dup tty-readline-cursor @ tty-readline-erase-from
   arg0 tty-readline-redraw
-;
+end
 
-: tty-readline-erase-marked
+def tty-readline-erase-marked
   arg0 tty-readline-cursor @
   arg0 tty-readline-mark @
   minmax-int
   2dup int-sub abs-int
   local0 over arg0 tty-readline-erase-from/3
   arg0 tty-readline-clamp-cursors
-;
+end
 
-: tty-readline-cut
+def tty-readline-cut
   doc( Yank and erase the text between the cursor and mark. )
   arg0 tty-readline-yank
   tty-readline-erase-marked
   arg0 tty-readline-redraw
-;
+end
 
 ( Testing functions )
 
-: tty-readline-insert-nolan
+def tty-readline-insert-nolan
   " nolan" arg0 tty-readline-insert-string
-;
+end
 
-: tty-readline-shift-by-five
+def tty-readline-shift-by-five
   .\n " shift by five" .s .\n
   arg0
   arg0 tty-readline-cursor @
@@ -521,9 +521,9 @@ global-var *TTY-READLINE-DICT*
   tty-readline-shift-buffer-right
   int32 5 arg0 tty-readline-change-length-by
   arg0 tty-readline-redraw
-;
+end
 
-: tty-readline-report
+def tty-readline-report
   .\n " tty-readline:" .s .\n
   " buffer: " .s arg0 tty-readline-buffer @ seq-length .i ,sp write-line
   " paste: " .s arg0 tty-readline-paste-buffer @ seq-length .i ,sp write-line
@@ -542,11 +542,11 @@ global-var *TTY-READLINE-DICT*
     drop2
   ]DOTIMES
   .\n arg0 tty-readline-redraw
-;
+end
 
 ( Readline initialization )
 
-: tty-readline-dict
+def tty-readline-dict
     terminator
     ( Key bindings )
     " M-\e" aliases> tty-readeval-done!
@@ -595,17 +595,17 @@ global-var *TTY-READLINE-DICT*
     ( Readeval words )
     tty-make-readeval-default-dict
     return1
-;
+end
 
-: tty-readline-init
+def tty-readline-init
   *TTY-READLINE-DICT* @ null? IF
     tty-readline-dict dup *TTY-READLINE-DICT* !
   THEN
   return1
-;
+end
 
 ( The API's face )
 
-: tty-readline
+def tty-readline
   tty-readline-init tty-readline-redraw tty-readeval
-;
+end

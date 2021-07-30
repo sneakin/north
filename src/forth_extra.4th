@@ -1,5 +1,5 @@
 ( pause while defining. )
-: PAUSE pause ; immediate-only
+def PAUSE pause ; immediate-only
 
 (
 " EOS" lit eos constant drop2
@@ -7,43 +7,43 @@
 " Not Number" lit not-number constant drop2
 "  " lit space constant drop2
 )
-: not-found " Not Found" return1 ;
-: not-number  " Not Number" return1 ;
+def not-found " Not Found" return1 end
+def not-number  " Not Number" return1 end
 
-: test-return-locals
+def test-return-locals
   int32 1 int32 2 int32 3 return-locals
-;
+end
 
 ( Return all the locals except the number from the top. )
-: return-locals-less ( num-to-overwrite )
+def return-locals-less ( num-to-overwrite )
   end-frame drop2
   here swap
   cell* swapdrop
   locals swap int-sub
   swap int-sub cell/ swapdrop returnN
-;
+end
 
-: test-return-locals-less
+def test-return-locals-less
   int32 1 int32 2 int32 3 int32 4 int32 5 arg0 return-locals-less
-;
+end
 
 ( Return the greater argument. )
-: max
+def max
   arg1 arg0 < IF arg0 return1 THEN
   arg1 return1
-;
+end
 
 ( Place the arguments in min max order inplace. )
-: minmax
+def minmax
   arg1 arg0 > IF arg1 arg0 set-arg1 set-arg0 THEN
-;
+end
 
-: backtick?
+def backtick?
   arg0 " `" string-equal return1
-;
+end
 
 ( Read and look tokens up inserting `literal` before each. )
-: `
+def `
   DO
     *tokenizer* peek tokenizer-next-token UNLESS drop2 LEAVE THEN
     swapdrop ( token )
@@ -54,22 +54,22 @@
   backtick? swapdrop UNTIL
 
   int32 3 return-locals-less
-; immediate
+end immediate
 
-: test-backtick-1
+def test-backtick-1
   ` write-ok write-ok write-ok `
   return-locals
-; immediate
+end immediate
 
-: test-backtick
+def test-backtick
   write-helo test-backtick-1 write-helo
-;
+end
 
-: test-DOTIMES
+def test-DOTIMES
   int32 5 DOTIMES[ arg1 write-int write-crnl drop ]DOTIMES write-helo
-;
+end
   
-: seq1 ( max min )
+def seq1 ( max min )
   arg1
   arg0
   2dup int-sub dallot-seq
@@ -84,9 +84,9 @@
 
   write-ok int32 1146048327 write-word drop
   local2 return1
-;
+end
 
-: seq2 ( max min )
+def seq2 ( max min )
   arg1
   arg0
   2dup int-sub dallot-seq
@@ -101,18 +101,18 @@
 
   write-ok int32 1146048327 write-word drop
   local2 return1
-;
+end
 
-: test-argn-inner
+def test-argn-inner
   int32 3 argn return1
-;
+end
 
-: test-argn
+def test-argn
   int32 6 int32 7 int32 8 int32 9 test-argn-inner
   int32 6 equals return1
-;
+end
 
-: test-unsigned-number
+def test-unsigned-number
   " 123" unsigned-number drop int32 123 equals UNLESS false return1 THEN
   " &123" unsigned-number drop int32 123 equals UNLESS false return1 THEN
   " #98" unsigned-number drop int32 98 equals UNLESS false return1 THEN
@@ -121,11 +121,11 @@
   " %1000" unsigned-number drop int32 8 equals UNLESS false return1 THEN
   " %1111" unsigned-number drop int32 15 equals UNLESS false return1 THEN
   true return1
-;
+end
 
 ( todo copy this out of here to keep and use )
 ( Convert an unsigned integer value to a string. )
-: unsigned-int-to-string-1 ( number -- str-ptr )
+def unsigned-int-to-string-1 ( number -- str-ptr )
   arg0
   here
   DO
@@ -133,10 +133,10 @@
     arg2 base poke uint-div dup set-arg2
   WHILE
   here dup local1 swap uint-sub cell/ swapdrop int32 4 uint-sub intern return1
-;
+end
 
 ( Patch the bootstrap functions. )
-:: unsigned-int-to-string literal unsigned-int-to-string-1 jump-entry-data ;
+:: unsigned-int-to-string literal unsigned-int-to-string-1 jump-entry-data end
 
 ( Actually prompt! )
 terminator

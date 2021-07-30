@@ -246,9 +246,9 @@ end
 
 ( Lists: )
 
-def dcons arg0 dpush dhere arg1 dpush return1 ;
-def tail arg0 cell+ peek return1 ;
-def head arg0 peek return1 ;
+def dcons arg0 dpush dhere arg1 dpush return1 end
+def tail arg0 cell+ peek return1 end
+def head arg0 peek return1 end
 
 ( Dictionary )
 
@@ -482,7 +482,7 @@ end
 
 constant token-max-cell-size 512
 
-def token-max-byte-size token-max-cell-size cell* return1 ;
+def token-max-byte-size token-max-cell-size cell* return1 end
 
 def tokenizer-str-offset
   arg0 cell+
@@ -953,7 +953,7 @@ def next-token
   int32 0 int32 0 return2
 end
 
-def eos " EOS" return1 ;
+def eos " EOS" return1 end
 
 def next-word
     next-token UNLESS eos error THEN

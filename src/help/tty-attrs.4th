@@ -1,4 +1,4 @@
-: help-tty-color-table
+def help-tty-color-table
     doc( View the 16 TTY colors in a table with color numbers. )
     arg0
     int32 8 DOTIMES[
@@ -13,9 +13,9 @@
     ]DOTIMES
     
     color-reset
-;
+end
 
-: help-tty-attr-table
+def help-tty-attr-table
     doc( View a table of TTY character attributes. )
     bold " bold" write-string tty-normal
     write-tab
@@ -33,9 +33,9 @@
     write-tab
     strike " strike" write-string strike-off
     color-reset write-crnl
-;
+end
 
-: help-tty-attrs
+def help-tty-attrs
     doc( View a table of colors and styles availeble on a TTY. )
     " Normal" write-heading
     "  hey! " dim help-tty-color-table
@@ -49,4 +49,4 @@
     " Attributes" write-heading
     help-tty-attr-table
     write-crnl
-;
+end

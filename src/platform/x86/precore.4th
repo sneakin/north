@@ -1,53 +1,53 @@
-: parent-frame
+def parent-frame
   ( first field )
   return0
-;
+end
 
-: frame-return-address
+def frame-return-address
   arg0 int32 1 cell+n return1-1
-;
+end
 
-: frame-eval-address
+def frame-eval-address
   arg0 int32 2 cell+n return1-1
-;
+end
 
-: arg4
+def arg4
     int32 4
     current-frame parent-frame peek
     frame-argn return1
-;
+end
 
-: frame-locals
+def frame-locals
     arg0 cell- return1-1
-;
+end
 
-: return-address
+def return-address
     current-frame parent-frame peek frame-return-address peek
     return1
-;
+end
 
-: local1
+def local1
     current-frame parent-frame peek
     frame-locals cell- swapdrop peek
     return1
-;
+end
 
-: store-local1
+def store-local1
     arg0
     current-frame parent-frame peek frame-locals cell-
     swapdrop poke
     return-1
-;
+end
 
-: copydown
+def copydown
   arg0 cell-size uint< IF return0 THEN
   arg0 arg2 int-add peek
   arg0 arg1 int-add poke
   arg0 cell-size int-sub set-arg0
   RECURSE
-;
+end
 
-: dallot-seq
+def dallot-seq
   arg0 cell-size int-mul
   dup cell-size int32 2 int-mul int-add
   dup dallot
@@ -55,8 +55,8 @@
   arg0 over poke
   set-arg0
   return0
-;
+end
 
-: code-segment
+def code-segment
   indirect-offset peek return1
-;
+end
