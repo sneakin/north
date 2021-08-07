@@ -100,7 +100,7 @@ def tty-box-fill
     doc( Draws a solid, empty box from the cursor's position. )
     arg1
     arg0 DOTIMES[
-    arg2 space write-repeated-byte
+    arg2 int32 32 write-repeated-byte
     drop tty-cursor-left drop
     tty-cursor-down-1
     ]DOTIMES
@@ -134,7 +134,7 @@ end
 
 def tty-filled-box-line
     tty-box-vert write-byte
-    arg0 int32 2 int-sub space write-repeated-byte
+    arg0 int32 2 int-sub int32 32 write-repeated-byte
     tty-box-vert write-byte
 end
 
@@ -173,11 +173,11 @@ def test-tty-filled-box-rand-draw
     int32 8 rand-n
     int32 8 rand-n
     color/2
-    int32 40 rand-n
-    int32 14 rand-n
+    int32 40 rand-n int32 1 int-add
+    int32 14 rand-n int32 1 int-add
     tty-cursor-to
-    int32 40 rand-n
-    int32 10 rand-n
+    int32 40 rand-n int32 1 int-add
+    int32 10 rand-n int32 1 int-add
     tty-filled-box
 end
 
@@ -195,11 +195,11 @@ def test-tty-box-rand-draw
     int32 8 rand-n
     int32 8 rand-n
     color/2
-    int32 40 rand-n
-    int32 14 rand-n
+    int32 40 rand-n int32 1 int-add
+    int32 14 rand-n int32 1 int-add
     tty-cursor-to
-    int32 40 rand-n
-    int32 10 rand-n
+    int32 40 rand-n int32 1 int-add
+    int32 10 rand-n int32 1 int-add
     tty-box
 end
 

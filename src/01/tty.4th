@@ -53,39 +53,39 @@ def underline
 end
 
 def black
-  int32 8 int32 0 color/2 
+  int32 0 int32 0 color/2 
 end
 
 def red
-  int32 8 int32 1 color/2 
+  int32 0 int32 1 color/2 
 end
 
 def green
-  int32 8 int32 2 color/2 
+  int32 0 int32 2 color/2 
 end
 
 def yellow
-  int32 8 int32 3 color/2 
+  int32 0 int32 3 color/2 
 end
 
 def blue
-  int32 8 int32 4 color/2 
+  int32 0 int32 4 color/2 
 end
 
 def magenta
-  int32 8 int32 5 color/2 
+  int32 0 int32 5 color/2 
 end
 
 def cyan
-  int32 8 int32 6 color/2 
+  int32 0 int32 6 color/2 
 end
 
 def white
-  int32 8 int32 7 color/2 
+  int32 0 int32 7 color/2 
 end
 
 def tty-default-fg
-  int32 8 int32 9 color/2 
+  int32 0 int32 7 color/2 
 end
 
 def write-heading
