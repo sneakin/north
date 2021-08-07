@@ -302,9 +302,7 @@ stage(:stage2,
       texts: STAGE1_TEXTS,
       minimal: true)
 
-STAGE3_SRC = src('build-stage3.4th',
-                 '02/assembler.4th',
-                 '02/ops.4th')
+STAGE3_SRC = STAGE2_SRC + src('02/bc/assembler.4th', '02/bc/ops.4th')
 
 stage(:stage3,
       runner: 'bacaw',
@@ -313,11 +311,10 @@ stage(:stage3,
       minimal: true)
 
 STAGE4_SRC = STAGE1_SRC +
-  src('dev-tests.4th',
-      '03/storage.4th',
+  src('03/storage.4th',
       '03/storage_devices.4th',
       '03/storage_test.4th',
-      '02/dict.4th')
+      '02/fast_dict.4th')
 
 stage(:stage4,
       runner: 'bacaw',
