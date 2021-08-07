@@ -99,8 +99,7 @@ def abort-seq ( seq-ptr )
 end
 
 def seq-data
-    arg0 cell+
-    return1
+  arg0 cell+ return1
 end
 
 def seq-length
@@ -272,18 +271,15 @@ def add-dict
 end
 
 def dict-entry-name
-  arg0 peek 
-  return1
+  arg0 peek return1
 end
 
 def dict-entry-code
-  arg0 cell+ peek 
-  return1
+  arg0 cell+ peek return1
 end
 
 def dict-entry-data
-  arg0 cell+2 peek
-  return1
+  arg0 cell+2 peek return1
 end
 
 def set-dict-entry-code
@@ -349,15 +345,15 @@ def return-from-frame
 end
 
 def top-frame
-    arg0 peek
-    dup stack-top uint< IF
-      set-arg0 RECURSE
-    THEN
+  arg0 peek
+  dup stack-top uint< IF
+    set-arg0 RECURSE
+  THEN
 end
 
 def quit
-    doc( Return to the function started with outer-start-thread, but not the outer-start-thread's caller. )
-    current-frame top-frame return-from-frame
+  doc( Return to the function started with outer-start-thread, but not the outer-start-thread's caller. )
+  current-frame top-frame return-from-frame
 end
 
 global-var *state* doc( Holds a function pointer that determines how words are interpreted. See `compile`. )
@@ -440,8 +436,8 @@ def null?
 end
 
 def in-range?
-    doc( Inclusively test if VALUE is between MAX and MIN. )
-    args( Max min value ++ result )
+  doc( Inclusively test if VALUE is between MAX and MIN. )
+  args( Max min value ++ result )
   arg0 dup arg1 >= IF
     arg2 <= IF int32 1 return1 THEN
     int32 0 return1
@@ -502,14 +498,14 @@ def tokenizer-str-ptr
 end
 
 def set-tokenizer-str
-    arg1 arg0 tokenizer-str swapdrop !
-    int32 0 arg0 tokenizer-str-offset swapdrop !
+  arg1 arg0 tokenizer-str swapdrop !
+  int32 0 arg0 tokenizer-str-offset swapdrop !
 end
 
 def tokenizer-inc-str-offset
-    arg0 tokenizer-str-offset
-    dup peek cell+ swapdrop
-    swap poke
+  arg0 tokenizer-str-offset
+  dup peek cell+ swapdrop
+  swap poke
 end
 
 def tokenizer-exhausted?
@@ -520,35 +516,35 @@ def tokenizer-exhausted?
 end
   
 def tokenizer-reader
-    arg0 int32 4 cell+n return1-1
+  arg0 int32 4 cell+n return1-1
 end
 
 def tokenizer-reader-state
-    arg0 int32 5 cell+n return1-1
+  arg0 int32 5 cell+n return1-1
 end
 
 def tokenizer-read-more
-    arg0 tokenizer-reader @ dup IF
-        arg0 tokenizer-reader-state @
-        swap exec-core-word
-        dup IF arg0 set-tokenizer-str int32 1 return1 THEN
-    THEN
-    int32 0 return1
+  arg0 tokenizer-reader @ dup IF
+    arg0 tokenizer-reader-state @
+    swap exec-core-word
+    dup IF arg0 set-tokenizer-str int32 1 return1 THEN
+  THEN
+  int32 0 return1
 end
-    
+  
 def tokenizer-peek-word
-    arg0
-    tokenizer-exhausted? IF
-        tokenizer-read-more UNLESS int32 0 return1 THEN
-    THEN
-    tokenizer-str-ptr peek
-    return1
+  arg0
+  tokenizer-exhausted? IF
+    tokenizer-read-more UNLESS int32 0 return1 THEN
+  THEN
+  tokenizer-str-ptr peek
+  return1
 end
 
 def tokenizer-next-word
-    arg0 tokenizer-peek-word dup UNLESS return1 THEN
-    swap tokenizer-inc-str-offset
-    drop return1 ( tokenizer cell )
+  arg0 tokenizer-peek-word dup UNLESS return1 THEN
+  swap tokenizer-inc-str-offset
+  drop return1 ( tokenizer cell )
 end
 
 ( todo use a function to test characters and refactor eat-spaces )
@@ -662,19 +658,19 @@ end
 def make-tokenizer
   args( reader-fn token-buffer string ++ tokenizer )
   doc( Creates a new tokenizer on the data stack. Tokenizers have the structure:
-    str-ptr
-    str-offset
-    token-seq
-    token-seq-offset
-    reader-fn
-    reader-state )
+  str-ptr
+  str-offset
+  token-seq
+  token-seq-offset
+  reader-fn
+  reader-state )
   arg0 dpush
   dhere
   int32 0 dpush
   arg1 dpush
-    int32 0 dpush
-    arg2 dpush
-    arg3 dpush
+  int32 0 dpush
+  arg2 dpush
+  arg3 dpush
   return1
 end
 
@@ -682,25 +678,25 @@ global-var *tokenizer-stack* doc( Tokenizers are pushed here when evaluating str
 global-var *tokenizer* doc( The interpreter's tokenizer. )
 
 def pop-tokenizer
-    *tokenizer-stack* @ null? IF int32 0 return1 THEN
-    tail *tokenizer-stack* !
-    head return1
+  *tokenizer-stack* @ null? IF int32 0 return1 THEN
+  tail *tokenizer-stack* !
+  head return1
 end
 
 def pop-tokenizer!
-    pop-tokenizer dup IF *tokenizer* ! return0 THEN
-    " no tokenizer" " tokenizer-error" error
+  pop-tokenizer dup IF *tokenizer* ! return0 THEN
+  " no tokenizer" " tokenizer-error" error
 end
 
 def push-tokenizer
-    *tokenizer-stack* @ arg0 dcons
-    *tokenizer-stack* !
+  *tokenizer-stack* @ arg0 dcons
+  *tokenizer-stack* !
 end
 
 def make-the-tokenizer
-    *tokenizer* peek
-    push-tokenizer
-    dup IF tokenizer-buffer THEN
+  *tokenizer* peek
+  push-tokenizer
+  dup IF tokenizer-buffer THEN
   dup UNLESS token-max-cell-size dallot-seq THEN
   arg0 arg2 roll arg1 roll make-tokenizer ( tokenizer )
   *tokenizer* poke
@@ -731,8 +727,8 @@ end
 ( Call frames continued: )
 
 def return1-1
-    doc( Returns from a frame by replacing an argment with the return value. )
-    drop-call-frame set-arg0
+  doc( Returns from a frame by replacing an argment with the return value. )
+  drop-call-frame set-arg0
 end
 
 def set-arg1
@@ -760,84 +756,84 @@ def set-arg3
 end
 
 def argn
-    arg0 cell* call-frame-size int-add
-    current-frame parent-frame peek int-add
-    peek set-arg0
+  arg0 cell* call-frame-size int-add
+  current-frame parent-frame peek int-add
+  peek set-arg0
 end
 
 def set-argn
-    arg0 cell* call-frame-size int-add
-    current-frame parent-frame peek int-add
-    arg1 swap poke
+  arg0 cell* call-frame-size int-add
+  current-frame parent-frame peek int-add
+  arg1 swap poke
 end
 
 def frame-args
-    arg0 call-frame-size int-add return1-1
+  arg0 call-frame-size int-add return1-1
 end
 
 def frame-argn
-    doc( Return the Nth argument of a frame. )
-    args( n frame ++ value )
-    arg0 frame-args arg1 cell+n peek return1
+  doc( Return the Nth argument of a frame. )
+  args( n frame ++ value )
+  arg0 frame-args arg1 cell+n peek return1
 end
 
 def frame-locals
-    arg0 cell- return1-1
+  arg0 cell- return1-1
 end
 
 def frame-byte-size
-    arg0 dup peek swap int-sub return1-1
+  arg0 dup peek swap int-sub return1-1
 end
 
 def frame-arg-byte-size
-    arg0 parent-frame peek
-    arg0 frame-args
-    int-sub return1-1
+  arg0 parent-frame peek
+  arg0 frame-args
+  int-sub return1-1
 end
 
 def frame-num-args
-    arg0 frame-arg-byte-size cell/ return1-1
+  arg0 frame-arg-byte-size cell/ return1-1
 end
 
 def frame-return-addr
-    arg0 cell+ return1-1
+  arg0 cell+ return1-1
 end
 
 def locals-byte-size
-    current-frame parent-frame peek
-    args int-sub return1
+  current-frame parent-frame peek
+  args int-sub return1
 end
 
 def locals-size
-    current-frame parent-frame peek
-    args int-sub cell/ return1
+  current-frame parent-frame peek
+  args int-sub cell/ return1
 end
 
 def dropn-args
-    doc( Drop N arguments from the calling frame keeping any locals. )
-    ( calc size of locals + call frame )
-    current-frame parent-frame peek
-    ( copy from here to nth arg - the size )
-    ( src )
-    here
-    ( dest )
-    dup arg0 cell+n rotdrop2
-    ( number bytes )
-    local0
-    call-frame-size int-add
-    int32 2 overn int-sub
-    ( update pointers first )
-    local0 arg0 cell+n rotdrop2 current-frame parent-frame poke
-    current-frame arg0 cell+n rotdrop2 set-current-frame
-    ( now )
-    copydown
-    return-1
+  doc( Drop N arguments from the calling frame keeping any locals. )
+  ( calc size of locals + call frame )
+  current-frame parent-frame peek
+  ( copy from here to nth arg - the size )
+  ( src )
+  here
+  ( dest )
+  dup arg0 cell+n rotdrop2
+  ( number bytes )
+  local0
+  call-frame-size int-add
+  int32 2 overn int-sub
+  ( update pointers first )
+  local0 arg0 cell+n rotdrop2 current-frame parent-frame poke
+  current-frame arg0 cell+n rotdrop2 set-current-frame
+  ( now )
+  copydown
+  return-1
 end
 
 ( Some signed math: )
 
 def negative?
-    arg0 int32 0 < IF true ELSE false THEN return1
+  arg0 int32 0 < IF true ELSE false THEN return1
 end
 
 def negate
@@ -956,21 +952,21 @@ end
 def eos " EOS" return1 end
 
 def next-word
-    next-token UNLESS eos error THEN
-    seq-length intern-seq return1
+  next-token UNLESS eos error THEN
+  seq-length intern-seq return1
 end
 
 def next-lookup
-    next-token UNLESS eos error THEN
-    interp drop dup UNLESS " lookup-error" error THEN
-    return1
+  next-token UNLESS eos error THEN
+  interp drop dup UNLESS " lookup-error" error THEN
+  return1
 end
 
 def next-int
-    next-token UNLESS " End of stream" error THEN
-    number drop
-    ( POSTPONE int32 swap return2 )
-    return1
+  next-token UNLESS " End of stream" error THEN
+  number drop
+  ( POSTPONE int32 swap return2 )
+  return1
 end
 
 def eval-read-line
@@ -990,22 +986,22 @@ def eval-loop
 end
 
 def eval-input
-    int32 0 ' eval-read-line int32 0 make-the-tokenizer drop3
-    eval-loop
-    pop-tokenizer!
-    return-locals
+  int32 0 ' eval-read-line int32 0 make-the-tokenizer drop3
+  eval-loop
+  pop-tokenizer!
+  return-locals
 end
 
 def eval-start
-    input-reset
-    ' eval-input jump-entry-data
+  input-reset
+  ' eval-input jump-entry-data
 end
 
 def eval-string
-    int32 0 int32 0 arg0 make-the-tokenizer drop3
-    eval-loop
-    pop-tokenizer!
-    return-locals
+  int32 0 int32 0 arg0 make-the-tokenizer drop3
+  eval-loop
+  pop-tokenizer!
+  return-locals
 end
 
 def load
@@ -1082,14 +1078,14 @@ def variable
 end
 
 def global-var
-    create int32 0 does-var
+  create int32 0 does-var
 end
 
 ( Entry type testing: )
 
 def in-range-unsigned?
-    doc( Inclusively test if VALUE is between MAX and MIN. )
-    args( Max min value ++ result )
+  doc( Inclusively test if VALUE is between MAX and MIN. )
+  args( Max min value ++ result )
   arg0 dup arg1 uint>= IF
     arg2 uint<= IF int32 1 return1 THEN
     int32 0 return1
@@ -1101,38 +1097,38 @@ end
 global-var binary-size
 
 def pointer?
-    stack-top here arg0 in-range-unsigned? IF true return1 THEN
-    dhere data-segment arg0 in-range-unsigned? IF true return1 THEN
-    code-segment binary-size @ int-add code-segment arg0 in-range-unsigned? IF true return1 THEN
-    false return1
+  stack-top here arg0 in-range-unsigned? IF true return1 THEN
+  dhere data-segment arg0 in-range-unsigned? IF true return1 THEN
+  code-segment binary-size @ int-add code-segment arg0 in-range-unsigned? IF true return1 THEN
+  false return1
 end
 
 def dict-entry?
-    arg0 pointer? UNLESS int32 0 return1 THEN
-    ( name a valid string? )
-    dict-entry-name pointer? UNLESS int32 0 return1 THEN
-    seq-length cell* swapdrop
-    int-add cell+ peek
-    terminator? return1
+  arg0 pointer? UNLESS int32 0 return1 THEN
+  ( name a valid string? )
+  dict-entry-name pointer? UNLESS int32 0 return1 THEN
+  seq-length cell* swapdrop
+  int-add cell+ peek
+  terminator? return1
 end
 
 ( Word aliases: )
 
 def copy-dict-entry
-    args( dest src )
-    arg0 dict-entry-code arg1 set-dict-entry-code
-    arg0 dict-entry-data arg1 set-dict-entry-data
-    arg0 dict-entry-doc arg1 set-dict-entry-doc
-    arg0 dict-entry-args arg1 set-dict-entry-args
+  args( dest src )
+  arg0 dict-entry-code arg1 set-dict-entry-code
+  arg0 dict-entry-data arg1 set-dict-entry-data
+  arg0 dict-entry-doc arg1 set-dict-entry-doc
+  arg0 dict-entry-args arg1 set-dict-entry-args
 end
 
 def alias
-    args( : new-word src-word )
-    create next-lookup dict-entry? IF
-      copy-dict-entry
-    ELSE
-      " not a dictionary entry" " alias-error" error
-    THEN
+  args( : new-word src-word )
+  create next-lookup dict-entry? IF
+    copy-dict-entry
+  ELSE
+    " not a dictionary entry" " alias-error" error
+  THEN
 end
 
 ( Dictionary initialization )
