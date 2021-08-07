@@ -5,7 +5,7 @@
     https://www.gnu.org/software/screen/manual/html_node/Control-Sequences.html
 )
 
-def write-bell int32 char-code \b write-byte end
+def write-bell char-code \b write-byte end
 
 def tty-reset
     " \ec" write-string
@@ -225,9 +225,9 @@ def tty-font-g2-1 " \en" write-string end
 def tty-font-g3 " \eO" write-string end
 def tty-font-g3-1 " \eo" write-string end
 
-def TTY-FONT-US int32 char-code B return1 end
-def TTY-FONT-UK int32 char-code A return1 end
-def TTY-FONT-BOX int32 char-code 0 return1 end
+def TTY-FONT-US char-code B return1 end
+def TTY-FONT-UK char-code A return1 end
+def TTY-FONT-BOX char-code 0 return1 end
 
 def tty-set-g0 " \e(" write-string arg0 write-byte end
 def tty-set-g1 " \e)" write-string arg0 write-byte end
@@ -328,7 +328,7 @@ def tty-read-int-seq-loop/3
     ( Scanning: [ digit+ ';' ]* digit* char )
     arg0 int32 1 int-add set-arg0
     arg2 tty-read-int
-    dup int32 char-code ; equals UNLESS
+    dup char-code ; equals UNLESS
       arg0 swap arg1 TTY-READ-CSI return-locals
     THEN
     drop
@@ -357,10 +357,10 @@ def tty-read-csi
         int32 0
         ' tty-read-int-seq cont
     THEN
-    dup int32 char-code M equals IF
+    dup char-code M equals IF
         ' tty-read-mouse-coords cont
     THEN
-    dup int32 char-code ? equals IF
+    dup char-code ? equals IF
         int32 0
         swap
         ' tty-read-int-seq cont
@@ -384,13 +384,13 @@ def tty-read-escape-seq
     args( ++ digit-seq code mod )
     tty-read-byte
     ( CSI codes: \e[ )
-    dup int32 char-code [ equals IF
+    dup char-code [ equals IF
             drop
             ' tty-read-csi cont
     THEN
     ( Function keys: \e[O \e[N )    
-    dup int32 char-code N equals
-    over int32 char-code O equals
+    dup char-code N equals
+    over char-code O equals
     logior IF
         int32 0
         tty-read-byte
@@ -452,15 +452,15 @@ def tty-readeval-key-name
         terminator
         ( Control codes: C-key )
         arg2 control-code? IF
-            int32 char-code a int-add int32 1 int-sub
-            int32 char-code -
-            int32 char-code C
+            char-code a int-add int32 1 int-sub
+            char-code -
+            char-code C
             int32 3
         ELSE
           dup int32 127 equals IF
-            int32 char-code ?
-            int32 char-code -
-            int32 char-code C
+            char-code ?
+            char-code -
+            char-code C
             int32 3
           ELSE
             int32 1
@@ -476,21 +476,21 @@ def tty-readeval-key-name
         arg3 control-code?
         over escape? not swapdrop
         logand IF
-            int32 char-code a int-add int32 1 int-sub
-            int32 char-code -
-            int32 char-code C
-            int32 char-code -
-            int32 char-code M
+            char-code a int-add int32 1 int-sub
+            char-code -
+            char-code C
+            char-code -
+            char-code M
             int32 5
         ELSE
             ( Function keys: M-O-letter )
-            dup int32 char-code O equals IF
+            dup char-code O equals IF
                 int32 4 argn
-                int32 char-code - shift
-                int32 char-code - int32 char-code M
+                char-code - shift
+                char-code - char-code M
                 int32 5
             ELSE ( M-key )
-                int32 char-code - int32 char-code M
+                char-code - char-code M
                 int32 3
             THEN
         THEN
@@ -501,31 +501,31 @@ def tty-readeval-key-name
     arg1 TTY-READ-CSI equals IF
       ( " csi " .s arg3 .d arg2 .d arg1 .d .\n )
         ( Arrow keys are named. )
-        int32 char-code D int32 char-code A arg3 in-range? IF
-            dup int32 char-code A equals IF " <up>" THEN
-            dup int32 char-code B equals IF " <down>" THEN
-            dup int32 char-code C equals IF " <right>" THEN
-            dup int32 char-code D equals IF " <left>" THEN
+        char-code D char-code A arg3 in-range? IF
+            dup char-code A equals IF " <up>" THEN
+            dup char-code B equals IF " <down>" THEN
+            dup char-code C equals IF " <right>" THEN
+            dup char-code D equals IF " <left>" THEN
             seq-length arg0 swap copy-seq
             return0
         THEN
-        dup int32 char-code ~ equals IF
+        dup char-code ~ equals IF
             drop
-            int32 5 argn int32 char-code a int-add
-            int32 char-code k
+            int32 5 argn char-code a int-add
+            char-code k
             int32 2
             here arg0 int32 2 overn copy-seq
             return0
         THEN
         ( Anything else is the escape sequence minus parameters. )
-        terminator arg3 int32 char-code [ int32 char-code \e
+        terminator arg3 char-code [ char-code \e
         int32 3
         here
         arg0 int32 2 overn copy-seq
         return0
     THEN
     arg1 TTY-READ-MOUSE equals IF
-        terminator int32 char-code M int32 char-code [ int32 char-code \e
+        terminator char-code M char-code [ char-code \e
         int32 3
         here
         arg0 int32 2 overn copy-seq
@@ -536,7 +536,7 @@ end
 
 def test-tty-readeval-key-name
     int32 32 stack-allot
-    int32 char-code A TTY-READ-BYTE shift tty-readeval-key-name
+    char-code A TTY-READ-BYTE shift tty-readeval-key-name
     int32 64 write-line-n hexdump
     .\n
     int32 32 stack-allot
@@ -548,15 +548,15 @@ def test-tty-readeval-key-name
     int32 64 write-line-n hexdump
     .\n
     int32 32 stack-allot
-    int32 char-code \r TTY-READ-BYTE shift tty-readeval-key-name
+    char-code \r TTY-READ-BYTE shift tty-readeval-key-name
     int32 64 write-line-n hexdump
     .\n
     int32 32 stack-allot
-    int32 char-code A TTY-READ-ESCAPE int32 2 overn tty-readeval-key-name
+    char-code A TTY-READ-ESCAPE int32 2 overn tty-readeval-key-name
     int32 64 hexdump
     .\n
     int32 32 stack-allot
-    int32 0 int32 char-code A int32 0 TTY-READ-CSI int32 4 overn tty-readeval-key-name
+    int32 0 char-code A int32 0 TTY-READ-CSI int32 4 overn tty-readeval-key-name
     int32 64 hexdump
 end
 

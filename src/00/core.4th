@@ -373,7 +373,7 @@ end
 ( Input )
 
 def newline?
-    arg0 int32 char-code \n equals return1
+  arg0 char-code \n equals return1
 end
 
 def read-line-inner
@@ -420,11 +420,11 @@ def space?
 end
 
 def whitespace?
-  arg0 space? swap int32 char-code \r equals
-  arg0 int32 char-code \n equals
-  arg0 int32 char-code \t equals
-  arg0 int32 char-code \v equals
-  arg0 int32 char-code \f equals
+  arg0 space? swap char-code \r equals
+  arg0 char-code \n equals
+  arg0 char-code \t equals
+  arg0 char-code \v equals
+  arg0 char-code \f equals
   or rotdrop2
   or rotdrop2
   or rotdrop2
@@ -451,22 +451,22 @@ def in-range?
 end
 
 def digit?
-  int32 char-code 9
-  int32 char-code 0
+  char-code 9
+  char-code 0
   arg0 in-range?
   return1
 end
 
 def lower-alpha?
-  int32 char-code z
-  int32 char-code a
+  char-code z
+  char-code a
   arg0 in-range?
   return1
 end
 
 def upper-alpha?
-  int32 char-code Z
-  int32 char-code A
+  char-code Z
+  char-code A
   arg0 in-range?
   return1
 end

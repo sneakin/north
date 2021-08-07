@@ -298,7 +298,7 @@ Forth.macros = {
     var tok = this.next_token(code);
     var v = this.unslash(tok[0]);
     var n = v.codePointAt(0);
-    this.emitter.uint32(n);
+    this.interp(`uint32 ${n}`);  
     return tok[1];
   },
   immediate: function(token, code) {

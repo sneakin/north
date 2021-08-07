@@ -1,42 +1,42 @@
 ( TTY VT100 box drawing. )
 
-def tty-box-nw int32 char-code l return1 end
-def tty-box-ne int32 char-code k return1 end
-def tty-box-se int32 char-code j return1 end
-def tty-box-sw int32 char-code m return1 end
-def tty-box-cross int32 char-code n return1 end
-def tty-box-horiz int32 char-code q return1 end
-def tty-box-vert int32 char-code x return1 end
-def tty-box-wide-vert int32 char-code 0 return1 end
-def tty-box-cross-east int32 char-code t return1 end
-def tty-box-cross-west int32 char-code u return1 end
-def tty-box-cross-north int32 char-code v return1 end
-def tty-box-cross-south int32 char-code w return1 end
+def tty-box-nw char-code l return1 end
+def tty-box-ne char-code k return1 end
+def tty-box-se char-code j return1 end
+def tty-box-sw char-code m return1 end
+def tty-box-cross char-code n return1 end
+def tty-box-horiz char-code q return1 end
+def tty-box-vert char-code x return1 end
+def tty-box-wide-vert char-code 0 return1 end
+def tty-box-cross-east char-code t return1 end
+def tty-box-cross-west char-code u return1 end
+def tty-box-cross-north char-code v return1 end
+def tty-box-cross-south char-code w return1 end
 
-def tty-box-arrow-left int32 char-code , return1 end
-def tty-box-arrow-right int32 char-code + return1 end
-def tty-box-arrow-up int32 char-code - return1 end
-def tty-box-arrow-down int32 char-code . return1 end
+def tty-box-arrow-left char-code , return1 end
+def tty-box-arrow-right char-code + return1 end
+def tty-box-arrow-up char-code - return1 end
+def tty-box-arrow-down char-code . return1 end
 
-def tty-box-filled-1 int32 char-code a return1 end
-def tty-box-filled-2 int32 char-code h return1 end
-def tty-box-snowman int32 char-code i return1 end
-def tty-box-diamond int32 char-code ` return1 end
-def tty-box-degree int32 char-code f return1 end
-def tty-box-plusminus int32 char-code g return1 end
-def tty-box-lte int32 char-code y return1 end
-def tty-box-gte int32 char-code z return1 end
-def tty-box-pi int32 char-code z return1 end
-def tty-box-notequals int32 char-code { return1 end
-def tty-box-pounds int32 char-code | return1 end
-def tty-box-dot int32 char-code } return1 end
+def tty-box-filled-1 char-code a return1 end
+def tty-box-filled-2 char-code h return1 end
+def tty-box-snowman char-code i return1 end
+def tty-box-diamond char-code ` return1 end
+def tty-box-degree char-code f return1 end
+def tty-box-plusminus char-code g return1 end
+def tty-box-lte char-code y return1 end
+def tty-box-gte char-code z return1 end
+def tty-box-pi char-code z return1 end
+def tty-box-notequals char-code { return1 end
+def tty-box-pounds char-code | return1 end
+def tty-box-dot char-code } return1 end
 
-def tty-box-hbar-0 int32 char-code o return1 end
-def tty-box-hbar-1 int32 char-code p return1 end
-def tty-box-hbar-2 int32 char-code q return1 end
-def tty-box-hbar-3 int32 char-code r return1 end
-def tty-box-hbar-4 int32 char-code s return1 end
-def tty-box-hbar-5 int32 char-code _ return1 end
+def tty-box-hbar-0 char-code o return1 end
+def tty-box-hbar-1 char-code p return1 end
+def tty-box-hbar-2 char-code q return1 end
+def tty-box-hbar-3 char-code r return1 end
+def tty-box-hbar-4 char-code s return1 end
+def tty-box-hbar-5 char-code _ return1 end
 
 ( Exercise routines of the above. Lots could be desired. Clipping... )
 

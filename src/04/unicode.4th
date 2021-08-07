@@ -239,13 +239,13 @@ end
 ( Test functions: )
 
 def test-color-char
-    int32 char-code N int32 4 int32 2 int32 0 make-color-char write-color-char
-    int32 char-code O int32 2 int32 4 int32 1 make-color-char write-color-char
-    int32 char-code L int32 3 int32 5 int32 2 make-color-char write-color-char
-    int32 char-code A int32 5 int32 3 int32 3 make-color-char write-color-char
-    int32 char-code N int32 6 int32 1 int32 4 make-color-char write-color-char
-    int32 char-code ' int32 0 int32 7 int32 5 make-color-char write-color-char
-    int32 char-code S int32 7 int32 0 int32 6 make-color-char write-color-char
+    char-code N int32 4 int32 2 int32 0 make-color-char write-color-char
+    char-code O int32 2 int32 4 int32 1 make-color-char write-color-char
+    char-code L int32 3 int32 5 int32 2 make-color-char write-color-char
+    char-code A int32 5 int32 3 int32 3 make-color-char write-color-char
+    char-code N int32 6 int32 1 int32 4 make-color-char write-color-char
+    char-code ' int32 0 int32 7 int32 5 make-color-char write-color-char
+    char-code S int32 7 int32 0 int32 6 make-color-char write-color-char
 end
 
 def test-utf32

@@ -503,19 +503,19 @@ end
 
 def tokenizer-read-escape-word
     arg0 tokenizer-next-word
-    int32 char-code a over equals IF int32 7 return1 THEN
-    int32 char-code b over equals IF int32 char-code \b ( 8 ) return1 THEN
-    int32 char-code f over equals IF int32 char-code \f ( $c ) return1 THEN
-    int32 char-code e over equals IF int32 char-code \e ( $1b )return1 THEN
-    int32 char-code v over equals IF int32 char-code \v ( $b ) return1 THEN
-    int32 char-code n over equals IF int32 char-code \n ( $A ) return1 THEN
-    int32 char-code r over equals IF int32 char-code \r ( $D ) return1 THEN
-    int32 char-code t over equals IF int32 char-code \t ( 9 ) return1 THEN
-    int32 char-code \\ over equals IF int32 char-code \\ ( $5c ) return1 THEN
-    int32 char-code \" over equals IF int32 char-code \" ( $22 ) return1 THEN
-    int32 char-code x over equals IF drop tokenizer-read-hex2-digits return1 THEN
-    int32 char-code u over equals IF drop tokenizer-read-hex8-digits return1 THEN
-    int32 char-code 0 over equals IF drop tokenizer-read-octal-digits return1 THEN
+    char-code a over equals IF int32 7 return1 THEN
+    char-code b over equals IF char-code \b ( 8 ) return1 THEN
+    char-code f over equals IF char-code \f ( $c ) return1 THEN
+    char-code e over equals IF char-code \e ( $1b )return1 THEN
+    char-code v over equals IF char-code \v ( $b ) return1 THEN
+    char-code n over equals IF char-code \n ( $A ) return1 THEN
+    char-code r over equals IF char-code \r ( $D ) return1 THEN
+    char-code t over equals IF char-code \t ( 9 ) return1 THEN
+    char-code \\ over equals IF char-code \\ ( $5c ) return1 THEN
+    char-code \" over equals IF char-code \" ( $22 ) return1 THEN
+    char-code x over equals IF drop tokenizer-read-hex2-digits return1 THEN
+    char-code u over equals IF drop tokenizer-read-hex8-digits return1 THEN
+    char-code 0 over equals IF drop tokenizer-read-octal-digits return1 THEN
     return1
 end
 
@@ -608,7 +608,7 @@ def char-code
 end
 
 def 'char-code
-      POSTPONE' char-code return2
+  POSTPONE' char-code return2
 end immediate-as char-code
 
 def make-long-msb
