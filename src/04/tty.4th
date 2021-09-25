@@ -112,7 +112,7 @@ end
 
 def tty-cursor-to arg0 arg1 " f" tty-basic-escape2 end
 def tty-cursor-to-column arg0 " G" tty-basic-escape1 end
-def tty-cursor-home int32 1 tty-cursor-to-column end
+def tty-cursor-home int32 0 tty-cursor-to-column end
 
 def tty-cursor-up arg0 " A" tty-basic-escape1 end
 def tty-cursor-down arg0 " B" tty-basic-escape1 end
@@ -339,7 +339,7 @@ end
 def tty-read-int-seq
     args( initial-digit modifier ++ digits code modifier )
     arg1 arg0 int32 0
-    ' tty-read-int-seq-loop/3 cont
+    tty-read-int-seq-loop/3 return-locals
 end
 
 def tty-read-mouse-coords
@@ -351,19 +351,19 @@ end
 
 def tty-read-csi
     args( ++ digits code modifier kind-of-escape  )
-    tty-read-byte
+    tty-read-byte ( here 1 write-line/2 )
     digit? IF
         digit-char swapdrop
         int32 0
-        ' tty-read-int-seq cont
+        tty-read-int-seq return-locals
     THEN
     dup char-code M equals IF
-        ' tty-read-mouse-coords cont
+        tty-read-mouse-coords int32 4 returnN
     THEN
     dup char-code ? equals IF
         int32 0
         swap
-        ' tty-read-int-seq cont
+        tty-read-int-seq return-locals
     THEN
     int32 0 swap int32 0 TTY-READ-CSI int32 4 returnN
 end
@@ -382,7 +382,7 @@ def tty-read-escape-seq
 
     )
     args( ++ digit-seq code mod )
-    tty-read-byte
+    tty-read-byte ( here 1 write-line/2 )
     ( CSI codes: \e[ )
     dup char-code [ equals IF
             drop
@@ -444,6 +444,27 @@ end
 
 ( TTY ReadEval: reader + dictionary word execution by key name: )
 
+def tty-readeval-arrow-name
+  char-code D char-code A arg0 in-range? IF
+    arg0 char-code A equals
+    IF s" <up>" ELSE
+      arg0 char-code B equals
+      IF s" <down>" ELSE
+	arg0 char-code C equals
+	IF s" <right>" ELSE
+	  arg0 char-code D equals
+	  IF s" <left>"
+	  ELSE s" <unknown>"
+	  THEN
+	THEN
+      THEN
+    THEN
+    true int32 3 returnN
+  ELSE
+    false return1
+  THEN
+end
+
 def tty-readeval-key-name
     doc( Convert `tty-read` output into a string. Key names are close to Emacs' style names: C- used for control, M- used for alt/meta. )
     args( ...event-data kind output-seq ++ )
@@ -466,7 +487,7 @@ def tty-readeval-key-name
             int32 1
           THEN
         THEN
-        here arg0 int32 2 overn copy-seq
+        here arg0 int32 2 pick seq->cstring
         return0
     THEN
     arg1 TTY-READ-ESCAPE equals IF
@@ -484,80 +505,84 @@ def tty-readeval-key-name
             int32 5
         ELSE
             ( Function keys: M-O-letter )
-            dup char-code O equals IF
-                int32 4 argn
-                char-code - shift
-                char-code - char-code M
-                int32 5
-            ELSE ( M-key )
-                char-code - char-code M
-                int32 3
-            THEN
+          dup char-code O equals IF
+	    int32 4 argn tty-readeval-arrow-name IF
+              arg0
+	      swap cell-align swapdrop copy-string
+              return0
+	    ELSE drop
+	    THEN
+
+            int32 4 argn
+            char-code - shift
+            char-code - char-code M
+            int32 5
+          ELSE ( M-key )
+            char-code - char-code M
+            int32 3
+          THEN
         THEN
         here
-        arg0 int32 2 overn copy-seq
+        arg0 int32 2 pick seq->cstring
         return0
     THEN
     arg1 TTY-READ-CSI equals IF
       ( " csi " .s arg3 .d arg2 .d arg1 .d .\n )
-        ( Arrow keys are named. )
-        char-code D char-code A arg3 in-range? IF
-            dup char-code A equals IF " <up>" THEN
-            dup char-code B equals IF " <down>" THEN
-            dup char-code C equals IF " <right>" THEN
-            dup char-code D equals IF " <left>" THEN
-            seq-length arg0 swap copy-seq
-            return0
-        THEN
-        dup char-code ~ equals IF
-            drop
-            int32 5 argn char-code a int-add
-            char-code k
-            int32 2
-            here arg0 int32 2 overn copy-seq
-            return0
-        THEN
-        ( Anything else is the escape sequence minus parameters. )
-        terminator arg3 char-code [ char-code \e
-        int32 3
-        here
-        arg0 int32 2 overn copy-seq
+      ( Arrow keys are named. )
+      arg3 tty-readeval-arrow-name IF
+        arg0
+	swap cell-align swapdrop copy-string
         return0
+      THEN
+      dup char-code ~ equals IF
+	drop
+	int32 5 argn char-code a int-add
+	char-code k
+	int32 2
+	here arg0 int32 2 pick seq->cstring
+	return0
+      THEN
+      ( Anything else is the escape sequence minus parameters. )
+      terminator arg3 char-code [ char-code \e
+      int32 3
+      here
+      arg0 int32 2 pick seq->cstring
+      return0
     THEN
     arg1 TTY-READ-MOUSE equals IF
         terminator char-code M char-code [ char-code \e
         int32 3
         here
-        arg0 int32 2 overn copy-seq
+        arg0 int32 2 pick seq->cstring
         return0
     THEN
-    terminator int32 0 here arg0 int32 2 overn copy-seq
+    terminator int32 0 here arg0 int32 2 pick seq->cstring
 end
 
 def test-tty-readeval-key-name
     int32 32 stack-allot
     char-code A TTY-READ-BYTE shift tty-readeval-key-name
-    int32 64 write-line-n hexdump
+    int32 16 write-line-n hexdump
     .\n
     int32 32 stack-allot
     int32 127 TTY-READ-BYTE shift tty-readeval-key-name
-    int32 64 write-line-n hexdump
+    int32 16 write-line-n hexdump
     .\n
     int32 32 stack-allot
     int32 0 TTY-READ-BYTE shift tty-readeval-key-name
-    int32 64 write-line-n hexdump
+    int32 16 write-line-n hexdump
     .\n
     int32 32 stack-allot
     char-code \r TTY-READ-BYTE shift tty-readeval-key-name
-    int32 64 write-line-n hexdump
+    int32 16 write-line-n hexdump
     .\n
     int32 32 stack-allot
-    char-code A TTY-READ-ESCAPE int32 2 overn tty-readeval-key-name
-    int32 64 hexdump
+    char-code A TTY-READ-ESCAPE int32 2 pick tty-readeval-key-name
+    int32 16 write-line-n hexdump
     .\n
     int32 32 stack-allot
-    int32 0 char-code A int32 0 TTY-READ-CSI int32 4 overn tty-readeval-key-name
-    int32 64 hexdump
+    int32 0 char-code A int32 0 TTY-READ-CSI int32 4 pick tty-readeval-key-name
+    int32 16 write-line-n hexdump
 end
 
 def tty-readeval-done!/2
@@ -577,7 +602,7 @@ end
 def tty-readeval-done?
     lit tty-readeval-done arg0 dict-lookup
     dup UNLESS int32 2 return1 THEN
-    dict-entry-data return1
+    dict-entry-data@ return1
 end
 
 def tty-readeval-on-break
@@ -587,28 +612,32 @@ end
 
 def tty-readeval-loop
     args( key-name-buffer on-char on-key dict ) 
-    arg0 tty-readeval-done? swapdrop IF return0 THEN
+    arg0 tty-readeval-done? ( here int32 128 hexdump drop2 ) swapdrop IF return0 THEN
     tty-read
-    arg3 tty-readeval-key-name ( write-escaped-string )
-    seq-length int32 1 > IF
+    arg3 tty-readeval-key-name ( dup write-line ) ( write-escaped-string )
+    dup string-length int32 1 >= IF
       arg0 dict-lookup ( ...event-data event-kind name dict entry )
     ELSE
       arg0 int32 0
     THEN
     null? IF ( nothing in dictionary )
         drop
-        int32 2 overn TTY-READ-BYTE equals
-        ( try one of the args )
-        IF arg2 ELSE arg1 THEN
+        int32 2 pick TTY-READ-BYTE equals IF
+          int32 3 pick control-code? swapdrop
+          ( try one of the args )
+	  IF arg1 ELSE arg2 THEN
+	ELSE arg1
+	THEN
+	null? IF drop arg1 THEN
     THEN
-    null? UNLESS
+    null? UNLESS 
       ( "  exec " .s write-dict-entry )
-        ( todo named events don't need the kind and name )
-        ( todo char events only need the name )
-        ( todo key events need it all )
-        shift drop
-        dup arg1 equals UNLESS shift drop THEN
-        exec-core-word
+      ( todo named events don't need the kind and name )
+      ( todo char events only need the name )
+      ( todo key events need it all )
+      shift drop
+      dup arg1 equals UNLESS shift drop THEN
+      exec-core-word
     THEN
     drop-locals RECURSE
 end
@@ -633,13 +662,13 @@ def tty-readeval
     code, and modifier. )
     args( dict )
     tty-readeval-start
-    int32 8 stack-allot
+    int32 16 stack-allot
     " on-char" arg0 dict-lookup rotdrop2
     " on-key" arg0 dict-lookup rotdrop2
     arg0
     tty-readeval-reset-done!
     tty-readeval-loop drop
-    tty-readeval-end
+    tty-readeval-end yellow here int32 64 hexdump drop2
 end
 
 def tty-make-readeval-default-dict
@@ -648,8 +677,8 @@ def tty-make-readeval-default-dict
     arg0
     " C-c" aliases> tty-readeval-on-break
     " tty-readeval-loop" aliases> tty-readeval-loop
-    " tty-readeval-done" ' variable-peeker dict-entry-code swapdrop int32 0 make-dict/4
-    return1
+    " tty-readeval-done" ' variable-peeker dict-entry-code@ int32 0 make-dict/4
+    exit-frame
 end
 
 ( ReadEval test: )
@@ -721,7 +750,7 @@ def test-tty-readeval-on-report-cursor
 end
 
 def test-tty-readeval-dict
-    terminator
+    dict-terminator
     " \e[c" aliases> test-tty-readeval-on-status
     " <up>" aliases> test-tty-readeval-on-up
     " \e[M" aliases> test-tty-readeval-on-mouse
@@ -735,9 +764,9 @@ def test-tty-readeval-dict
     " on-key" aliases> test-tty-readeval-on-key
     " on-char" aliases> test-tty-readeval-on-char
     tty-make-readeval-default-dict
-    return1
+    exit-frame
 end
 
 def test-tty-readeval
-    test-tty-readeval-dict tty-readeval
+  test-tty-readeval-dict tty-readeval
 end

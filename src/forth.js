@@ -385,6 +385,17 @@ Forth.macros = {
       return "parse error: unterminated string";
     }
   },
+  's"': function(token, code) {
+    var m = code.indexOf('"');
+    if(m >= 0) {
+      var label = this.genlabel('data');
+      this.strings[label] = code.slice(1, m);
+      this.interp(`string ${label} uint32 ${m}`);
+      return code.slice(m + 1);
+    } else {
+      return "parse error: unterminated string";
+    }
+  },
   lit: function(token, code) {
     var tok = this.next_token(code);
     var label = this.genlabel('data');

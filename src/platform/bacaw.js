@@ -29,8 +29,8 @@ class Platform
   registers = {
     heap: VM.CPU.REGISTERS.DS - 1,
     eval_ip: VM.CPU.REGISTERS.DS - 2,
-    dict: VM.CPU.REGISTERS.DS - 5,
-    fp: VM.CPU.REGISTERS.DS - 6,
+    dict: VM.CPU.REGISTERS.DS - 3,
+    fp: VM.CPU.REGISTERS.DS - 4,
   };
 
   constructor(machine, ds, cs) {
