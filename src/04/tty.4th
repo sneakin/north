@@ -124,7 +124,6 @@ def tty-cursor-up-1 " \eM" write-string end
 
 def tty-cursor-next-line arg0 " E" tty-basic-escape1 end
 def tty-cursor-prev-line arg0 " F" tty-basic-escape1 end
-def tty-cursor-to-col arg0 " G" tty-basic-escape1 end
 
 def tty-cursor-move
     arg1 negative? IF negate tty-cursor-left ELSE tty-cursor-right THEN
@@ -214,6 +213,9 @@ def strike int32 9 color-attr end
 def strike-off int32 29 color-attr end
 
 def tty-reset-font int32 10 color-attr end
+
+def tty-default-fg arg0 39 " m" tty-basic-escape2 end
+def tty-default-bg arg0 49 " m" tty-basic-escape2 end
 
 ( Font selection: )
 
