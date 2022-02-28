@@ -207,25 +207,40 @@ def color-attr
     arg0 " m" tty-basic-escape1
 end
 
+def color-attr-off
+  arg0 int32 20 int-add color-attr
+end
+
 def tty-char-reset int32 0 color-attr end
 def tty-normal int32 22 color-attr end
 
-def bold int32 1 color-attr end
-def bold-off int32 21 color-attr end
-def dim int32 2 color-attr end
-def italic int32 3 color-attr end
-def italic-off int32 23 color-attr end
-def underline int32 4 color-attr end
-def underline-off int32 24 color-attr end
-def blink-fast int32 5 color-attr end
-def blink-off int32 25 color-attr end
-def blink-slow int32 6 color-attr end
-def inverse int32 7 color-attr end
-def inverse-off int32 27 color-attr end
-def invisible int32 8 color-attr end
-def invisible-off int32 28 color-attr end
-def strike int32 9 color-attr end
-def strike-off int32 29 color-attr end
+0 const> TTY-ATTN-NORMAL
+1 const> TTY-ATTR-BOLD
+2 const> TTY-ATTR-DIM
+3 const> TTY-ATTR-ITALIC
+4 const> TTY-ATTR-UNDERLINE
+5 const> TTY-ATTR-BLINK
+6 const> TTY-ATTR-BLINK-SLOW
+7 const> TTY-ATTR-INVERSE
+8 const> TTY-ATTR-INVISIBLE
+9 const> TTY-ATTR-STRIKE
+
+def bold TTY-ATTR-BOLD color-attr end
+def bold-off TTY-ATTR-BOLD color-attr-off end
+def dim TTY-ATTR-DIM color-attr end
+def italic TTY-ATTR-ITALIC color-attr end
+def italic-off TTY-ATTR-ITALIC color-attr-off end
+def underline TTY-ATTR-UNDERLINE color-attr end
+def underline-off TTY-ATTR-UNDERLINE color-attr-off end
+def blink-fast TTY-ATTR-BLINK color-attr end
+def blink-off TTY-ATTR-BLINK color-attr-off end
+def blink-slow TTY-BLINK-SLOW color-attr end
+def inverse TTY-ATTR-INVERSE color-attr end
+def inverse-off TTY-ATTR-INVERSE color-attr-off end
+def invisible TTY-ATTR-INVISIBLE color-attr end
+def invisible-off TTY-ATTR-INVISIBLE color-attr-off end
+def strike TTY-ATTR-STRIKE color-attr end
+def strike-off TTY-ATTR-STRIKE color-attr-off end
 
 def tty-reset-font int32 10 color-attr end
 
@@ -296,6 +311,18 @@ def tty-set-window-icon-name int32 1 arg0 tty-osc-command end
 def tty-fill-rect ( right bottom left top char -- )
   ( CSI P c ; P t ; P l ; P b ; P r $ x )
   args int32 5 " $x" " [" tty-basic-escape
+  int32 5 return0-n
+end
+
+def tty-erase-rect ( right bottom left top -- )
+  ( CSI P t ; P l ; P b ; P r $ z )
+  args int32 4 " $z" " [" tty-basic-escape
+  int32 4 return0-n
+end
+
+def tty-chattr-rect ( attr right bottom left top -- )
+  ( CSI P t ; P l ; P b ; P r ; P s $ r )
+  args int32 5 " $r" " [" tty-basic-escape
   int32 5 return0-n
 end
 
