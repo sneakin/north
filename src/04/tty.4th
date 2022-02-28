@@ -13,14 +13,31 @@ end
 
 ( Helper functions: )
 
+def write-tty-values/3 ( values n counter -- )
+  arg0 arg1 int>= IF int32 3 return0-n THEN
+  arg0 cell-size int-mul arg2 peek-off write-int
+  arg0 int32 1 int-add set-arg0
+  arg0 arg1 int< IF " ;" write-string THEN RECURSE
+end
+
+def write-tty-values ( ...values n -- )
+  args up-stack arg0 int32 0 write-tty-values/3
+  arg0 int32 1 int-add return0-n
+end
+
+def tty-basic-escape ( values n suffix prefix -- )
+    base peek dec
+    " \e" write-string
+    arg0 write-string
+    arg3 arg2 int32 0 write-tty-values/3
+    arg1 write-string
+    local0 base poke
+end
+
 def tty-basic-escape3
     base peek dec
     " \e[" write-string
-    arg3 write-int
-    " ;" write-string
-    arg2 write-int
-    " ;" write-string
-    arg1 write-int
+    args up-stack int32 3 int32 0 write-tty-values/3
     arg0 write-string
     local0 base poke
 end
@@ -28,9 +45,7 @@ end
 def tty-basic-escape2
     base peek dec
     " \e[" write-string
-    arg2 write-int
-    " ;" write-string
-    arg1 write-int
+    args up-stack int32 2 int32 0 write-tty-values/3
     arg0 write-string
     local0 base poke
 end
@@ -276,7 +291,20 @@ def tty-set-window-icon-and-title int32 0 arg0 tty-osc-command end
 def tty-set-window-title int32 2 arg0 tty-osc-command end
 def tty-set-window-icon-name int32 1 arg0 tty-osc-command end
 
+( Rectangular regions: )
 
+def tty-fill-rect ( right bottom left top char -- )
+  ( CSI P c ; P t ; P l ; P b ; P r $ x )
+  args int32 5 " $x" " [" tty-basic-escape
+  int32 5 return0-n
+end
+
+def tty-copy-rect ( dest-page dest-left dest-top src-page src-right src-bottom src-left src-top -- )
+  ( CSI P t ; P l ; P b ; P r ; P p ; P t ; P l ; P p $ v )
+  args int32 8 " $v" " [" tty-basic-escape
+  int32 8 return0-n
+end
+			
 ( Bad codes? )
 
 def tty-reversed/1 arg0 " \e[?12" tty-escape-private! end

@@ -29,3 +29,11 @@ alias pick overn
 
 def dict-entry-data@ arg0 dict-entry-data return1-1 end
 def dict-entry-code@ arg0 dict-entry-code return1-1 end
+
+def peek-off ( offset ptr -- value )
+  arg1 arg0 int-add peek int32 2 return1-n
+end
+
+def up-stack ( ptr )
+  arg0 cell+ return1-1
+end
