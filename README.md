@@ -3,7 +3,7 @@ North
 
 Nolan's Forth
 
-Copyright (C) 2019 Nolan Eakins
+Copyright (C) 2019-2022 Nolan Eakins
 
 Demo: https://sneakin.github.io/north/
 
@@ -22,10 +22,11 @@ To build the web site's files:
 3. `export PATH=$(npm bin):$PATH`
 4. `rake`
 
-For the native x86 builds:
+For the native x86 runner:
 
-1. All of the above
-2. `rake i32:build i64:build`
+1. Steps 1 to 3 of the above.
+2. Build the interpreter in `x86`: `cd x86 && make && `cd ..`; see `x86/README.md` for more details.
+3. `rake i32:stage0:build i32:stage1:build`
 
 
 Running
@@ -33,7 +34,7 @@ Running
 
 * To run stage0 with the native interpretter: `rake i32:stage0:run`
 * With a web browser: Open `build/runner.html`
-* Run Bacaw's `bccon` or development page using one of the BIN files in the build directory.
+* Run Bacaw's `bccon` or development page using one of the BIN files in the build directory. Rake tasks are provided: `rake stage0:run`.
 
 
 Credits
