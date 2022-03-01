@@ -22,12 +22,16 @@ defop peek_byte
 ;;; Frames
 ;;; 
 
+;;; todo move to frames.asm?
+
 defalias begin,begin_frame
 
 defop exit
   mov eval_ip, [fp+ptrsize]
   jmp end_frame_asm
-  
+
+defalias exit_frame,exit
+	
 defop arg2
   mov eax, [fp+call_frame_byte_size+ptrsize*2]
   pop ebx
@@ -101,6 +105,22 @@ defop return1_n
   push ecx                      ; restore return
   ret
 
+defop return2_n
+  mov eax, [esp+ptrsize]        ; # of args to drop
+  imul eax, ptrsize
+  mov ebx, esp                  ; save stack for return values
+  mov esp, fp                   ; return from frame
+  pop fp
+  pop eval_ip
+  pop ecx                       ; save next's address
+  add esp, eax                  ; drop the args
+  mov eax, [ebx+ptrsize*3]      ; push return value 1
+  push eax
+  mov eax, [ebx+ptrsize*2]      ; push return value 2
+  push eax
+  push ecx                      ; restore return
+  ret
+
 defop cont
   pop ebx
   pop eax
@@ -111,7 +131,7 @@ defop cont
   push ecx
   ;; push ebx
   jmp [eax+dict_entry_code]
-
+	
 defop tailcall
   pop ebx
   pop eax
