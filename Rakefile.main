@@ -250,6 +250,43 @@ stage(:stage1,
       texts: STAGE1_TEXTS,
       minimal: true)
 
+STAGE2_SRC = STAGE1_SRC +
+  src('02/init.4th',
+      '03/storage.4th',
+      '03/storage_devices.4th',
+      '03/storage_test.4th',
+      '02/sound.4th')
+
+stage(:stage2,
+      runner: 'bacaw',
+      sources: with_platform(:bacaw, STAGE2_SRC, :stage1),
+      texts: STAGE1_TEXTS,
+      minimal: true)
+
+STAGE3_SRC = STAGE2_SRC + src('02/bc/assembler.4th', '02/bc/ops.4th')
+
+stage(:stage3,
+      runner: 'bacaw',
+      sources: with_platform(:bacaw, STAGE3_SRC, :stage1),
+      texts: STAGE1_TEXTS,
+      minimal: true)
+
+STAGE4_SRC = STAGE1_SRC +
+  src('03/storage.4th',
+      '03/storage_devices.4th',
+      '03/storage_test.4th',
+      '02/fast_dict.4th')
+
+stage(:stage4,
+      runner: 'bacaw',
+      sources: with_platform(:bacaw, STAGE4_SRC, :stage1),
+      texts: STAGE1_TEXTS,
+      minimal: true)
+
+#
+# x86
+#
+
 namespace :i32 do
   stage('stage0',
         machine: 'i32',
@@ -289,43 +326,6 @@ namespace 'i64' do
         platform: :x86,
         data_segment: 0)
 end
-
-STAGE2_SRC = STAGE1_SRC +
-  src('02/init.4th',
-      '03/storage.4th',
-      '03/storage_devices.4th',
-      '03/storage_test.4th',
-      '02/sound.4th')
-
-stage(:stage2,
-      runner: 'bacaw',
-      sources: with_platform(:bacaw, STAGE2_SRC, :stage1),
-      texts: STAGE1_TEXTS,
-      minimal: true)
-
-STAGE3_SRC = STAGE2_SRC + src('02/bc/assembler.4th', '02/bc/ops.4th')
-
-stage(:stage3,
-      runner: 'bacaw',
-      sources: with_platform(:bacaw, STAGE3_SRC, :stage1),
-      texts: STAGE1_TEXTS,
-      minimal: true)
-
-STAGE4_SRC = STAGE1_SRC +
-  src('03/storage.4th',
-      '03/storage_devices.4th',
-      '03/storage_test.4th',
-      '02/fast_dict.4th')
-
-stage(:stage4,
-      runner: 'bacaw',
-      sources: with_platform(:bacaw, STAGE4_SRC, :stage1),
-      texts: STAGE1_TEXTS,
-      minimal: true)
-
-#
-# x86
-#
 
 X86_PLATFORMS=%w(posix)
 X86_BITS=%w(32)
