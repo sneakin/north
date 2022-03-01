@@ -214,16 +214,16 @@ end
 def tty-char-reset int32 0 color-attr end
 def tty-normal int32 22 color-attr end
 
-0 const> TTY-ATTN-NORMAL
-1 const> TTY-ATTR-BOLD
-2 const> TTY-ATTR-DIM
-3 const> TTY-ATTR-ITALIC
-4 const> TTY-ATTR-UNDERLINE
-5 const> TTY-ATTR-BLINK
-6 const> TTY-ATTR-BLINK-SLOW
-7 const> TTY-ATTR-INVERSE
-8 const> TTY-ATTR-INVISIBLE
-9 const> TTY-ATTR-STRIKE
+constant TTY-ATTN-NORMAL 0
+constant TTY-ATTR-BOLD 1
+constant TTY-ATTR-DIM 2
+constant TTY-ATTR-ITALIC 3
+constant TTY-ATTR-UNDERLINE 4
+constant TTY-ATTR-BLINK 5
+constant TTY-ATTR-BLINK-SLOW 6
+constant TTY-ATTR-INVERSE 7
+constant TTY-ATTR-INVISIBLE 8
+constant TTY-ATTR-STRIKE 9
 
 def bold TTY-ATTR-BOLD color-attr end
 def bold-off TTY-ATTR-BOLD color-attr-off end
@@ -234,7 +234,7 @@ def underline TTY-ATTR-UNDERLINE color-attr end
 def underline-off TTY-ATTR-UNDERLINE color-attr-off end
 def blink-fast TTY-ATTR-BLINK color-attr end
 def blink-off TTY-ATTR-BLINK color-attr-off end
-def blink-slow TTY-BLINK-SLOW color-attr end
+def blink-slow TTY-ATTR-BLINK-SLOW color-attr end
 def inverse TTY-ATTR-INVERSE color-attr end
 def inverse-off TTY-ATTR-INVERSE color-attr-off end
 def invisible TTY-ATTR-INVISIBLE color-attr end
