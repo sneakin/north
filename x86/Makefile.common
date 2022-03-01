@@ -44,7 +44,11 @@ LDFLAGS=-m$(BITS) -no-pie -ldl
 endif
 else
 ifeq ($(BITS),32)
+ifeq ($(PLATFORM),windows)
 LDFLAGS=-m$(BITS) -mconsole -e main
+else
+LDFLAGS=-m$(BITS) -nostdlib -e main
+endif
 else
 LDFLAGS=-m$(BITS) -no-pie -e main
 endif
