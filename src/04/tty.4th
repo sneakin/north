@@ -247,6 +247,46 @@ def tty-reset-font int32 10 color-attr end
 def tty-default-fg arg0 39 " m" tty-basic-escape2 end
 def tty-default-bg arg0 49 " m" tty-basic-escape2 end
 
+def tty-rgb ( b g r attr -- )
+  arg3 arg2 arg1 2 arg0 here 5 " m" " [" tty-basic-escape
+  4 return0-n
+end
+
+def tty-fgbg-rgb ( fb fg fr bb bg br -- )
+  5 argn 4 argn arg3 2 38 arg2 arg1 arg0 2 48 here 10 " m" " [" tty-basic-escape
+  6 return0-n
+end
+
+def tty-fg-rgb ( b g r -- )
+  arg2 arg1 arg0 38 tty-rgb
+  3 return0-n
+end
+
+def tty-bg-rgb ( b g r -- )
+  arg2 arg1 arg0 48 tty-rgb
+  3 return0-n
+end
+
+def tty-palette ( index attr -- )
+  arg1 5 arg0 " m" tty-basic-escape3
+  2 return0-n
+end
+
+def tty-fgbg-palette ( fg bg -- )
+  arg1 5 38 arg0 5 48 here 6 " m" " [" tty-basic-escape
+  2 return0-n
+end
+
+def tty-fg-palette ( index -- )
+  arg0 38 tty-palette
+  1 return0-n
+end
+
+def tty-bg-palette ( index -- )
+  arg0 48 tty-palette
+  1 return0-n
+end
+
 ( Font selection: )
 
 def tty-font-utf8 " \e%G" write-string end
