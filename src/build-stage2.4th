@@ -9,8 +9,8 @@ src/01/tty.4th load
 src/01/seq.4th load
 src/01/ui.4th load
 
-src/02/assembler.4th load
-src/02/ops.4th load
+src/02/bc/assembler.4th load
+( src/02/bc/ops.4th load )
 
 ( todo... )
 " Now to save the dictionary..." write-line

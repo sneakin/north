@@ -263,7 +263,7 @@ stage(:stage2,
       texts: STAGE1_TEXTS,
       minimal: true)
 
-STAGE3_SRC = STAGE2_SRC + src('02/bc/assembler.4th', '02/bc/ops.4th')
+STAGE3_SRC = STAGE2_SRC + src('02/bc/assembler.4th')
 
 stage(:stage3,
       runner: 'bacaw',
