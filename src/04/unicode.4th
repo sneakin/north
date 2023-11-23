@@ -58,7 +58,7 @@ def utf32->utf8
     arg0 .\n .h " invalid UTF-32 code" " argument-error" error
 end
 
-( UTF-8 cell sequence to UTF-32mcell: )
+( UTF-8 cell sequence to UTF-32 cell: )
 
 def utf8-decode-second
     arg0 int32 $3F logand return1

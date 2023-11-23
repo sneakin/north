@@ -28,7 +28,7 @@ def make-uint32-lsb-n
     args( ...bytes number ++ uint32 )
     zero
     arg0 DOTIMES[
-        arg0 int32 1 int-add current-frame parent-frame peek frame-argn
+        arg0 int32 1 int-add current-frame parent-frame frame-argn
         arg0 int32 8 int-mul bsl
         arg2 logior set-arg2
     ]DOTIMES

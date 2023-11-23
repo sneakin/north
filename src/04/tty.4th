@@ -151,7 +151,7 @@ end
 
 def tty-scroll-region-off " \e[r" write-string end
 def tty-scroll-region
-    args( top bottom )
+    args( max-line min-line )
     arg1 arg0 " r" tty-basic-escape2
 end
 
@@ -814,6 +814,7 @@ def test-tty-readeval-dict
     " \e[R" aliases> test-tty-readeval-on-report-cursor
     " C" aliases> tty-get-cursor
     " M-O-P" aliases> help
+    " <f2>" aliases> help
     " C-l" aliases> tty-reset
     " C-m" aliases> test-tty-readeval-on-return
     " C-j" aliases> test-tty-readeval-on-newline
