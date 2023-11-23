@@ -12,6 +12,7 @@ See https://www.fileformat.info/info/unicode/utf8.htm )
 
 ( todo char-code needs Unicode support as do escaped strings with \u000000. )
 ( todo tokenizer updated to Unicode )
+( todo rencoding strings )
 
 constant UNICODE-MAX $10FFFF
 
@@ -139,6 +140,43 @@ def utf32->utf8-cell
     arg0 utf32->utf8 make-uint32-lsb-n return1
 end
 
+( UTF-16: )
+
+def utf32->utf16 ( utf32-char -- hi16 lo16 )
+  arg0 0xFFFF uint<= IF
+    arg0 0 set-arg0 return1
+  ELSE
+    arg0 0x10000 int-sub
+    dup 10 bsr 0xD800 logior
+    over 0x3FF logand 0xDC00 logior
+    set-arg0 return1
+  THEN
+end
+
+def utf32->utf16-cell
+  arg0 utf32->utf16 swap 16 bsl logior set-arg0
+end
+
+def utf16->utf32 ( hi? lo -- next-char char )
+  arg0 0xD800 logand 0xD800 equals? IF
+    arg1 0xDC00 logand 0xDC00 equals? IF
+      arg0 0xD800 int-sub 10 bsl
+      arg1 0xDC00 int-sub 0x3FF logand
+      logior 0x10000 int-add set-arg0
+      0 set-arg1
+    ELSE
+      -1 set-arg0
+    THEN
+  ELSE
+  THEN
+end
+
+def utf16-cell->utf32
+  arg0 0xFFFF0000 logand 16 bsr
+  arg0 0xFFFF logand
+  utf16->utf32 swap set-arg0 return1
+end
+
 ( UTF Output: )
 
 def write-utf32-char
@@ -165,6 +203,35 @@ def write-utf32-string
     write-utf32-string-n
 end
 
+def write-utf16-cell
+  arg0 utf16-cell->utf32 write-utf32-char drop
+  dup IF write-utf32-char THEN
+end
+
+def write-utf16-string-n
+  doc( Write a UTF-16 sequence out as UTF-8. )
+  args( ptr num-bytes -- end-ptr 0 )
+  arg0 int32 0 > UNLESS return0 THEN
+  arg1 peek utf16-cell->utf32
+  write-utf32-char drop
+  dup IF
+    arg1 2 int-add set-arg1
+    arg0 int32 2 int-sub set-arg0
+    RECURSE
+  ELSE
+    arg1 4 int-add set-arg1
+    arg0 int32 4 int-sub set-arg0
+    RECURSE
+  THEN
+end
+
+def write-utf16-string
+    doc( Write a UTF-16 byte sequence to the output device as UTF-8. )
+    arg0 seq-data
+    swap seq-length cell-size int-mul swapdrop
+    write-utf16-string-n
+end
+
 ( UTF input: )
 
 def read-utf8
@@ -182,7 +249,7 @@ def char-map
     arg1
     arg0 int32 8 int-div DOTIMES[
         arg2 arg0 int32 8 int-mul int-add
-        write-crnl write-int write-tab
+        write-crnl ,h write-tab
         int32 8 DOTIMES[
             arg2 arg0 int-add
             write-utf32-char write-space
